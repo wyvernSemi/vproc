@@ -1,0 +1,56 @@
+###################################################################
+# Makefile for Virtual Processor testcode in Icarus Verilog
+#
+# Copyright (c) 2005-2010 Simon Southwell.
+#
+# This file is part of VProc.
+#
+# VProc is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VProc is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with VProc. If not, see <http://www.gnu.org/licenses/>.
+#
+# $Id: makefile.ica,v 1.1 2010-06-18 15:33:44 simon Exp $
+# $Source: /home/simon/CVS/src/HDL/VProcThread/makefile.ica,v $
+#
+###################################################################
+
+USER_C          = VUserMain0.c VUserMain1.c
+
+SRCDIR          = ${PWD}/code
+USRCDIR         = ${PWD}/usercode
+ICADIR		= ${HOME}/tools/icarus
+
+VPROC_C         = ${SRCDIR}/VSched.c 		\
+                  ${SRCDIR}/VUser.c
+
+CC		= gcc
+CFLAGS      	= -shared -lpthread -lrt -rdynamic 	 \
+		  -I${SRCDIR}        		         \
+                  -I${USRCDIR} 			         \
+		  -I ${ICADIR}/include		         \
+		  -D_REENTRANT 				 \
+		  -DICARUS
+
+#		  -L ${ICADIR}/lib -lveriuser -lvpi      \
+
+ALL_C           = ${USER_C:%.c=${USRCDIR}/%.c} ${VPROC_C} ${SRCDIR}/veriuser_ica.c
+
+all: VProc.so verilog 
+
+verilog: test.v f_VProc.v
+	iverilog -o sim test.v f_VProc.v
+
+VProc.so: ${ALL_C}
+	${CC} ${CFLAGS} ${ALL_C} -o $@
+
+clean:
+	@rm -f csrc/* func.daidir/* *.log vcs.key vcdplus.vpd

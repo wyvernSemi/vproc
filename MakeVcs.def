@@ -1,0 +1,56 @@
+###################################################################
+# Common VCS configuration options used in every test
+#
+# Copyright (c) 2005-2010 Simon Southwell.
+#
+# This file is part of VProc.
+#
+# VProc is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VProc is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with VProc. If not, see <http://www.gnu.org/licenses/>.
+#
+# $Id: MakeVcs.def,v 1.1 2010-06-18 15:33:44 simon Exp $
+# $Source: /home/simon/CVS/src/HDL/VProcThread/MakeVcs.def,v $
+#
+###################################################################
+#
+#
+# $Id: MakeVcs.def,v 1.1 2010-06-18 15:33:44 simon Exp $
+# $Source: /home/simon/CVS/src/HDL/VProcThread/MakeVcs.def,v $
+#
+VCSOPTS         = -k off -I +v2k -Mdirectory=csrc -Mupdate 	\
+                  -l vcscomp.log				\
+                  +lint=all +cli+4 -line                        \
+                  +lint=noTMR,noERASM +warn=noERASM     	\
+		  +incdir+$VCS_HOME/include 			\
+		  -F test.vc -o simv
+
+MACHTYPE	:= $(shell uname -p)
+
+#
+# Set additional flags according to OS and Machine type
+#
+ifeq ("${MACHTYPE}", "sparc")
+  CFLAGS        = -xCC -fast -mt -D__SOLARIS__
+  VCSFLAGS      = ${VCSOPTS} -Xstrict=0x01 -syslib "-lpthread" -syslib "-lrt"
+endif
+
+ifeq ("${MACHTYPE}", "i386")
+  CFLAGS        = 
+  VCSFLAGS      = ${VCSOPTS} -Xstrict -syslib "-lpthread" -syslib "-lrt" -LDFLAGS -rdynamic
+endif
+
+ifeq ("${MACHTYPE}", "x86_64")
+  CFLAGS        = 
+  VCSFLAGS      = ${VCSOPTS} -full64 -Xstrict -syslib "-lpthread" -syslib "-lrt" -LDFLAGS -rdynamic
+endif
+

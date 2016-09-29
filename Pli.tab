@@ -1,0 +1,4 @@
+$vinit     size=0 args=1 call=VInit misc=VHalt
+$vsched    size=0 args=7 call=VSched 
+$vaccess   size=0 args=4 call=VAccess
+$vprocuser size=0 args=2 call=VProcUser

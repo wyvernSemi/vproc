@@ -1,0 +1,59 @@
+###################################################################
+# Makefile for Virtual Processor testcode in CVer
+#
+# Copyright (c) 2005-2010 Simon Southwell.
+#
+# This file is part of VProc.
+#
+# VProc is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VProc is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with VProc. If not, see <http://www.gnu.org/licenses/>.
+#
+# $Id: makefile.cver,v 1.1 2010-06-18 15:33:44 simon Exp $
+# $Source: /home/simon/CVS/src/HDL/VProcThread/makefile.cver,v $
+#
+###################################################################
+
+#CVERHOME=/user/simon/tools/gplcver
+VUSRTGT=VUser
+VSCHEDTGT=VSched.so
+
+ifeq ("${MACHTYPE}", "sparc")
+   CC=cc 
+   CFLAGS=-xCC -fast -DCVER
+   SO_FLAG=-G 
+else
+   CC=gcc
+   CFLAGS=-DCVER
+   SO_FLAG=-shared
+endif
+
+SRCDIR=./code
+USRCDIR=./usercode
+TARGETS=VUser VUserMain0.so VUserMain1.so VSched.so 
+
+all: ${TARGETS}
+
+VUser: ${SRCDIR}/VUser.c ${SRCDIR}/VProc.h
+	${CC} ${CFLAGS} ${SRCDIR}/VUser.c -I. -I${SRCDIR}/ -o VUser -ldl
+
+VUserMain0.so: ${USRCDIR}/VUserMain0.c ${SRCDIR}/VUser.h
+	${CC} ${CFLAGS} ${SO_FLAG} ${USRCDIR}/VUserMain0.c -I${SRCDIR} -o VUserMain0.so
+
+VUserMain1.so: ${USRCDIR}/VUserMain1.c ${SRCDIR}/VUser.h
+	${CC} ${CFLAGS} ${SO_FLAG} ${USRCDIR}/VUserMain1.c -I${SRCDIR} -o VUserMain1.so
+
+VSched.so: ${SRCDIR}/VSched.c ${SRCDIR}/VProc.h ${SRCDIR}/VSched_pli.h  ${SRCDIR}/veriuser.c
+	${CC} ${CFLAGS} ${SO_FLAG} -I . -I .. ${SRCDIR}/VSched.c ${SRCDIR}/veriuser.c -I ${CVER_HOME}/pli_incs -o VSched.so
+
+clean:
+	@rm -rf ${TARGETS} VSched.o veriuser.o 
