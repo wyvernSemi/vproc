@@ -28,7 +28,7 @@ Source:"test.vc";                          DestDir: "{app}"
 Source:"test.v";                           DestDir: "{app}"
 Source:"extradefs.v";                      DestDir: "{app}"
 Source:"f_VProc.v";                        DestDir: "{app}"
-                                     
+
 ; C source code                                            
 Source:"code\*.c";                         DestDir: "{app}\code"
 Source:"code\*.h";                         DestDir: "{app}\code"
@@ -37,3 +37,4 @@ Source:"usercode\*.c";                     DestDir: "{app}\usercode"
 ; Documentation
 Source:"doc\VProc.htm";                    DestDir: "{app}\doc"
 Source:"doc\images\*.gif";                 DestDir: "{app}\doc\images"
+Source:"doc\images\*.png";                 DestDir: "{app}\doc\images"
