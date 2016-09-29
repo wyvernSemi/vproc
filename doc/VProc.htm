@@ -55,6 +55,7 @@ compiled for the host computer.
   <ul>
   <li><a href="#VCS">VCS</a>
   <li><a href="#NcVerilog">NC-Verilog</a>
+  <li><a href="#ModelSim">ModelSim</a>
   </ul>
 <li><a href="#DelivFiles">Delivered Files</a>
   <ul>
@@ -130,9 +131,11 @@ test harness might
 utilse an already existing HDL interface block to connect to a transactional bus model
 which was then controlled by mapping much simpler input signals into VProc.
 </p>
+<br>
 <center>
-<img src="images/VProcDiag.gif">
+<img style="box-shadow: 10px 10px 15px #d0d0d0"; src="images/VProcDiag.gif">
 </center>
+<br>
 <p>
 The above diagram shows what a typical virtual processor system set of 
 layers might be. The bottom layers are provided with this system. On top of 
@@ -165,7 +168,7 @@ the PLI, and the module waits for the number of ticks to have passed, or an
 IO transaction is acknowledged, before calling $vsched again. 
 </p>
 <center>
-<img src="images/VProcDiag2.gif">
+<img src="images/VProcDiag2.png">
 </center>
 <a name="VerilogBusStructure"></a>
 <h2>Verilog Bus Structure</h2>
@@ -496,6 +499,22 @@ array, so no extra table file is required. To access this code the
 The pthread and rt libraries must also be linked with the shared object.
 </p>
 
+<a name="ModelSim"></a>
+<h3>ModelSim</h3>
+<p>
+ModelSim compiles the verilog, and runs the simulation seperately, with the commands 
+<tt>vlog</tt> and <tt>vsim</tt> respectively. The PLI code is reference at the running
+of the simulation. So, assumning the PLI C code was compiled as <tt>VProc.so</tt>, the
+<tt>vsim</tt> command is structed as shown below:
+</p>
+<pre>
+    vsim &lt;normal compile options&gt; -pli VProc.so
+</pre>
+
+<p>
+As with NC-Verilog, the pthread and rt libraries must be linked with the shared object.
+</p>
+
 <a name="DelivFiles"></a>
 <h2>Delivered Files</h2>
 <p>
@@ -505,7 +524,7 @@ In order to use the virtual processor, the following files are used.
 <tr> <td>&nbsp;</td> <td style="font-family:courier">f_VProc.v</td>         <td>:</td>      <td>Virtual processor verilog</td></tr>
 <tr> <td>&nbsp;</td> <td style="font-family:courier">VSched.c</td>          <td>:</td>      <td>Simulation (server) side  C code</td></tr>
 <tr> <td>&nbsp;</td> <td style="font-family:courier">VSched_pli.h</td>      <td>:</td>      <td>Common PLI definitions and prototypes</td></tr>
-<tr> <td>&nbsp;</td> <td style="font-family:courier">veriuser.h</td>        <td>:</td>      <td>PLI table (NC-Verilog)</td></tr>
+<tr> <td>&nbsp;</td> <td style="font-family:courier">veriuser.c</td>        <td>:</td>      <td>PLI table (NC-Verilog)</td></tr>
 <tr> <td>&nbsp;</td> <td style="font-family:courier">Pli.tab</td>           <td>:</td>      <td>PLI table (VCS only)</td></tr>
 <tr> <td>&nbsp;</td> <td style="font-family:courier">VProc.h</td>           <td>:</td>      <td>VProc layer definitions</td></tr>
 <tr> <td>&nbsp;</td> <td style="font-family:courier">VUser.c</td>           <td>:</td>      <td>User (client) side C code</td></tr>
@@ -548,8 +567,9 @@ simulation and one of the user threads. There can, of course, be multiple user
 threads (one for each VProc) with similar interactions with the simulator. 
 </p>
 <center>
-<img src="images/MessageDiag.gif">
+<img style="box-shadow: 10px 10px 15px #d0d0d0"; src="images/MessageDiag.gif">
 </center>
+<br>
 <p>
 As can be seen, there are normally two types of messages exchanged 
 between user thread and simulation. The simulation, at time 0, always sends 
