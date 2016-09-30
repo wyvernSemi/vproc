@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
 //
-// $Id: VSched_pli.h,v 1.1 2010-06-18 15:30:07 simon Exp $
+// $Id: VSched_pli.h,v 1.2 2016-09-30 12:28:14 simon Exp $
 // $Source: /home/simon/CVS/src/HDL/VProcThread/code/VSched_pli.h,v $
 //
 //=====================================================================
@@ -38,9 +38,9 @@
 #define debug_io_printf //
 #endif
 
-extern int VInit (void);
-extern int VSched (void);
-extern int VPrinter (void);
-extern int VHalt (int, int);
-extern int VProcUser(void);
-
+extern int VInit     (void);
+extern int VSched    (void);
+extern int VPrinter  (void);
+extern int VHalt     (int, int);
+extern int VProcUser (void);
+extern int VAccess   (void);

@@ -18,26 +18,30 @@
 # You should have received a copy of the GNU General Public License
 # along with VProc. If not, see <http://www.gnu.org/licenses/>.
 #
-# $Id: makefile,v 1.2 2016-09-29 08:42:49 simon Exp $
+# $Id: makefile,v 1.3 2016-09-30 12:26:32 simon Exp $
 # $Source: /home/simon/CVS/src/HDL/VProcThread/makefile,v $
 #
 ###################################################################
 
 # $MODELSIM and $MODEL_TECH environment variables must be set
 
-SRCDIR          = ${PWD}/code
-USRCDIR         = ${PWD}/usercode
+SRCDIR          = code
+USRCDIR         = usercode
+VOBJDIR         = obj
 
 # VPROC C source code
-VPROC_C         = ${SRCDIR}/VSched.c                             \
-                  ${SRCDIR}/VUser.c                              \
-                  ${SRCDIR}/veriuser.c
+VPROC_C         = VSched.c                             \
+                  VUser.c                              \
+                  veriuser.c
 
 # Test user code
 USER_C          = VUserMain0.c VUserMain1.c
 
+VOBJS           = ${addprefix ${VOBJDIR}/, ${VPROC_C:%.c=%.o}}
+
 # Generated  PLI C library
 VPROC_PLI       = VProc.so
+VLIB            = libvproc.a
 
 VPROC_TOP       = test
 
@@ -45,23 +49,35 @@ VPROC_TOP       = test
 OSTYPE:=$(shell uname -o)
 
 CC              = gcc
-CFLAGS          = -m32 -fPIC -shared -lpthread -lrt -rdynamic   \
-                  -I${SRCDIR}                                   \
-                  -I${USRCDIR}                                  \
-                  -I${MODELSIM}/include                         \
-                  -DMODELSIM                                    \
+CFLAGS          = -m32 -fPIC                            \
+                  -I${SRCDIR}                           \
+                  -I${USRCDIR}                          \
+                  -I${MODELSIM}/include                 \
+                  -DMODELSIM                            \
                   -D_REENTRANT
+CFLAGS_SO       = -shared -lpthread -lrt -rdynamic
 
 # Comman flags for vsim
 VSIMFLAGS = -pli ${VPROC_PLI} ${VPROC_TOP}
 
 # All C source code for compilation
-ALL_C           = ${USER_C:%.c=${USRCDIR}/%.c} ${VPROC_C}
+ALL_C           = ${USER_C:%.c=${USRCDIR}/%.c} ${VPROC_C:%.c=${SRCDIR}/%.c}
 
-all: ${VPROC_PLI} verilog
+all: ${VPROC_PLI} ${VLIB} verilog
+
+${VOBJDIR}/%.o: ${SRCDIR}/%.c
+	@${CC} -c ${CFLAGS} $< -o $@
+
+${VLIB} : ${VOBJS}
+	@ar cr ${VLIB} ${VOBJS}
+
+${VOBJS}: | ${VOBJDIR}
+
+${VOBJDIR}:
+	@mkdir ${VOBJDIR}
 
 ${VPROC_PLI}: ${ALL_C}
-	@${CC} ${CFLAGS} ${ALL_C} ${LIBS} -o $@ 
+	@${CC} ${CFLAGS_SO} ${CFLAGS} ${ALL_C} -o $@ 
 
 # Let modelsim decide what's changed in the verilog
 .PHONY: verilog
@@ -77,15 +93,15 @@ run: verilog
 
 rungui: verilog
 	@if [ -e wave.do ]; then                                 \
-          vsim -gui -do wave.do ${VSIMFLAGS};                    \
+          @sim -gui -do wave.do ${VSIMFLAGS};                    \
         else                                                     \
-          vsim -gui ${VSIMFLAGS};                                \
+          @vsim -gui ${VSIMFLAGS};                                \
         fi
 
 gui: rungui
 
 clean:
-	@rm -rf ${VPROC_PLI} *.wlf
+	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJS} *.wlf
 	@if [ -d "./work" ]; then                                \
           vdel -all;                                             \
         fi

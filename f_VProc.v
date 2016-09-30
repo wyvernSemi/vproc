@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with VProc. If not, see <http://www.gnu.org/licenses/>.
  *
- * $Id: f_VProc.v,v 1.2 2016-09-28 07:12:56 simon Exp $
+ * $Id: f_VProc.v,v 1.2 2016/09/28 07:12:56 simon Exp $
  * $Source: /home/simon/CVS/src/HDL/VProcThread/f_VProc.v,v $
  */
 
