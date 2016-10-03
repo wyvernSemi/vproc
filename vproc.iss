@@ -1,10 +1,10 @@
 
 [Setup]
 AppName=vproc
-AppVerName=VPROC_1_0_2
+AppVerName=VPROC_1_0_3
 DefaultDirName={src}\vproc
 DisableProgramGroupPage=yes
-OutputBaseFilename=setup_vproc_1_0_2
+OutputBaseFilename=setup_vproc_1_0_3
 
 [Dirs]
 Name: "{app}\code"

@@ -18,8 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with VProc. If not, see <http://www.gnu.org/licenses/>.
 #
-# $Id: makefile,v 1.3 2016-09-30 12:26:32 simon Exp $
-# $Source: /home/simon/CVS/src/HDL/VProcThread/makefile,v $
+# $Id: makefile,v 1.5 2016/10/03 13:19:09 simon Exp $
+# $Source: /home/simon/CVS/src/HDL/VProc/makefile,v $
 #
 ###################################################################
 
@@ -31,8 +31,7 @@ VOBJDIR         = obj
 
 # VPROC C source code
 VPROC_C         = VSched.c                             \
-                  VUser.c                              \
-                  veriuser.c
+                  VUser.c
 
 # Test user code
 USER_C          = VUserMain0.c VUserMain1.c
@@ -60,15 +59,16 @@ CFLAGS_SO       = -shared -lpthread -lrt -rdynamic
 # Comman flags for vsim
 VSIMFLAGS = -pli ${VPROC_PLI} ${VPROC_TOP}
 
-# All C source code for compilation
-ALL_C           = ${USER_C:%.c=${USRCDIR}/%.c} ${VPROC_C:%.c=${SRCDIR}/%.c}
+#------------------------------------------------------
+# BUILD RULES
+#------------------------------------------------------
 
-all: ${VPROC_PLI} ${VLIB} verilog
+all: ${VPROC_PLI} verilog
 
 ${VOBJDIR}/%.o: ${SRCDIR}/%.c
 	@${CC} -c ${CFLAGS} $< -o $@
 
-${VLIB} : ${VOBJS}
+${VLIB} : ${VOBJS} ${VOBJDIR}
 	@ar cr ${VLIB} ${VOBJS}
 
 ${VOBJS}: | ${VOBJDIR}
@@ -76,33 +76,48 @@ ${VOBJS}: | ${VOBJDIR}
 ${VOBJDIR}:
 	@mkdir ${VOBJDIR}
 
-${VPROC_PLI}: ${ALL_C}
-	@${CC} ${CFLAGS_SO} ${CFLAGS} ${ALL_C} -o $@ 
+${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o ${USER_C:%.c=${USRCDIR}/%.c}
+	@${CC} ${CFLAGS_SO}                               \
+	       ${CFLAGS}                                  \
+	       ${USER_C:%.c=${USRCDIR}/%.c}               \
+	       ${VOBJDIR}/veriuser.o                      \
+               -Wl,-whole-archive                         \
+	       -L. -lvproc                                \
+	       -Wl,-no-whole-archive                      \
+	       -o $@
 
 # Let modelsim decide what's changed in the verilog
 .PHONY: verilog
 
 verilog: ${VPROC_PLI}
-	@if [ ! -d "./work" ]; then                              \
-          vlib work;                                             \
+	@if [ ! -d "./work" ]; then                        \
+          vlib work;                                       \
         fi
 	@vlog -f test.vc
         
+#------------------------------------------------------
+# EXECUTION RULES
+#------------------------------------------------------
+
 run: verilog
 	@vsim -c ${VSIMFLAGS}
 
 rungui: verilog
-	@if [ -e wave.do ]; then                                 \
-          vsim -gui -do wave.do ${VSIMFLAGS};                    \
-        else                                                     \
-          vsim -gui ${VSIMFLAGS};                                \
+	@if [ -e wave.do ]; then                           \
+          vsim -gui -do wave.do ${VSIMFLAGS};              \
+        else                                               \
+          vsim -gui ${VSIMFLAGS};                          \
         fi
 
 gui: rungui
 
+#------------------------------------------------------
+# CLEANING RULES
+#------------------------------------------------------
+
 clean:
-	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJS} *.wlf
-	@if [ -d "./work" ]; then                                \
-          vdel -all;                                             \
+	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJS} ${VOBJDIR}/veriuser.c *.wlf
+	@if [ -d "./work" ]; then                           \
+          vdel -all;                                        \
         fi
 

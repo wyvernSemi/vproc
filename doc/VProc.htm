@@ -459,6 +459,11 @@ output stream, and appear in the correct relative order.
 <a name="AddingC"></a>
 <h2>Adding C functions to Simulators</h2>
 
+<p>
+Each of the simulators treats PLI code slightly differently, in the way it is linked as a 
+shared object/DLL. Three simulator examples are documented here. 
+</p>
+
 <a name="VCS"></a>
 <h3>VCS</h3>
 <p>
@@ -482,6 +487,11 @@ the compilation directory, or the above modified to reference the files
 remotely. The <tt>-Xstrict=0x01</tt> is a VCS requirement for using threads in PLI code,
 and the <tt>pthread</tt> and <tt>rt</tt> libraries must be compiled in (e.g. use the <tt>-syslib</tt> option).
 </p>
+If <tt>VProc</tt>is being used as a library component in a system which has additional PLI 
+functionality, then the system's <tt>Pli.tab</tt> must be extended with the entries in that
+supplied by <tt>VProc</tt>.
+<p>
+</p>
 <a name="NcVerilog"></a>
 <h3>NC-Verilog</h3>
 <p>
@@ -498,6 +508,38 @@ array, so no extra table file is required. To access this code the
 <p>
 The pthread and rt libraries must also be linked with the shared object.
 </p>
+<p>
+If <tt>VProc</tt> is being used as a library component in a system which has additional PLI 
+functionality, there can only be one set of '<tt>veriuser</tt>' tables and boot functions.
+The system using <tt>VProc</tt> must extend its own <tt>veriusertfs</tt> table to include
+the <tt>VProc</tt> entries. The <tt>VSched_pli.h</tt> header includes definitions for these
+entries as <tt>VPROC_TF_TBL</tt>, along with  the number of entries (<tt>VPROC_TF_TBL_SIZE</tt>).
+The new system's table can then look something like the following:
+</p>
+
+<pre style="font-family:Courier; font-size:11pt; color:#603000";>
+    s_tfcell veriusertfs[VPROC_TF_TBL_SIZE + MY_TBL_SIZE] =
+    {
+        VPROC_TF_TBL,
+	&lt;my table entries&gt;,
+        {0} 
+    };
+</pre>
+<p>
+When building <tt>VProc</tt>, a static library of the functions is generated as <tt>libvproc.a</tt>,
+for linking with the new system. This does not contain a compiled object for
+<tt>veriuser.c</tt>. The new system must provide this functionality if adding
+additional PLI functionality, extended as just mentioned. If no new functionality
+is to be added, the <tt>VProc</tt> code can be used, and <tt>veriuser.c</tt> from
+<tt>VProc</tt> compiled into a shared object, along with the code from <tt>libvproc.a</tt>.
+</p>
+<p>
+Note: when linking library functions into a shared object (with <tt>ld</tt>) 
+the <tt>-whole-archive</tt>/<tt>-no-whole-archive</tt> pair must bracket the library 
+references in order to have the shared object contain the library functions. 
+When using <tt>gcc</tt> to compile and link in a single step , the options become 
+<tt>-Wl,-whole-archive</tt>/<tt>-Wl,-whole-archive</tt>.
+</p>
 
 <a name="ModelSim"></a>
 <h3>ModelSim</h3>
@@ -507,13 +549,40 @@ ModelSim compiles the verilog, and runs the simulation seperately, with the comm
 of the simulation. So, assumning the PLI C code was compiled as <tt>VProc.so</tt>, the
 <tt>vsim</tt> command is structed as shown below:
 </p>
-<pre>
+<pre style="font-family:Courier; font-size:11pt; color:#603000";>
     vsim &lt;normal compile options&gt; -pli VProc.so
 </pre>
 
 <p>
 As with NC-Verilog, the pthread and rt libraries must be linked with the shared object.
 </p>
+<p>
+If <tt>VProc</tt> is being used as a library component in a system which has additional PLI 
+functionality, there can only be one set of '<tt>veriuser</tt>' tables and boot functions.
+The system using <tt>VProc</tt> must extend its own <tt>veriusertfs</tt> table to include
+the <tt>VProc</tt> entries. The <tt>VSched_pli.h</tt> header includes definitions for these
+entries as <tt>VPROC_TF_TBL</tt>, along with  the number of entries (<tt>VPROC_TF_TBL_SIZE</tt>).
+The new system's table can then look something like that shown for <a href="#NcVerilog">NC-Verilog</a>,
+above.
+</p>
+<p>
+When building <tt>VProc</tt>, a static library of the functions is generated as <tt>libvproc.a</tt>,
+for linking with the new system. This does not contain a compiled object for
+<tt>veriuser.c</tt>. The new system must provide this functionality if adding
+additional PLI functionality, extended as just mentioned. If no new functionality
+is to be added, the <tt>VProc</tt> code can be used, and <tt>veriuser.c</tt> from
+<tt>VProc</tt> compiled into a shared object, along with the code from <tt>libvproc.a</tt>.
+</p>
+
+<p>
+Note: when linking library functions into a shared object (with <tt>ld</tt>) 
+the <tt>-whole-archive</tt>/<tt>-no-whole-archive</tt> pair must bracket the library 
+references in order to have the shared object contain the library functions. 
+When using <tt>gcc</tt> to compile and link in a single step , the options become 
+<tt>-Wl,-whole-archive</tt>/<tt>-Wl,-whole-archive</tt>.
+</p>
+
+
 
 <a name="DelivFiles"></a>
 <h2>Delivered Files</h2>

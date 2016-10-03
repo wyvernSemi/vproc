@@ -19,8 +19,8 @@
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
 //
-// $Id: VSched_pli.h,v 1.2 2016-09-30 12:28:14 simon Exp $
-// $Source: /home/simon/CVS/src/HDL/VProcThread/code/VSched_pli.h,v $
+// $Id: VSched_pli.h,v 1.3 2016/10/03 13:20:56 simon Exp $
+// $Source: /home/simon/CVS/src/HDL/VProc/code/VSched_pli.h,v $
 //
 //=====================================================================
 //
@@ -37,6 +37,14 @@
 #else
 #define debug_io_printf //
 #endif
+
+#define VPROC_TF_TBL \
+    {usertask, 0, NULL, 0, VInit,     VHalt, "$vinit",     1}, \
+    {usertask, 0, NULL, 0, VSched,    NULL,  "$vsched",    1}, \
+    {usertask, 0, NULL, 0, VAccess,   NULL,  "$vaccess",   1}, \
+    {usertask, 0, NULL, 0, VProcUser, NULL,  "$vprocuser", 1}
+
+#define VPROC_TF_TBL_SIZE 4
 
 extern int VInit     (void);
 extern int VSched    (void);
