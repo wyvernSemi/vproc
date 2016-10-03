@@ -93,9 +93,9 @@ run: verilog
 
 rungui: verilog
 	@if [ -e wave.do ]; then                                 \
-          @sim -gui -do wave.do ${VSIMFLAGS};                    \
+          vsim -gui -do wave.do ${VSIMFLAGS};                    \
         else                                                     \
-          @vsim -gui ${VSIMFLAGS};                                \
+          vsim -gui ${VSIMFLAGS};                                \
         fi
 
 gui: rungui
