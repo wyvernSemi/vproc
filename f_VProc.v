@@ -2,7 +2,7 @@
  * Verilog side Virtual Processor, for running host
  * programs as control in simulation.
  *
- * Copyright (c) 2004-2010 Simon Southwell. 
+ * Copyright (c) 2004-2016 Simon Southwell. 
  *
  * This file is part of VProc.
  *
@@ -19,32 +19,46 @@
  * You should have received a copy of the GNU General Public License
  * along with VProc. If not, see <http://www.gnu.org/licenses/>.
  *
- * $Id: f_VProc.v,v 1.2 2016/09/28 07:12:56 simon Exp $
- * $Source: /home/simon/CVS/src/HDL/VProcThread/f_VProc.v,v $
+ * $Id: f_VProc.v,v 1.3 2016/10/04 15:10:42 simon Exp $
+ * $Source: /home/simon/CVS/src/HDL/VProc/f_VProc.v,v $
  */
 
 `VProcTimeScale
 
-`define WEbit  0
-`define RDbit  1
+`define WEbit       0
+`define RDbit       1
 `define DeltaCycle -1
 
 module VProc (Clk, Addr, WE, RD, DataOut, DataIn, WRAck, RDAck, Interrupt, Update, UpdateResponse, Node);
-input         Clk, RDAck, WRAck, UpdateResponse;
-input  [3:0]  Node; 
-input  [2:0]  Interrupt;
+
+input         Clk;
+input         RDAck;
+input         WRAck;
+input         UpdateResponse;
+input   [3:0] Node; 
+input   [2:0] Interrupt;
 input  [31:0] DataIn;
 output [31:0] Addr, DataOut;
-output        WE, RD, Update;
+output        WE;
+output        RD;
+output        Update;
 
-integer VPDataOut, VPAddr, VPRW, VPTicks;
-integer TickVal;
+integer       VPDataOut;
+integer       VPAddr;
+integer       VPRW;
+integer       VPTicks;
+integer       TickVal;
 
-reg [31:0] DataOut, DataInSamp, Addr;
-reg [2:0] IntSamp;
-reg WE, RD, RdAckSamp, WRAckSamp;
-reg Initialised;
-reg Update;
+reg    [31:0] DataOut;
+reg    [31:0] DataInSamp;
+reg    [31:0] Addr;
+reg     [2:0] IntSamp;
+reg           WE;
+reg           RD;
+reg           RdAckSamp;
+reg           WRAckSamp;
+reg           Initialised;
+reg           Update;
 
 initial
 begin
@@ -57,17 +71,17 @@ begin
     // Don't remove delay! Needed to allow Node to be assigned
     #1
     $vinit(Node);
-    Initialised = 1;
+    Initialised  = 1;
 end
 
 
 always @(posedge Clk)
 begin
     // Cleanly sample the inputs
-    DataInSamp = DataIn;
-    RdAckSamp  = RDAck;
-    WRAckSamp  = WRAck; 
-    IntSamp    = Interrupt;
+    DataInSamp   = DataIn;
+    RdAckSamp    = RDAck;
+    WRAckSamp    = WRAck; 
+    IntSamp      = Interrupt;
 
     if (Initialised == 1'b1)
     begin
@@ -78,12 +92,14 @@ begin
             // If interrupt routine returns non-zero tick, then override
             // current tick value. Otherwise, leave at present value.
             if (VPTicks > 0)
+            begin
                 TickVal = VPTicks;
+            end
         end
 
         // If tick, write or a read has completed...
         if ((RD === 1'b0 && WE === 1'b0 && TickVal === 0) || 
-            (RD === 1'b1 && RdAckSamp === 1'b1) ||
+            (RD === 1'b1 && RdAckSamp === 1'b1)           ||
             (WE === 1'b1 && WRAckSamp === 1'b1))
         begin
             // Host process message scheduler called
@@ -100,22 +116,32 @@ begin
 
             // Update current tick value with returned number (if not zero)
             if (VPTicks > 0)
+            begin
                 TickVal = VPTicks;
+            end
             else if ( VPTicks < 0)
+            begin
                 while (VPTicks == `DeltaCycle)
                 begin
                     // Resample delta input data
                     DataInSamp = DataIn;
+
                     $vsched({28'h0000000, Node}, 32'h0, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
+
                     WE      = VPRW[`WEbit];
                     RD      = VPRW[`RDbit];
                     DataOut = VPDataOut;
                     Addr    = VPAddr;
                     Update  = ~Update;
+
                     if (VPTicks >= 0)
+		    begin
                         TickVal = VPTicks;
+                    end
+
                     @(UpdateResponse);
                 end
+            end
         end
         else
         begin
