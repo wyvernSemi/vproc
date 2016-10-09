@@ -18,10 +18,13 @@
 # You should have received a copy of the GNU General Public License
 # along with VProc. If not, see <http://www.gnu.org/licenses/>.
 #
-# $Id: makefile.cver,v 1.1 2010-06-18 15:33:44 simon Exp $
-# $Source: /home/simon/CVS/src/HDL/VProcThread/makefile.cver,v $
+# $Id: makefile.cver,v 1.2 2016/10/09 13:50:39 simon Exp $
+# $Source: /home/simon/CVS/src/HDL/VProc/makefile.cver,v $
 #
 ###################################################################
+
+# Define the maximum number of supported VProcs in the compile pli library
+MAX_NUM_VPROC   = 64
 
 #CVERHOME=/user/simon/tools/gplcver
 VUSRTGT=VUser
@@ -29,11 +32,11 @@ VSCHEDTGT=VSched.so
 
 ifeq ("${MACHTYPE}", "sparc")
    CC=cc 
-   CFLAGS=-xCC -fast -DCVER
+   CFLAGS=-xCC -fast -DCVER -DVP_MAX_NODES=${MAX_NUM_VPROC}
    SO_FLAG=-G 
 else
    CC=gcc
-   CFLAGS=-DCVER
+   CFLAGS=-DCVER -DVP_MAX_NODES=${MAX_NUM_VPROC}
    SO_FLAG=-shared
 endif
 

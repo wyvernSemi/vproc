@@ -18,10 +18,13 @@
 # You should have received a copy of the GNU General Public License
 # along with VProc. If not, see <http://www.gnu.org/licenses/>.
 #
-# $Id: makefile.nc,v 1.1 2010-06-18 15:33:44 simon Exp $
-# $Source: /home/simon/CVS/src/HDL/VProcThread/makefile.nc,v $
+# $Id: makefile.nc,v 1.2 2016/10/09 13:50:38 simon Exp $
+# $Source: /home/simon/CVS/src/HDL/VProc/makefile.nc,v $
 #
 ###################################################################
+
+# Define the maximum number of supported VProcs in the compile pli library
+MAX_NUM_VPROC   = 64
 
 include		./MakeNc.def
 
@@ -33,8 +36,10 @@ USRCDIR         = ./usercode
 VPROC_C         = ${VPROCDIR}/VSched.c           		\
                   ${VPROCDIR}/VUser.c
 
+
 # Test specific C flags ('include' paths and any required -D definitions)
 TESTCFLAGS      = -I${VPROCDIR}                        		\
+                  -DVP_MAX_NODES=${MAX_NUM_VPROC}               \
                   -I${USRCDIR} -D_REENTRANT
 
 ALL_C           = ${USER_C:%.c=${USRCDIR}/%.c} ${VPROC_C} 	\
