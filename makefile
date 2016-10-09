@@ -18,12 +18,15 @@
 # You should have received a copy of the GNU General Public License
 # along with VProc. If not, see <http://www.gnu.org/licenses/>.
 #
-# $Id: makefile,v 1.5 2016/10/03 13:19:09 simon Exp $
+# $Id: makefile,v 1.6 2016/10/09 13:38:20 simon Exp $
 # $Source: /home/simon/CVS/src/HDL/VProc/makefile,v $
 #
 ###################################################################
 
 # $MODELSIM and $MODEL_TECH environment variables must be set
+
+# Define the maximum number of supported VProcs in the compile pli library
+MAX_NUM_VPROC   = 64
 
 SRCDIR          = code
 USRCDIR         = usercode
@@ -52,6 +55,7 @@ CFLAGS          = -m32 -fPIC                            \
                   -I${SRCDIR}                           \
                   -I${USRCDIR}                          \
                   -I${MODELSIM}/include                 \
+		  -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
                   -DMODELSIM                            \
                   -D_REENTRANT
 CFLAGS_SO       = -shared -lpthread -lrt -rdynamic
