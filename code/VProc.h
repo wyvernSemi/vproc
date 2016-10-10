@@ -19,8 +19,8 @@
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
 //
-// $Id: VProc.h,v 1.3 2016-09-28 07:12:00 simon Exp $
-// $Source: /home/simon/CVS/src/HDL/VProcThread/code/VProc.h,v $
+// $Id: VProc.h,v 1.3 2016/09/28 07:12:00 simon Exp $
+// $Source: /home/simon/CVS/src/HDL/VProc/code/VProc.h,v $
 //
 //=====================================================================
 //
