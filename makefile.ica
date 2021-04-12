@@ -40,7 +40,7 @@ VPROC_C         = ${SRCDIR}/VSched.c 		\
 CC		= gcc
 CFLAGS  = -shared -rdynamic                 \
 		  -I${SRCDIR}                       \
-          -I${USRCDIR}                      \
+		  -I${USRCDIR}                      \
 		  -DVP_MAX_NODES=${MAX_NUM_VPROC}   \
 		  -D_REENTRANT                      \
 		  -DICARUS                          \
