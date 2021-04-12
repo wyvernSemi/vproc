@@ -23,6 +23,9 @@
 #
 ###################################################################
 
+# Requirements: iverilog
+#     on RHEL 7 "yum install iverilog" to install Icarus
+# To run: vvp -m ./VProc.so sim
 # Define the maximum number of supported VProcs in the compile pli library
 MAX_NUM_VPROC   = 64
 
@@ -30,23 +33,21 @@ USER_C          = VUserMain0.c VUserMain1.c
 
 SRCDIR          = ${PWD}/code
 USRCDIR         = ${PWD}/usercode
-ICADIR		= ${HOME}/tools/icarus
 
 VPROC_C         = ${SRCDIR}/VSched.c 		\
                   ${SRCDIR}/VUser.c
 
 CC		= gcc
-CFLAGS      	= -shared -lpthread -lrt -rdynamic 	 \
-		  -I${SRCDIR}        		         \
-                  -I${USRCDIR} 			         \
-		  -I ${ICADIR}/include		         \
-		  -DVP_MAX_NODES=${MAX_NUM_VPROC}        \
-		  -D_REENTRANT 				 \
-		  -DICARUS
+CFLAGS  = -shared -rdynamic                 \
+		  -I${SRCDIR}                       \
+          -I${USRCDIR}                      \
+		  -DVP_MAX_NODES=${MAX_NUM_VPROC}   \
+		  -D_REENTRANT                      \
+		  -DICARUS                          \
+		  -fPIC
+LDFLAGS = -lveriuser -lvpi -lpthread -lrt
 
-#		  -L ${ICADIR}/lib -lveriuser -lvpi      \
-
-ALL_C           = ${USER_C:%.c=${USRCDIR}/%.c} ${VPROC_C} ${SRCDIR}/veriuser_ica.c
+ALL_C   = ${USER_C:%.c=${USRCDIR}/%.c} ${VPROC_C} ${SRCDIR}/veriuser_ica.c
 
 all: VProc.so verilog 
 
@@ -54,7 +55,7 @@ verilog: test.v f_VProc.v
 	iverilog -o sim test.v f_VProc.v
 
 VProc.so: ${ALL_C}
-	${CC} ${CFLAGS} ${ALL_C} -o $@
+	${CC} ${CFLAGS} ${ALL_C} -o $@ ${LDFLAGS}
 
 clean:
-	@rm -f csrc/* func.daidir/* *.log vcs.key vcdplus.vpd
+	@rm -f VProc.so sim

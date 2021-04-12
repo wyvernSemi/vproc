@@ -97,10 +97,12 @@ int VHalt (int data, int reason)
 
     if (reason == reason_endofcompile) {
     } else if (reason == reason_finish) {
+#ifndef ICARUS
     } else if (reason == reason_startofsave) {
     } else if (reason == reason_save) {
     } else if (reason == reason_restart) {
         debug_io_printf("VHalt(): restart\n");
+#endif
     } else if (reason != reason_finish) {
         debug_io_printf("VHalt(): not called for a halt reason (%d)\n", reason);
         return 0;
