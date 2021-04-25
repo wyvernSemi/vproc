@@ -33,12 +33,14 @@ USER_C          = VUserMain0.c VUserMain1.c
 
 SRCDIR          = ${PWD}/code
 USRCDIR         = ${PWD}/usercode
+ICADIR          = /usr/include/iverilog
 
 VPROC_C         = ${SRCDIR}/VSched.c 		\
                   ${SRCDIR}/VUser.c
 
 CC		= gcc
 CFLAGS  = -shared -rdynamic                 \
+          -I${ICADIR}                       \
 		  -I${SRCDIR}                       \
 		  -I${USRCDIR}                      \
 		  -DVP_MAX_NODES=${MAX_NUM_VPROC}   \
