@@ -1,6 +1,6 @@
 //=====================================================================
 //
-// VSched.c                                           Date: 2004/12/13 
+// VSched.c                                           Date: 2004/12/13
 //
 // Copyright (c) 2004-2010 Simon Southwell.
 //
@@ -19,15 +19,15 @@
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
 //
-// $Id: VSched.c,v 1.3 2016-09-29 08:47:53 simon Exp $
-// $Source: /home/simon/CVS/src/HDL/VProcThread/code/VSched.c,v $
+// $Id: VSched.c,v 1.5 2021/05/04 15:38:37 simon Exp $
+// $Source: /home/simon/CVS/src/HDL/VProc/code/VSched.c,v $
 //
 //=====================================================================
 //
 // Simulator VProc C interface routines for scheduling
 // access to user processes
 //
-// Only uses first generation PLI task/function (TF) routines 
+// Only uses first generation PLI task/function (TF) routines
 //
 //=====================================================================
 
@@ -45,17 +45,19 @@ pSchedState_t ns[VP_MAX_NODES];
 // Main routine called whenever $vinit task invoked from
 // initial block of VProc module.
 //
-int VInit ()
+VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 {
+#ifndef VPROC_VHDL
     int node;
     pid_t pid;
     int fd;
 
-    debug_io_printf("VInit()\n");
-
     // Get single argument value of $vinit call
     node = tf_getp(VPNODENUM_ARG);
-   
+#endif
+
+    debug_io_printf("VInit()\n");
+
     // Range check node number
     if (node < 0 || node >= VP_MAX_NODES) {
         io_printf("***Error: VInit() got out of range node number (%d)\n", node);
@@ -80,11 +82,13 @@ int VInit ()
     }
 
     debug_io_printf("VInit(): initialising semaphores for node %d---Done\n", node);
-	
+
     // Issue a new thread to run the user code
     VUser(node);
 
+#ifndef VPROC_VHDL
     return 0;
+#endif
 }
 
 /////////////////////////////////////////////////////////////
@@ -110,19 +114,22 @@ int VHalt (int data, int reason)
 }
 
 /////////////////////////////////////////////////////////////
-// Main routine called whenever $vsched task invoked, on 
+// Main routine called whenever $vsched task invoked, on
 // clock edge of scheduled cycle.
 //
 
-int VSched ()
+VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 {
+    int VPDataOut_int, VPAddr_int, VPRw_int, VPTicks_int;
+
+#ifndef VPROC_VHDL
     int node, Interrupt, VPDataIn;
-    int VPDataOut, VPAddr, VPRw, VPTicks;
- 
-    // Get the input argumant values of $vsched
+
+    // Get the input argument values of $vsched
     node         = tf_getp (VPNODENUM_ARG);
     Interrupt    = tf_getp (VPINTERRUPT_ARG);
     VPDataIn     = tf_getp (VPDATAIN_ARG);
+#endif
 
     // Sample inputs and update node state
     ns[node]->rcv_buf.data_in   = VPDataIn;
@@ -138,49 +145,67 @@ int VSched ()
 
     // Update outputs of $vsched task
     if (ns[node]->send_buf.ticks >= DELTA_CYCLE) {
-        VPDataOut = ns[node]->send_buf.data_out;
-        VPAddr    = ns[node]->send_buf.addr;
-        VPRw      = ns[node]->send_buf.rw;
-        VPTicks   = ns[node]->send_buf.ticks;
-        debug_io_printf("VSched(): VPTicks=%08x\n", VPTicks);
-    } 
+        VPDataOut_int = ns[node]->send_buf.data_out;
+        VPAddr_int    = ns[node]->send_buf.addr;
+        VPRw_int      = ns[node]->send_buf.rw;
+        VPTicks_int   = ns[node]->send_buf.ticks;
+        debug_io_printf("VSched(): VPTicks=%08x\n", VPTicks_int);
+    }
 
-    debug_io_printf("VSched(): Interrupt=%d VPDataIn=%08x VPDataOut=%08x VPAddr=%08x VPRw=%d VPTicks=%d\n", Interrupt, VPDataIn, VPDataOut, VPAddr, VPRw, VPTicks);
+    debug_io_printf("VSched(): Interrupt=%d VPDataIn=%08x VPDataOut=%08x VPAddr=%08x VPRw=%d VPTicks=%d\n", Interrupt, VPDataIn, VPDataOut_int, VPAddr_int, VPRw_int, VPTicks_int);
 
     debug_io_printf("VSched(): returning to simulation from node %d\n\n", node);
 
+#ifdef VPROC_VHDL
+    // Export outputs over FLI
+    *VPDataOut = VPDataOut_int;
+    *VPAddr    = VPAddr_int;
+    *VPRw      = VPRw_int;
+    *VPTicks   = VPTicks_int;
+
+#else
     // Update verilog PLI task ($vsched) output values with returned update data
-    tf_putp (VPDATAOUT_ARG, VPDataOut);
-    tf_putp (VPADDR_ARG,    VPAddr);
-    tf_putp (VPRW_ARG,      VPRw);
-    tf_putp (VPTICKS_ARG,   VPTicks);
+    tf_putp (VPDATAOUT_ARG, VPDataOut_int);
+    tf_putp (VPADDR_ARG,    VPAddr_int);
+    tf_putp (VPRW_ARG,      VPRw_int);
+    tf_putp (VPTICKS_ARG,   VPTicks_int);
 
     return 0;
+#endif
+
 }
 
 /////////////////////////////////////////////////////////////
 // Calls a user registered function (if available) when
 // $vprocuser(node) called in verilog
 //
-int VProcUser()
+VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 {
+#ifndef VPROC_VHDL
     int node, value;
 
     node  = tf_getp (VPNODENUM_ARG);
     value = tf_getp (VPINTERRUPT_ARG);
+#endif
 
-    if (ns[node]->VUserCB != NULL) 
+    if (ns[node]->VUserCB != NULL)
         (*(ns[node]->VUserCB))(value);
 
+#ifndef VPROC_VHDL
     return 0;
+#endif
 }
 
 /////////////////////////////////////////////////////////////
 // Called on $vaccess PLI task. Exchanges block data between
 // C and verilog domain
 //
-int VAccess()
+VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
 {
+#ifdef VPROC_VHDL
+    *VPDataOut                               = ((int *) ns[node]->send_buf.data_p)[idx];
+    ((int *) ns[node]->send_buf.data_p)[idx] = VPDataIn;
+#else
     int node, idx;
 
     node = tf_getp (VPNODENUM_ARG);
@@ -190,4 +215,5 @@ int VAccess()
     ((int *) ns[node]->send_buf.data_p)[idx] = tf_getp (VPDATAIN_ARG);
 
     return 0;
+#endif
 }

@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
 //
-// $Id: VSched_pli.h,v 1.3 2016/10/03 13:20:56 simon Exp $
+// $Id: VSched_pli.h,v 1.4 2021/05/04 15:38:37 simon Exp $
 // $Source: /home/simon/CVS/src/HDL/VProc/code/VSched_pli.h,v $
 //
 //=====================================================================
@@ -32,11 +32,39 @@
 #include "veriuser.h"
 #include "vpi_user.h"
 
-#ifdef DEBUG
-#define debug_io_printf io_printf
+#ifndef _VSCHED_PLI_H_
+#define _VSCHED_PLI_H_
+
+# ifdef VPROC_VHDL
+
+#  ifdef DEBUG
+#  define debug_io_printf printf
+#  else
+#  define debug_io_printf //
+#  endif
+
+#define VPROC_TF_TBL_SIZE  0
+#define VPROC_TF_TBL       {0}
+
+#define VINIT_PARAMS       int  node
+#define VSCHED_PARAMS      int  node, int Interrupt, int VPDataIn, int* VPDataOut, int* VPAddr, int* VPRw,int* VPTicks
+#define VPROCUSER_PARAMS   int  node, int value
+#define VACCESS_PARAMS     int  node, int  idx, int VPDataIn, int* VPDataOut
+
+#define VPROC_RTN_TYPE     void
+
+extern void VInit     (VINIT_PARAMS);
+extern void VSched    (VSCHED_PARAMS);
+extern void VProcUser (VPROCUSER_PARAMS);
+extern void VAccess   (VACCESS_PARAMS);
+
 #else
-#define debug_io_printf //
-#endif
+
+#  ifdef DEBUG
+#  define debug_io_printf io_printf
+#  else
+#  define debug_io_printf //
+#  endif
 
 #define VPROC_TF_TBL \
     {usertask, 0, NULL, 0, VInit,     VHalt, "$vinit",     1}, \
@@ -46,9 +74,20 @@
 
 #define VPROC_TF_TBL_SIZE 4
 
-extern int VInit     (void);
-extern int VSched    (void);
+#define VINIT_PARAMS      void 
+#define VSCHED_PARAMS     void
+#define VPROCUSER_PARAMS  void
+#define VACCESS_PARAMS    void
+
+#define VPROC_RTN_TYPE    int
+
+extern int VInit     (VINIT_PARAMS);
+extern int VSched    (VSCHED_PARAMS);
+extern int VProcUser (VPROCUSER_PARAMS);
+extern int VAccess   (VACCESS_PARAMS);
 extern int VPrinter  (void);
 extern int VHalt     (int, int);
-extern int VProcUser (void);
-extern int VAccess   (void);
+
+# endif
+
+#endif

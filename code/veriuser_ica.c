@@ -19,8 +19,8 @@
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
 //
-// $Id: veriuser_ica.c,v 1.2 2010-07-31 05:32:44 simon Exp $
-// $Source: /home/simon/CVS/src/HDL/VProcThread/code/veriuser_ica.c,v $
+// $Id: veriuser_ica.c,v 1.3 2021/05/04 15:38:37 simon Exp $
+// $Source: /home/simon/CVS/src/HDL/VProc/code/veriuser_ica.c,v $
 //
 //=====================================================================
 // 
@@ -42,7 +42,7 @@
 
 char *veriuser_version_str = "Virtual Processor PLI V0.1 Copyright (c) 2005 Simon Southwell.";
 
-s_tfcell veriusertfs[4] =
+s_tfcell veriusertfs[5] =
 {
     {usertask, 0, NULL, 0, VInit,     VHalt, "$vinit",     1},
     {usertask, 0, NULL, 0, VSched,    NULL,  "$vsched",    1},

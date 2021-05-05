@@ -19,8 +19,8 @@
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
 //
-// $Id: VUser.h,v 1.4 2016-09-29 08:44:11 simon Exp $
-// $Source: /home/simon/CVS/src/HDL/VProcThread/code/VUser.h,v $
+// $Id: VUser.h,v 1.5 2021/05/04 15:38:37 simon Exp $
+// $Source: /home/simon/CVS/src/HDL/VProc/code/VUser.h,v $
 //
 //=====================================================================
 
@@ -48,7 +48,27 @@ extern int  VTick         (unsigned int ticks, unsigned int node);
 extern void VRegInterrupt (int level, pVUserInt_t func, unsigned int node);
 extern void VRegUser      (pVUserCB_t func, uint32 node);
 
-#define VPrint io_printf
+#ifdef VPROC_VHDL
+
+// In windows using the FLI, a \n in the printf format string causes 
+// two lines to be advanced, so replace new lines with carriage returns
+// which seems to work
+# ifdef _WIN32
+# define VPrint(format, ...) {int len;                                             \
+                              char formbuf[256];                                   \
+                              strncpy(formbuf, format, 255);                       \
+                              len = strlen(formbuf);                               \
+                              for(int i = 0; i < len; i++)                         \
+                                if (formbuf[i] == '\n')                            \
+                                  formbuf[i] = '\r';                               \
+                              printf (formbuf, ##__VA_ARGS__);                     \
+                              }
+# else
+# define VPrint(...) printf (__VA_ARGS__)
+# endif
+#else
+#define VPrint(...) vpi_printf (__VA_ARGS__)
+#endif
 
 #ifdef DEBUG
 #define DebugVPrint VPrint

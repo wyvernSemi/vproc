@@ -19,8 +19,8 @@
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
 //
-// $Id: VUser.c,v 1.3 2016/09/28 07:12:00 simon Exp $
-// $Source: /home/simon/CVS/src/HDL/VProcThread/code/VUser.c,v $
+// $Id: VUser.c,v 1.4 2021/05/04 15:38:37 simon Exp $
+// $Source: /home/simon/CVS/src/HDL/VProc/code/VUser.c,v $
 //
 //=====================================================================
 //
@@ -42,7 +42,6 @@ static void VUserInit (int node);
 int VUser (int node)
 {
     pthread_t thread;
-    pthread_attr_t tattr;
     int status;
     int idx, jdx;
 
@@ -56,11 +55,8 @@ int VUser (int node)
 
     debug_io_printf("VUser(): initialised interrupt table node %d\n", node);
 
-    pthread_attr_init(&tattr);
-    pthread_attr_setscope(&tattr, PTHREAD_SCOPE_SYSTEM);
-
     // Set off the user code thread
-    if (status = pthread_create(&thread, &tattr, (pThreadFunc_t)VUserInit, (void *)node)) {
+    if (status = pthread_create(&thread, NULL, (pThreadFunc_t)VUserInit, (void *)((long)node))) {
         debug_io_printf("VUser(): pthread_create returned %d\n", status);
         return 1;
     }
