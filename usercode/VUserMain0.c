@@ -19,13 +19,13 @@ static int Reset = 0;
 
 static int VInterrupt_1(void)
 {
-    io_printf("Node %d: VInterrupt_1()\n", node);
+    VPrint("Node %d: VInterrupt_1()\n", node);
     return 0;
 }
 
 static int VInterrupt_4(void)
 {
-    io_printf("Node %d: VInterrupt_4()\n", node);
+    VPrint("Node %d: VInterrupt_4()\n", node);
     Reset = 1;
     return 1;
 }
@@ -34,7 +34,7 @@ void VUserMain0()
 {
     unsigned int num, data, addr;
 
-    //debug_io_printf("VUserMain0(): node=%d\n", node);
+    VPrint("VUserMain0(): node=%d\n", node);
 
     // Register function as interrupt level 1 routine
     VRegInterrupt(1, VInterrupt_1, node);
