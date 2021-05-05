@@ -18,8 +18,8 @@
  * You should have received a copy of the GNU General Public License
  * along with VProc. If not, see <http://www.gnu.org/licenses/>.
  *
- * $Id: test.v,v 1.2 2016-09-29 08:41:33 simon Exp $
- * $Source: /home/simon/CVS/src/HDL/VProcThread/test.v,v $
+ * $Id: test.v,v 1.2 2016/09/29 08:41:33 simon Exp $
+ * $Source: /home/simon/CVS/src/HDL/VProc/test.v,v $
  */
 
 `ifdef resol_10ps

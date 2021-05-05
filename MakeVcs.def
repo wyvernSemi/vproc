@@ -18,14 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with VProc. If not, see <http://www.gnu.org/licenses/>.
 #
-# $Id: MakeVcs.def,v 1.1 2010-06-18 15:33:44 simon Exp $
-# $Source: /home/simon/CVS/src/HDL/VProcThread/MakeVcs.def,v $
+# $Id: MakeVcs.def,v 1.2 2021/05/04 07:52:48 simon Exp $
+# $Source: /home/simon/CVS/src/HDL/VProc/MakeVcs.def,v $
 #
 ###################################################################
 #
 #
-# $Id: MakeVcs.def,v 1.1 2010-06-18 15:33:44 simon Exp $
-# $Source: /home/simon/CVS/src/HDL/VProcThread/MakeVcs.def,v $
+# $Id: MakeVcs.def,v 1.2 2021/05/04 07:52:48 simon Exp $
+# $Source: /home/simon/CVS/src/HDL/VProc/MakeVcs.def,v $
 #
 VCSOPTS         = -k off -I +v2k -Mdirectory=csrc -Mupdate 	\
                   -l vcscomp.log				\

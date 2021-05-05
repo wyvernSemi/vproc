@@ -18,8 +18,8 @@
  * You should have received a copy of the GNU General Public License
  * along with VProc. If not, see <http://www.gnu.org/licenses/>.
  *
- * $Id: extradefs.v,v 1.1 2010-06-18 15:33:44 simon Exp $
- * $Source: /home/simon/CVS/src/HDL/VProcThread/extradefs.v,v $
+ * $Id: extradefs.v,v 1.1 2010/06/18 15:33:44 simon Exp $
+ * $Source: /home/simon/CVS/src/HDL/VProc/extradefs.v,v $
  */
 
 `define VProcTimeScale `timescale 1 ps / 1 ps

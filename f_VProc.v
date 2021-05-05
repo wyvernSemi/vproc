@@ -2,7 +2,7 @@
  * Verilog side Virtual Processor, for running host
  * programs as control in simulation.
  *
- * Copyright (c) 2004-2016 Simon Southwell. 
+ * Copyright (c) 2004-2016 Simon Southwell.
  *
  * This file is part of VProc.
  *
@@ -19,9 +19,11 @@
  * You should have received a copy of the GNU General Public License
  * along with VProc. If not, see <http://www.gnu.org/licenses/>.
  *
- * $Id: f_VProc.v,v 1.3 2016/10/04 15:10:42 simon Exp $
+ * $Id: f_VProc.v,v 1.4 2021/05/04 15:38:37 simon Exp $
  * $Source: /home/simon/CVS/src/HDL/VProc/f_VProc.v,v $
  */
+
+ `include "extradefs.v"
 
 `VProcTimeScale
 
@@ -35,7 +37,7 @@ input         Clk;
 input         RDAck;
 input         WRAck;
 input         UpdateResponse;
-input   [3:0] Node; 
+input   [3:0] Node;
 input   [2:0] Interrupt;
 input  [31:0] DataIn;
 output [31:0] Addr, DataOut;
@@ -80,7 +82,7 @@ begin
     // Cleanly sample the inputs
     DataInSamp   = DataIn;
     RdAckSamp    = RDAck;
-    WRAckSamp    = WRAck; 
+    WRAckSamp    = WRAck;
     IntSamp      = Interrupt;
 
     if (Initialised == 1'b1)
@@ -98,14 +100,14 @@ begin
         end
 
         // If tick, write or a read has completed...
-        if ((RD === 1'b0 && WE === 1'b0 && TickVal === 0) || 
+        if ((RD === 1'b0 && WE === 1'b0 && TickVal === 0) ||
             (RD === 1'b1 && RdAckSamp === 1'b1)           ||
             (WE === 1'b1 && WRAckSamp === 1'b1))
         begin
             // Host process message scheduler called
             $vsched({28'h0000000, Node}, 32'h0, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
 
-            #`RegDel 
+            #`RegDel
             WE      = VPRW[`WEbit];
             RD      = VPRW[`RDbit];
             DataOut = VPDataOut;

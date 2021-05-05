@@ -1,7 +1,7 @@
 ###################################################################
 # Makefile for Virtual Processor testcode in Modelsim
 #
-# Copyright (c) 2005-2010 Simon Southwell.
+# Copyright (c) 2005-2021 Simon Southwell.
 #
 # This file is part of VProc.
 #
@@ -18,12 +18,12 @@
 # You should have received a copy of the GNU General Public License
 # along with VProc. If not, see <http://www.gnu.org/licenses/>.
 #
-# $Id: makefile,v 1.7 2021/05/04 15:38:37 simon Exp $
-# $Source: /home/simon/CVS/src/HDL/VProc/makefile,v $
+# $Id: makefile.vhd,v 1.2 2021/05/05 08:07:40 simon Exp $
+# $Source: /home/simon/CVS/src/HDL/VProc/makefile.vhd,v $
 #
 ###################################################################
 
-# $MODELSIM and MODEL_TECH environment variables must be set
+# MODELSIM and MODEL_TECH environment variables must be set
 
 # Define the maximum number of supported VProcs in the compile pli library
 MAX_NUM_VPROC   = 64
@@ -54,11 +54,9 @@ OSTYPE:=$(shell uname)
 ifeq (${OSTYPE}, Linux)
   CFLAGS_SO        = -shared -lpthread -lrt -rdynamic
   CPPSTD           = -std=c++11
-  MODELSIMBINDIR   = linuxaloem
 else
   CFLAGS_SO        = -shared -Wl,-export-all-symbols
   CPPSTD           =
-  MODELSIMBINDIR   = win32aloem
 endif
 
 CC              = gcc
@@ -71,16 +69,17 @@ CFLAGS          = -fPIC                                 \
                   -I${MODEL_TECH}/../include            \
                   -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
                   -DMODELSIM                            \
+                  -DVPROC_VHDL                          \
                   -D_REENTRANT
 
 # Comman flags for vsim
-VSIMFLAGS = -pli ${VPROC_PLI} ${VPROC_TOP}
+VSIMFLAGS = -pli ${VPROC_PLI} ${VPROC_TOP} 
 
 #------------------------------------------------------
 # BUILD RULES
 #------------------------------------------------------
 
-all: ${VPROC_PLI} verilog
+all: ${VPROC_PLI} vhdl
 
 ${VOBJDIR}/%.o: ${SRCDIR}/%.c
 	@${CC} -c ${CFLAGS} $< -o $@
@@ -112,23 +111,23 @@ ${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o ${USER_C:%.c=${VOBJDIR}/%.o}
            -Wl,-no-whole-archive                       \
            -o $@
 
-# Let modelsim decide what's changed in the verilog
-.PHONY: verilog
+# Let modelsim decide what's changed in the VHDL
+.PHONY: vhdl
 
-verilog: ${VPROC_PLI}
+vhdl: ${VPROC_PLI}
 	@if [ ! -d "./work" ]; then                        \
 	      vlib work;                                   \
 	fi
-	@vlog -f test.vc
+	@vcom -quiet -2008 -f files.tcl -work work
 
 #------------------------------------------------------
 # EXECUTION RULES
 #------------------------------------------------------
 
-run: verilog
+run: vhdl
 	@vsim -c ${VSIMFLAGS}
 
-rungui: verilog
+rungui: vhdl
 	@if [ -e wave.do ]; then                           \
 	    vsim -gui -do wave.do ${VSIMFLAGS};            \
 	else                                               \
