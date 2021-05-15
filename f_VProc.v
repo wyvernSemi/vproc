@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with VProc. If not, see <http://www.gnu.org/licenses/>.
  *
- * $Id: f_VProc.v,v 1.4 2021/05/04 15:38:37 simon Exp $
+ * $Id: f_VProc.v,v 1.5 2021/05/15 07:45:17 simon Exp $
  * $Source: /home/simon/CVS/src/HDL/VProc/f_VProc.v,v $
  */
 
@@ -52,9 +52,10 @@ integer       VPTicks;
 integer       TickVal;
 
 reg    [31:0] DataOut;
-reg    [31:0] DataInSamp;
+integer       DataInSamp;
 reg    [31:0] Addr;
-reg     [2:0] IntSamp;
+integer       IntSamp;
+integer       NodeI;
 reg           WE;
 reg           RD;
 reg           RdAckSamp;
@@ -71,7 +72,7 @@ begin
     Update       = 0;
 
     // Don't remove delay! Needed to allow Node to be assigned
-    #1
+    #0
     $vinit(Node);
     Initialised  = 1;
 end
@@ -79,17 +80,18 @@ end
 
 always @(posedge Clk)
 begin
-    // Cleanly sample the inputs
+    // Cleanly sample the inputs and make them integers
     DataInSamp   = DataIn;
     RdAckSamp    = RDAck;
     WRAckSamp    = WRAck;
-    IntSamp      = Interrupt;
+    IntSamp      = {1'b0, Interrupt};
+    NodeI        = Node;
 
     if (Initialised == 1'b1)
     begin
         if (IntSamp > 0)
         begin
-            $vsched({28'h0000000, Node}, {29'h00000000, IntSamp}, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
+            $vsched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
 
             // If interrupt routine returns non-zero tick, then override
             // current tick value. Otherwise, leave at present value.
@@ -105,7 +107,8 @@ begin
             (WE === 1'b1 && WRAckSamp === 1'b1))
         begin
             // Host process message scheduler called
-            $vsched({28'h0000000, Node}, 32'h0, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
+            IntSamp = 0;
+            $vsched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
 
             #`RegDel
             WE      = VPRW[`WEbit];
@@ -127,8 +130,8 @@ begin
                 begin
                     // Resample delta input data
                     DataInSamp = DataIn;
-
-                    $vsched({28'h0000000, Node}, 32'h0, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
+                    IntSamp    = 0;
+                    $vsched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
 
                     WE      = VPRW[`WEbit];
                     RD      = VPRW[`RDbit];

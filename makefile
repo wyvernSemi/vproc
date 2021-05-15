@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with VProc. If not, see <http://www.gnu.org/licenses/>.
 #
-# $Id: makefile,v 1.7 2021/05/04 15:38:37 simon Exp $
+# $Id: makefile,v 1.8 2021/05/15 07:45:17 simon Exp $
 # $Source: /home/simon/CVS/src/HDL/VProc/makefile,v $
 #
 ###################################################################
@@ -39,7 +39,9 @@ VPROC_C         = VSched.c                             \
 # Test user code
 USER_C          = VUserMain0.c VUserMain1.c
 
-VOBJS           = ${addprefix ${VOBJDIR}/, ${VPROC_C:%.c=%.o} ${USER_C:%.c=%.o}}
+VOBJS           = ${addprefix ${VOBJDIR}/, ${VPROC_C:%.c=%.o}}
+
+USRFLAGS        = 
 
 # Generated  PLI C library
 VPROC_PLI       = VProc.so
@@ -66,6 +68,7 @@ C++             = g++
 CFLAGS          = -fPIC                                 \
                   -m32                                  \
                   -g                                    \
+                  ${USRFLAGS}                           \
                   -I${SRCDIR}                           \
                   -I${USRCDIR}                          \
                   -I${MODEL_TECH}/../include            \
@@ -104,6 +107,7 @@ ${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o ${USER_C:%.c=${VOBJDIR}/%.o}
            ${CFLAGS_SO}                                \
            ${CFLAGS}                                   \
            -Wl,-whole-archive                          \
+           ${USER_C:%.c=${VOBJDIR}/%.o}                \
            ${VOBJDIR}/veriuser.o                       \
            -lpthread                                   \
            -L${MODEL_TECH}                             \

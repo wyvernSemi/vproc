@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with VProc. If not, see <http://www.gnu.org/licenses/>.
 #
-# $Id: makefile.ica,v 1.4 2021/05/04 15:38:37 simon Exp $
+# $Id: makefile.ica,v 1.5 2021/05/15 07:45:17 simon Exp $
 # $Source: /home/simon/CVS/src/HDL/VProc/makefile.ica,v $
 #
 ###################################################################
@@ -38,9 +38,12 @@ ICADIR          = /usr/include/iverilog
 VPROC_C         = ${SRCDIR}/VSched.c 		\
                   ${SRCDIR}/VUser.c
 
+USRFLAGS =
+
 CC		= gcc
 CFLAGS  = -shared -rdynamic                 \
           -Wno-incompatible-pointer-types   \
+          ${USRFLAGS}                       \
           -I${ICADIR}                       \
           -I${SRCDIR}                       \
           -I${USRCDIR}                      \
@@ -50,18 +53,18 @@ CFLAGS  = -shared -rdynamic                 \
           -fPIC
 LDFLAGS = -lveriuser -lvpi -lpthread -lrt
 
-ALL_C   = ${USER_C:%.c=${USRCDIR}/%.c} ${VPROC_C} ${SRCDIR}/veriuser_ica.c
+ALL_C   = ${USER_C:%.c=${USRCDIR}/%.c} ${VPROC_C} ${SRCDIR}/veriuser.c
 
-all: VProc.so verilog 
+all: VProc.so verilog
 
 verilog: test.v f_VProc.v
 	@iverilog -o sim test.v f_VProc.v
 
 VProc.so: ${ALL_C}
 	@${CC} ${CFLAGS} ${ALL_C} -o $@ ${LDFLAGS}
-    
+
 run: all
 	@vvp -m ./VProc.so sim
- 
+
 clean:
 	@rm -f VProc.so sim
