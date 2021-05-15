@@ -19,7 +19,7 @@
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
 //
-// $Id: VSched.c,v 1.5 2021/05/04 15:38:37 simon Exp $
+// $Id: VSched.c,v 1.6 2021/05/15 07:45:17 simon Exp $
 // $Source: /home/simon/CVS/src/HDL/VProc/code/VSched.c,v $
 //
 //=====================================================================
@@ -41,25 +41,125 @@
 // Pointers to state for each node (up to VP_MAX_NODES)
 pSchedState_t ns[VP_MAX_NODES];
 
+// If not VHDL FLI or PLI TF, use VPI
+#if !defined (VPROC_VHDL) && defined(VPROC_PLI_VPI)
+
+/////////////////////////////////////////////////////////////
+// Registers the increment system task
+//
+void register_vpi_tasks()
+{
+    s_vpi_systf_data data[] =
+      {{vpiSysTask, 0, "$vinit",     VInit,     0, 0, 0},
+       {vpiSysTask, 0, "$vsched",    VSched,    0, 0, 0},
+       {vpiSysTask, 0, "$vaccess",   VAccess,   0, 0, 0},
+       {vpiSysTask, 0, "$vprocuser", VProcUser, 0, 0, 0},
+      };
+
+
+    for (int idx= 0; idx < 4; idx++)
+    {
+        debug_io_printf("registering %s\n", data[idx].tfname);
+        vpi_register_systf(&data[idx]);
+    }
+}
+
+/////////////////////////////////////////////////////////////
+// Contains a zero-terminated list of functions that have
+// to be called at startup
+//
+void (*vlog_startup_routines[])() =
+{
+    register_vpi_tasks,
+    0
+};
+
+/////////////////////////////////////////////////////////////
+// Get task arguments using VPI calls
+//
+static int getArgs (vpiHandle taskHdl, int value[])
+{
+  int                  idx = 0;
+  struct t_vpi_value   argval;
+  vpiHandle            argh;
+
+  vpiHandle            args_iter = vpi_iterate(vpiArgument, taskHdl);
+
+  while (argh = vpi_scan(args_iter))
+  {
+    argval.format      = vpiIntVal;
+
+    vpi_get_value(argh, &argval);
+    value[idx]         = argval.value.integer;
+
+    debug_io_printf("VPI routine received %d\n", value[idx++]);
+  }
+
+  return idx;
+}
+
+/////////////////////////////////////////////////////////////
+// Update task arguments using VPI calls
+//
+static int updateArgs (vpiHandle taskHdl, int value[])
+{
+  int                 idx = 0;
+  struct t_vpi_value  argval;
+  vpiHandle           argh;
+
+  vpiHandle           args_iter = vpi_iterate(vpiArgument, taskHdl);
+
+  while (argh = vpi_scan(args_iter))
+  {
+    argval.format        = vpiIntVal;
+    argval.value.integer = value[idx++];
+    
+    vpi_put_value(argh, &argval, NULL, vpiNoDelay);
+  }
+
+  return idx;
+}
+
+#endif
+
 /////////////////////////////////////////////////////////////
 // Main routine called whenever $vinit task invoked from
 // initial block of VProc module.
 //
 VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 {
-#ifndef VPROC_VHDL
+
     int node;
-    pid_t pid;
-    int fd;
+
+#ifndef VPROC_VHDL
+# ifndef VPROC_PLI_VPI
 
     // Get single argument value of $vinit call
     node = tf_getp(VPNODENUM_ARG);
+    io_printf("VInit(%d): initialising PLI TF interface\n", node);
+
+# else
+    vpiHandle          taskHdl;
+    int                args[10];
+    
+    // Obtain a handle to the argument list
+    taskHdl            = vpi_handle(vpiSysTfCall, NULL);
+
+    getArgs(taskHdl, &args[1]);
+
+    // Get single argument value of $vinit call
+    node = args[VPNODENUM_ARG];
+
+    vpi_printf("VInit(%d): initialising PLI VPI interface\n", node);;
+
+# endif
 #endif
 
     debug_io_printf("VInit()\n");
 
     // Range check node number
-    if (node < 0 || node >= VP_MAX_NODES) {
+    if (node < 0 || node >= VP_MAX_NODES)
+    {
         io_printf("***Error: VInit() got out of range node number (%d)\n", node);
         exit(VP_USER_ERR);
     }
@@ -95,6 +195,8 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 // Called for a 'reason'. Holding procedure to catch 'finish'
 // in case of any tidying up required.
 //
+#if !defined(VPROC_PLI_VPI) || defined(VPROC_VHDL)
+
 int VHalt (int data, int reason)
 {
     debug_io_printf("VHalt(): data = %d reason = %d\n", data, reason);
@@ -112,6 +214,7 @@ int VHalt (int data, int reason)
         return 0;
     }
 }
+#endif
 
 /////////////////////////////////////////////////////////////
 // Main routine called whenever $vsched task invoked, on
@@ -121,14 +224,33 @@ int VHalt (int data, int reason)
 VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 {
     int VPDataOut_int, VPAddr_int, VPRw_int, VPTicks_int;
+    int node, Interrupt, VPDataIn;
 
 #ifndef VPROC_VHDL
-    int node, Interrupt, VPDataIn;
+# ifndef VPROC_PLI_VPI
 
     // Get the input argument values of $vsched
     node         = tf_getp (VPNODENUM_ARG);
     Interrupt    = tf_getp (VPINTERRUPT_ARG);
     VPDataIn     = tf_getp (VPDATAIN_ARG);
+
+# else
+
+    vpiHandle    taskHdl;
+    int          args[10];
+
+    // Obtain a handle to the argument list
+    taskHdl      = vpi_handle(vpiSysTfCall, NULL);
+
+    getArgs(taskHdl, &args[1]);
+
+    // Get single argument value of $vinit call
+    node         = args[VPNODENUM_ARG];
+    Interrupt    = args[VPINTERRUPT_ARG];
+    VPDataIn     = args[VPDATAIN_ARG];
+
+    //vpi_printf("VSched(): node=%d, Interrupt=%d, VPDataIn=0x%08x\n", node, Interrupt, VPDataIn);
+# endif
 #endif
 
     // Sample inputs and update node state
@@ -152,7 +274,7 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
         debug_io_printf("VSched(): VPTicks=%08x\n", VPTicks_int);
     }
 
-    debug_io_printf("VSched(): Interrupt=%d VPDataIn=%08x VPDataOut=%08x VPAddr=%08x VPRw=%d VPTicks=%d\n", Interrupt, VPDataIn, VPDataOut_int, VPAddr_int, VPRw_int, VPTicks_int);
+    //vpi_printf("VSched(): node=%d Interrupt=%d VPDataIn=%08x VPDataOut=%08x VPAddr=%08x VPRw=%d VPTicks=%d\n", node, Interrupt, VPDataIn, VPDataOut_int, VPAddr_int, VPRw_int, VPTicks_int);
 
     debug_io_printf("VSched(): returning to simulation from node %d\n\n", node);
 
@@ -164,11 +286,20 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     *VPTicks   = VPTicks_int;
 
 #else
+# ifndef VPROC_PLI_VPI
     // Update verilog PLI task ($vsched) output values with returned update data
     tf_putp (VPDATAOUT_ARG, VPDataOut_int);
     tf_putp (VPADDR_ARG,    VPAddr_int);
     tf_putp (VPRW_ARG,      VPRw_int);
     tf_putp (VPTICKS_ARG,   VPTicks_int);
+# else
+    args[VPDATAOUT_ARG] = VPDataOut_int;
+    args[VPADDR_ARG]    = VPAddr_int;
+    args[VPRW_ARG]      = VPRw_int;
+    args[VPTICKS_ARG]   = VPTicks_int;
+
+    updateArgs(taskHdl, &args[1]);
+# endif
 
     return 0;
 #endif
@@ -184,8 +315,25 @@ VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 #ifndef VPROC_VHDL
     int node, value;
 
-    node  = tf_getp (VPNODENUM_ARG);
-    value = tf_getp (VPINTERRUPT_ARG);
+# ifndef VPROC_PLI_VPI
+
+    node      = tf_getp (VPNODENUM_ARG);
+    value     = tf_getp (VPINTERRUPT_ARG);
+
+# else
+    vpiHandle taskHdl;
+    int       args[10];
+
+    // Obtain a handle to the argument list
+    taskHdl   = vpi_handle(vpiSysTfCall, NULL);
+
+    getArgs(taskHdl, &args[1]);
+
+    // Get single argument value of $vinit call
+    node      = args[VPNODENUM_ARG];
+    value     = args[VPINTERRUPT_ARG];
+
+# endif
 #endif
 
     if (ns[node]->VUserCB != NULL)
@@ -208,11 +356,32 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
 #else
     int node, idx;
 
+# ifndef VPROC_PLI_VPI
     node = tf_getp (VPNODENUM_ARG);
     idx  = tf_getp (VPINDEX_ARG);
 
     tf_putp (VPDATAOUT_ARG, ((int *) ns[node]->send_buf.data_p)[idx]);
     ((int *) ns[node]->send_buf.data_p)[idx] = tf_getp (VPDATAIN_ARG);
+
+# else
+    vpiHandle taskHdl;
+    int       args[10];
+
+    // Obtain a handle to the argument list
+    taskHdl   = vpi_handle(vpiSysTfCall, NULL);
+
+    getArgs(taskHdl, &args[1]);
+
+    node      = args[VPNODENUM_ARG];
+    idx       = args[VPINDEX_ARG];
+
+    args[VPDATAOUT_ARG] = ((int *) ns[node]->send_buf.data_p)[idx];
+
+    ((int *) ns[node]->send_buf.data_p)[idx] = args[VPDATAIN_ARG];
+
+    updateArgs(taskHdl, args);
+
+# endif
 
     return 0;
 #endif
