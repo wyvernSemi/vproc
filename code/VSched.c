@@ -129,9 +129,10 @@ static int updateArgs (vpiHandle taskHdl, int value[])
 VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 {
 
-    int node;
-
 #ifndef VPROC_VHDL
+
+    int node;
+    
 # ifndef VPROC_PLI_VPI
 
     // Get single argument value of $vinit call
@@ -223,10 +224,13 @@ int VHalt (int data, int reason)
 
 VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 {
-    int VPDataOut_int, VPAddr_int, VPRw_int, VPTicks_int;
-    int node, Interrupt, VPDataIn;
 
+    int VPDataOut_int, VPAddr_int, VPRw_int, VPTicks_int;
+    
 #ifndef VPROC_VHDL
+    int node;
+    int Interrupt, VPDataIn;
+    
 # ifndef VPROC_PLI_VPI
 
     // Get the input argument values of $vsched

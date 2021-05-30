@@ -31,11 +31,17 @@
 #include "VSched_pli.h"
 
 #ifndef VPROC_PLI_VPI
+
+#ifndef MEM_MODEL_TF_TBL
+#define MEM_MODEL_TF_TBL {0},
+#endif
+
 char *veriuser_version_str = "Virtual Processor PLI V0.1 Copyright (c) 2005 Simon Southwell.";
 
 s_tfcell veriusertfs[] =
 {
     VPROC_TF_TBL,
+    MEM_MODEL_TF_TBL
     {0} 
 };
 

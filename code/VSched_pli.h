@@ -32,6 +32,10 @@
 #include "veriuser.h"
 #include "vpi_user.h"
 
+#ifdef INCL_VLOG_MEM_MODEL
+#include "mem_model.h"
+#endif
+
 #ifndef _VSCHED_PLI_H_
 #define _VSCHED_PLI_H_
 
@@ -106,6 +110,6 @@ extern VPROC_RTN_TYPE VInit     (VINIT_PARAMS);
 extern VPROC_RTN_TYPE VSched    (VSCHED_PARAMS);
 extern VPROC_RTN_TYPE VProcUser (VPROCUSER_PARAMS);
 extern VPROC_RTN_TYPE VAccess   (VACCESS_PARAMS);
-extern VPROC_RTN_TYPE VHalt     (VHALT_PARAMS);
+extern int            VHalt     (VHALT_PARAMS);
 
 #endif

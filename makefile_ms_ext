@@ -1,0 +1,175 @@
+###################################################################
+# Makefile for VProc code in Modelsim on Windows with MinGW32 gcc/g++
+#
+# Copyright (c) 2021 Simon Southwell
+#
+###################################################################
+
+# The following variable can be overridden on the make command line
+# for specific environment. VUsermain C++ code is expected to be
+# located in USRCDIR. An additional include location under USRCDIR
+# can be set in EXTINCLDIR. MODELSIMDIR should point to the simul-
+# ator's root directory.
+
+TESTDIR            = ..
+
+USRCDIR            = ${TESTDIR}/src
+EXTINCLDIR         = ${USRCDIR}/hal
+MEMMODELDIR        = ../mem_model/src
+COMMONTESTSDIR     = ../lib/tests
+COMMONUTILSDIR     = ../lib/tests/utils
+MODELSIMDIR        = c:\altera\ver\modelsim_ase
+
+# Hooks to reference external HAL library and headers
+# filled with dummy values. Override from calling makefile.
+HALCOPTS           =
+HALLDOPTS          =
+
+# -----------------------------------------------------------------
+
+# Get the OS name
+OSTYPE:=$(shell uname)
+
+# Set OS specific variables between Linux and Windows (MinGW)
+ifeq (${OSTYPE}, Linux)
+  CFLAGS_SO        = -shared -lpthread -lrt -rdynamic
+  CPPSTD           = -std=c++11
+  MODELSIMBINDIR   = linuxaloem
+else
+  CFLAGS_SO        = -shared -Wl,-export-all-symbols
+  CPPSTD           =
+  MODELSIMBINDIR   = win32aloem
+endif
+
+# Specify where the object files will go
+VOBJDIR            = ${TESTDIR}/obj
+HALOBJDIR          = ${VOBJDIR}/hal
+
+# Define the maximum number of supported VProcs in the compile pli library
+MAX_NUM_VPROC      = 16
+
+# VProc C source code
+SRCDIR             = code
+
+# VPROC C source code
+VPROC_C            = VSched.c                             \
+                     VUser.c
+
+# Memory model C code
+MEM_C              = mem.c mem_model.c
+
+# Test user code default (override on command line if additional files)
+USER_C             = VUserMain0.cpp
+USER_INCL          =
+
+USER_CPP_BASE        = $(notdir $(filter %cpp, ${USER_C}))
+USER_C_BASE          = $(notdir $(filter %c, ${USER_C}))
+
+VOBJS              = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} ${VPROC_C:%.c=%.o} ${MEM_C:%.c=%.o}}
+
+# Generated  PLI C library
+VPROC_PLI          = ${TESTDIR}/VProc.so
+VLIB               = ${TESTDIR}/libvproc.a
+
+VPROC_TOP          = test
+
+CC                 = gcc
+C++                = g++
+CFLAGS             = -fPIC                                 \
+                     -m32                                  \
+                     -g                                    \
+                     -I${SRCDIR}                           \
+                     -I${USRCDIR}                          \
+                     -I${EXTINCLDIR}                       \
+                     -I${MODELSIMDIR}/include              \
+                     -I${MEMMODELDIR}                      \
+                     -I${COMMONTESTSDIR}                   \
+                     -I${COMMONUTILSDIR}                   \
+                     ${HALCOPTS}                           \
+                     -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
+                     -DMODELSIM                            \
+                     -DHDL_SIM                             \
+                     -D_REENTRANT
+
+# Common flags for vsim
+VSIMFLAGS          = -pli ${VPROC_PLI} ${VPROC_TOP}
+
+#------------------------------------------------------
+# BUILD RULES
+#------------------------------------------------------
+
+all: ${VPROC_PLI}
+
+${VOBJDIR}/%.o: ${SRCDIR}/%.c
+	@${CC} -c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${USRCDIR}/%.cpp ${USRCDIR}/hal/*.h ${USRCDIR}/*.h
+	@${C++} ${CPPSTD} -Wno-write-strings -c ${CFLAGS} $< -o $@
+    
+${VOBJDIR}/%.o: ${USRCDIR}/%.c ${USRCDIR}/hal/*.h ${USRCDIR}/*.h
+	@${CC} -Wno-write-strings -c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${MEMMODELDIR}/%.c ${MEMMODELDIR}/*.h
+	@${CC} -c ${CFLAGS} $< -o $@
+    
+${VOBJDIR}/%.o: ${COMMONTESTSDIR}/%.cpp ${COMMONTESTSDIR}/*.h ${COMMONUTILSDIR}/*.h
+	@${C++} -c ${CPPSTD} -Wno-write-strings ${CFLAGS} $< -o $@
+    
+${VOBJDIR}/%.o: ${COMMONUTILSDIR}/%.cpp ${COMMONTESTSDIR}/*.h ${COMMONUTILSDIR}/*.h
+	@${C++} -c ${CPPSTD} -Wno-write-strings ${CFLAGS} $< -o $@
+
+${VLIB} : ${VOBJS} ${VOBJDIR}
+	@ar cr ${VLIB} ${VOBJS}
+
+${VOBJS}: | ${VOBJDIR}
+
+
+${VOBJDIR}:
+	@mkdir ${VOBJDIR}
+	@mkdir ${HALOBJDIR}
+
+${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o
+	@${C++} ${CPPSTD}                                 \
+           ${CFLAGS_SO}                               \
+           ${CFLAGS}                                  \
+           -Wl,-whole-archive                         \
+           ${VOBJDIR}/veriuser.o                      \
+           -lpthread                                  \
+           -L${MODELSIMDIR}/${MODELSIMBINDIR}         \
+           -lmtipli                                   \
+           -L${TESTDIR} -lvproc                       \
+           -Wl,-no-whole-archive                      \
+           ${HALLDOPTS}                               \
+           -o $@
+
+# Let modelsim decide what's changed in the verilog
+.PHONY: verilog
+verilog: ${VPROC_PLI}
+	@vlib work
+	@vlog -f test.vc
+
+#------------------------------------------------------
+# EXECUTION RULES
+#------------------------------------------------------
+
+run: verilog
+	@vsim -c ${VSIMFLAGS}
+
+rungui: verilog
+	@vsim -gui -do wave.do ${VSIMFLAGS}
+
+
+gui: rungui
+
+#------------------------------------------------------
+# CLEANING RULES
+#------------------------------------------------------
+
+clean:
+	@rm -rf "${VPROC_PLI}"
+	@rm -rf "${VLIB}"
+	@rm -rf "${VOBJDIR}"
+	@rm -rf "${VOBJDIR}\hal"
+	@rm -rf "wlf*"
+	@rm -rf "work"
+
