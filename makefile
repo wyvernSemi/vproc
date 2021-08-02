@@ -30,22 +30,27 @@ MAX_NUM_VPROC   = 64
 
 SRCDIR          = code
 USRCDIR         = usercode
-VOBJDIR         = obj
+TESTDIR         = .
+VOBJDIR         = ${TESTDIR}/obj
+MEMMODELDIR     = .
 
 # VPROC C source code
-VPROC_C         = VSched.c                             \
+VPROC_C         = VSched.c \
                   VUser.c
+                  
+# Memory model C code
+MEM_C           = 
 
 # Test user code
 USER_C          = VUserMain0.c VUserMain1.c
 
-VOBJS           = ${addprefix ${VOBJDIR}/, ${VPROC_C:%.c=%.o}}
+VOBJS           = ${addprefix ${VOBJDIR}/, ${VPROC_C:%.c=%.o} ${MEM_C:%.c=%.o}}
 
 USRFLAGS        = 
 
 # Generated  PLI C library
-VPROC_PLI       = VProc.so
-VLIB            = libvproc.a
+VPROC_PLI       = ${TESTDIR}/VProc.so
+VLIB            = ${TESTDIR}/libvproc.a
 
 VPROC_TOP       = test
 
@@ -93,6 +98,9 @@ ${VOBJDIR}/%.o: ${USRCDIR}/%.c
 
 ${VOBJDIR}/%.o: ${USRCDIR}/%.cpp
 	@${C++} ${CPPSTD} -Wno-write-strings -c ${CFLAGS} $< -o $@
+    
+${VOBJDIR}/%.o: ${MEMMODELDIR}/%.c ${MEMMODELDIR}/*.h
+	@${CC} -c ${CFLAGS} $< -o $@
 
 ${VLIB} : ${VOBJS} ${VOBJDIR}
 	@ar cr ${VLIB} ${VOBJS}
@@ -112,7 +120,7 @@ ${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o ${USER_C:%.c=${VOBJDIR}/%.o}
            -lpthread                                   \
            -L${MODEL_TECH}                             \
            -lmtipli                                    \
-           -L. -lvproc                                 \
+           -L${TESTDIR} -lvproc                        \
            -Wl,-no-whole-archive                       \
            -o $@
 
