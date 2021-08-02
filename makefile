@@ -44,7 +44,10 @@ MEM_C           =
 # Test user code
 USER_C          = VUserMain0.c VUserMain1.c
 
-VOBJS           = ${addprefix ${VOBJDIR}/, ${VPROC_C:%.c=%.o} ${MEM_C:%.c=%.o}}
+USER_CPP_BASE   = $(notdir $(filter %cpp, ${USER_C}))
+USER_C_BASE     = $(notdir $(filter %c, ${USER_C}))
+
+VOBJS           = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} ${VPROC_C:%.c=%.o} ${MEM_C:%.c=%.o}}
 
 USRFLAGS        = 
 
@@ -110,12 +113,11 @@ ${VOBJS}: | ${VOBJDIR}
 ${VOBJDIR}:
 	@mkdir ${VOBJDIR}
 
-${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o ${USER_C:%.c=${VOBJDIR}/%.o}
+${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o
 	@${C++} ${CPPSTD}                                  \
            ${CFLAGS_SO}                                \
            ${CFLAGS}                                   \
            -Wl,-whole-archive                          \
-           ${USER_C:%.c=${VOBJDIR}/%.o}                \
            ${VOBJDIR}/veriuser.o                       \
            -lpthread                                   \
            -L${MODEL_TECH}                             \
