@@ -114,10 +114,10 @@ ${VOBJDIR}:
 	@mkdir ${VOBJDIR}
 
 ${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o
-	@${C++} ${CPPSTD}                                  \
+	@${C++} ${CPPSTD}                                   \
            ${CFLAGS_SO}                                \
-           ${CFLAGS}                                   \
            -Wl,-whole-archive                          \
+           ${CFLAGS}                                   \
            ${VOBJDIR}/veriuser.o                       \
            -lpthread                                   \
            -L${MODEL_TECH}                             \
