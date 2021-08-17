@@ -46,8 +46,11 @@ USER_C          = VUserMain0.c VUserMain1.c
 
 USER_CPP_BASE   = $(notdir $(filter %cpp, ${USER_C}))
 USER_C_BASE     = $(notdir $(filter %c, ${USER_C}))
+MEM_CPP_BASE    = $(notdir $(filter %cpp, ${MEM_C}))
+MEM_C_BASE      = $(notdir $(filter %c, ${MEM_C}))
 
-VOBJS           = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} ${VPROC_C:%.c=%.o} ${MEM_C:%.c=%.o}}
+VOBJS           = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} \
+                  ${VPROC_C:%.c=%.o} ${MEM_C_BASE:%.c=%.o} ${MEM_CPP_BASE:%.cpp=%.o}}
 
 USRFLAGS        = 
 
@@ -104,6 +107,9 @@ ${VOBJDIR}/%.o: ${USRCDIR}/%.cpp
     
 ${VOBJDIR}/%.o: ${MEMMODELDIR}/%.c ${MEMMODELDIR}/*.h
 	@${CC} -c ${CFLAGS} $< -o $@
+    
+${VOBJDIR}/%.o: ${MEMMODELDIR}/%.cpp ${MEMMODELDIR}/*.h
+	@${C++} -c ${CFLAGS} $< -o $@
 
 ${VLIB} : ${VOBJS} ${VOBJDIR}
 	@ar cr ${VLIB} ${VOBJS}
