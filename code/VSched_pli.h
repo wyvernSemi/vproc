@@ -29,6 +29,8 @@
 //=====================================================================
 
 #include "string.h"
+
+#include "aldecpli.h"
 #include "veriuser.h"
 #include "vpi_user.h"
 
@@ -38,42 +40,15 @@
 
 #ifndef _VSCHED_PLI_H_
 #define _VSCHED_PLI_H_
-
-# ifdef VPROC_VHDL
-
-#  ifdef DEBUG
-#  define debug_io_printf printf
-#  else
-#  define debug_io_printf //
-#  endif
-
-#define VPROC_TF_TBL_SIZE  0
-#define VPROC_TF_TBL       {0}
-
-#define VINIT_PARAMS       int  node
-#define VSCHED_PARAMS      int  node, int Interrupt, int VPDataIn, int* VPDataOut, int* VPAddr, int* VPRw,int* VPTicks
-#define VPROCUSER_PARAMS   int  node, int value
-#define VACCESS_PARAMS     int  node, int  idx, int VPDataIn, int* VPDataOut
-#define VHALT_PARAMS       int, int
-
-#define VPROC_RTN_TYPE     void
-
-# else
+#define _VSCHED_PLI_H_
 
 # ifndef VPROC_PLI_VPI
-#  ifdef DEBUG
-#  define debug_io_printf io_printf
-#  else
-#  define debug_io_printf //
-#  endif
 
 #define VPROC_TF_TBL \
-    {usertask, 0, NULL, 0, VInit,     VHalt, "$vinit",     1}, \
-    {usertask, 0, NULL, 0, VSched,    NULL,  "$vsched",    1}, \
-    {usertask, 0, NULL, 0, VAccess,   NULL,  "$vaccess",   1}, \
-    {usertask, 0, NULL, 0, VProcUser, NULL,  "$vprocuser", 1}
+    {usertask, 0, NULL, 0, VInit,     NULL, "$vinit",     1}, \
+    {usertask, 0, NULL, 0, VSched,    NULL, "$vsched",    1}
 
-#define VPROC_TF_TBL_SIZE 4
+#define VPROC_TF_TBL_SIZE 2
 
 #define VINIT_PARAMS      void
 #define VSCHED_PARAMS     void
@@ -83,14 +58,12 @@
 
 #define VPROC_RTN_TYPE    int
 
-#  else
+# else
+#define VPROC_VPI_TBL \
+       {vpiSysTask, 0, "$vinit",     VInit,     0, 0, 0}, \
+       {vpiSysTask, 0, "$vsched",    VSched,    0, 0, 0}
 
-#  ifdef DEBUG
-#  define debug_io_printf vpi_printf
-#  else
-#  define debug_io_printf //
-#  endif
-
+#define VPROC_VPI_TBL_SIZE 2
 #define VPROC_TF_TBL_SIZE  1
 #define VPROC_TF_TBL       {0}
 
@@ -102,14 +75,10 @@
 
 #define VPROC_RTN_TYPE    int
 
-#  endif
-
 # endif
+
 
 extern VPROC_RTN_TYPE VInit     (VINIT_PARAMS);
 extern VPROC_RTN_TYPE VSched    (VSCHED_PARAMS);
-extern VPROC_RTN_TYPE VProcUser (VPROCUSER_PARAMS);
-extern VPROC_RTN_TYPE VAccess   (VACCESS_PARAMS);
-extern int            VHalt     (VHALT_PARAMS);
 
 #endif

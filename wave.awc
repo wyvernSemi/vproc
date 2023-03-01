@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="awc" version="2">
+	<waveform>
+		<datasets>
+			<dataset alias="sim" file="dataset.asdb" id="0" uniqueid="1677714402995"/>
+		</datasets>
+		<browser type="events"/>
+		<view active="true">
+			<cursors>
+				<cursor name="Default cursor" id="-1" time="0fs+0" lock="0" tip="1"/>
+				<active name="Default cursor" time="0fs+0"/>
+			</cursors>
+			<signalspart>
+				<signal name="/test/Clk" aliasid="0"/>
+				<signal name="/test/Count" aliasid="0"/>
+				<signal name="/test/Seed" aliasid="0"/>
+				<signal name="/test/Interrupt0" aliasid="0"/>
+				<signal name="/test/Interrupt1" aliasid="0"/>
+				<signal name="/test/VPDataIn0" aliasid="0"/>
+				<signal name="/test/notReset_H" aliasid="0"/>
+				<signal name="/test/restart" aliasid="0"/>
+				<signal name="/test/UpdateResponse" aliasid="0"/>
+				<signal name="/test/VPAddr0" aliasid="0"/>
+				<signal name="/test/VPDataOut0" aliasid="0"/>
+				<signal name="/test/VPAddr1" aliasid="0"/>
+				<signal name="/test/VPDataOut1" aliasid="0"/>
+				<signal name="/test/VPDataIn1" aliasid="0"/>
+				<signal name="/test/VPWE0" aliasid="0"/>
+				<signal name="/test/VPWE1" aliasid="0"/>
+				<signal name="/test/VPRD0" aliasid="0"/>
+				<signal name="/test/VPRD1" aliasid="0"/>
+				<signal name="/test/Update" aliasid="0"/>
+				<signal name="/test/notReset" aliasid="0"/>
+				<signal name="/test/ResetInt" aliasid="0"/>
+				<signal name="/test/CS1" aliasid="0"/>
+			</signalspart>
+			<firstvisiblesignal number="0"/>
+			<timesynchronization value="1"/>
+			<cursorssynchronization value="1"/>
+			<time beginvisible="0fs" endvisible="0fs"/>
+		</view>
+		<bookmarks/>
+		<time beginvisible="0fs" endvisible="210ns"/>
+		<timeunit name="auto"/>
+		<cursors>
+			<cursor name="Default cursor" id="-1" time="200ns+1" lock="0" tip="1"/>
+			<active name="Default cursor" time="200ns+1"/>
+		</cursors>
+		<hierarchy_depth value="0"/>
+	</waveform>
+</document>

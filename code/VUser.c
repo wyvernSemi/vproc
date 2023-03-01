@@ -33,6 +33,18 @@
 #include "VProc.h"
 #include "VUser.h"
 
+#ifdef WIN32
+# include <windows.h>
+
+// Map Linux dynamic laoding calls to Windows equivalents
+# define dlsym GetProcAddress
+# define dlopen(_dll, _args) {LoadLibrary(_dll)}
+# define dlerror() ""
+# define dlclose FreeLibrary
+
+#endif
+
+
 static void VUserInit (int node);
 
 /////////////////////////////////////////////////////////////
@@ -45,7 +57,7 @@ int VUser (int node)
     int status;
     int idx, jdx;
 
-    debug_io_printf("VUser(): node %d\n", node);
+    DebugVPrint("VUser(): node %d\n", node);
 
     // Interrupt table initialisation
     for (jdx = 0; jdx < 8; jdx++) 
@@ -53,20 +65,20 @@ int VUser (int node)
 
     ns[node]->VUserCB = NULL;
 
-    debug_io_printf("VUser(): initialised interrupt table node %d\n", node);
+    DebugVPrint("VUser(): initialised interrupt table node %d\n", node);
 
     // Set off the user code thread
-    if (status = pthread_create(&thread, NULL, (pThreadFunc_t)VUserInit, (void *)((long)node))) {
-        debug_io_printf("VUser(): pthread_create returned %d\n", status);
+    if (status = pthread_create(&thread, NULL, (pThreadFunc_t)VUserInit, (void *)((long long)node))) {
+        DebugVPrint("VUser(): pthread_create returned %d\n", status);
         return 1;
     }
     
-    debug_io_printf("VUser(): spawned user thread for node %d\n", node);
+    DebugVPrint("VUser(): spawned user thread for node %d\n", node);
 
     // Detach the thread (we won't wait for it)
     //pthread_detach(thread);
 
-    //debug_io_printf("VUser(): detached user thread for node %d\n", node);
+    //DebugVPrint("VUser(): detached user thread for node %d\n", node);
 
     return 0;
 }
@@ -82,7 +94,7 @@ static void VUserInit (int node)
     char funcname[DEFAULT_STR_BUF_SIZE];
     int status;
 
-    debug_io_printf("VUserInit(%d)\n", node);
+    DebugVPrint("VUserInit(%d)\n", node);
 
     // Get function pointer of user entry routine
     sprintf(funcname, "%s%d",    "VUserMain", node);
@@ -99,18 +111,18 @@ static void VUserInit (int node)
         }
     }
 
-    debug_io_printf("VUserInit(): got user function (%s) for node %d (%x)\n", funcname, node, VUserMain_func);
+    DebugVPrint("VUserInit(): got user function (%s) for node %d (%x)\n", funcname, node, VUserMain_func);
 
     // Wait for first message from simulator
-    debug_io_printf("VUserInit(): waiting for first message semaphore rcv[%d]\n", node);
+    DebugVPrint("VUserInit(): waiting for first message semaphore rcv[%d]\n", node);
     if ((status = sem_wait(&(ns[node]->rcv))) == -1) {
         io_printf("***Error: bad sem_post status (%d) on node %d (VUserInit)\n", status, node);
         exit(1);
     }
 
-    debug_io_printf("VUserInit(): calling user code for node %d\n", node);
+    DebugVPrint("VUserInit(): calling user code for node %d\n", node);
     // Call user program
-    debug_io_printf("VUserInit(): calling VUserMain%d\n", node);
+    DebugVPrint("VUserInit(): calling VUserMain%d\n", node);
     VUserMain_func();
 }
 
@@ -125,7 +137,7 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, uint32 node)
     int status;
     // Send message to simulator
     ns[node]->send_buf = *psbuf;
-    debug_io_printf("VExch(): setting snd[%d] semaphore\n", node);
+    DebugVPrint("VExch(): setting snd[%d] semaphore\n", node);
     if ((status = sem_post(&(ns[node]->snd))) == -1) {
         io_printf("***Error: bad sem_post status (%d) on node %d (VExch)\n", status, node);
         exit(1);
@@ -133,7 +145,7 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, uint32 node)
 
     do {
         // Wait for response message from simulator
-        debug_io_printf("VExch(): waiting for rcv[%d] semaphore\n", node);
+        DebugVPrint("VExch(): waiting for rcv[%d] semaphore\n", node);
         sem_wait(&(ns[node]->rcv));
 
         *prbuf = ns[node]->rcv_buf;
@@ -141,7 +153,7 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, uint32 node)
         // Check if this is an interrupt
         if (prbuf->interrupt > 0) {
 
-            debug_io_printf("VExch(): node %d processing interrupt (%d)\n", node, prbuf->interrupt);
+            DebugVPrint("VExch(): node %d processing interrupt (%d)\n", node, prbuf->interrupt);
 
             if (prbuf->interrupt >= 8) {
                 io_printf("***Error: invalid interrupt level %d (VExch)\n", prbuf->interrupt);
@@ -156,10 +168,10 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, uint32 node)
             // Call user registered interrupt function
             psbuf->ticks = (*(ns[node]->VInt_table[prbuf->interrupt]))();
             ns[node]->send_buf = *psbuf;
-            debug_io_printf("VExch(): interrupt send_buf[node].ticks = %d\n", ns[node]->send_buf.ticks);
+            DebugVPrint("VExch(): interrupt send_buf[node].ticks = %d\n", ns[node]->send_buf.ticks);
 
             // Send new message to simulation
-            debug_io_printf("VExch(): setting snd[%d] semaphore (interrupt)\n", node);
+            DebugVPrint("VExch(): setting snd[%d] semaphore (interrupt)\n", node);
             if ((status = sem_post(&(ns[node]->snd))) == -1) {
                 io_printf("***Error: bad sem_post status (%d) on node %d (VExch)\n", status, node);
                 exit(1);
@@ -169,7 +181,7 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, uint32 node)
     // (This could be in the same cycle as the interrupt)
     } while (prbuf->interrupt > 0);
 
-    debug_io_printf("VExch(): returning to user code from node %d\n", node);
+    DebugVPrint("VExch(): returning to user code from node %d\n", node);
 
 }
 
@@ -212,25 +224,6 @@ int VRead (unsigned int Addr, unsigned int *rdata, int Delta, uint32 node)
 }
 
 /////////////////////////////////////////////////////////////
-// Invokes a array message exchange
-// 
-int VSwap (unsigned int Addr, void *data, int Delta, uint32 node)
-{
-    rcv_buf_t rbuf;
-    send_buf_t sbuf;
-
-    sbuf.addr     = Addr;
-    sbuf.data_out = 0;
-    sbuf.data_p   = data;
-    sbuf.rw       = V_SWAP;
-    sbuf.ticks    = Delta ? DELTA_CYCLE : 0;;
-
-    VExch(&sbuf, &rbuf, node);
-
-    return 0; 
-}
-
-/////////////////////////////////////////////////////////////
 // Invokes a tick message exchange
 // 
 int VTick (unsigned int ticks, uint32 node)
@@ -253,7 +246,7 @@ int VTick (unsigned int ticks, uint32 node)
 // 
 void VRegInterrupt (int level, pVUserInt_t func, uint32 node)
 {
-    debug_io_printf("VRegInterrupt(): at node %d, registering interrupt level %d\n", node, level);
+    DebugVPrint("VRegInterrupt(): at node %d, registering interrupt level %d\n", node, level);
 
     if (level < MIN_INTERRUPT_LEVEL || level >= MAX_INTERRUPT_LEVEL) {
         io_printf("***Error: attempt to register an out of range interrupt level (VRegInterrupt)\n");
@@ -263,14 +256,4 @@ void VRegInterrupt (int level, pVUserInt_t func, uint32 node)
     ns[node]->VInt_table[level] = func;
 }
 
-/////////////////////////////////////////////////////////////
-// Registers a user function as a callback against 
-// $vprocuser
-// 
-void VRegUser (pVUserCB_t func, uint32 node)
-{
-    debug_io_printf("VRegFinish(): at node %d, registering finish callback function\n", node);
-
-    ns[node]->VUserCB = func;
-}
 
