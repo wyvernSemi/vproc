@@ -35,9 +35,9 @@ SIM             = RivieraPro
 
 # VPROC C source code
 VPROC_C         = VSched.c VUser.c veriuser.c
-                  
+
 # Memory model C code
-MEM_C           = 
+MEM_C           =
 
 # Test user code
 USER_C          = VUserMain0.c VUserMain1.c
@@ -50,7 +50,7 @@ MEM_C_BASE      = $(notdir $(filter %c, ${MEM_C}))
 VOBJS           = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} \
                   ${VPROC_C:%.c=%.o} ${MEM_C_BASE:%.c=%.o} ${MEM_CPP_BASE:%.cpp=%.o}}
 
-USRFLAGS        = 
+USRFLAGS        =
 
 ifeq ("${SIM}", "ActiveHDL")
   ALDECDIR         =  /c/Aldec/Active-HDL-13-x64
@@ -72,7 +72,7 @@ OSTYPE:=$(shell uname)
 # Set OS specific variables between Linux and Windows (MinGW)
 ifeq (${OSTYPE}, Linux)
   CFLAGS_SO        = -shared -lpthread -lrt -rdynamic
-  WLIB             = 
+  WLIB             =
 else
   CFLAGS_SO        = -shared -Wl,-export-all-symbols
   WLIB             = -lWs2_32
@@ -106,10 +106,10 @@ ${VOBJDIR}/%.o: ${USRCDIR}/%.c
 
 ${VOBJDIR}/%.o: ${USRCDIR}/%.cpp
 	@${C++} ${CPPSTD} -Wno-write-strings -c ${CFLAGS} $< -o $@
-    
+
 ${VOBJDIR}/%.o: ${MEMMODELDIR}/%.c ${MEMMODELDIR}/*.h
 	@${CC} -c ${CFLAGS} $< -o $@
-    
+
 ${VOBJDIR}/%.o: ${MEMMODELDIR}/%.cpp ${MEMMODELDIR}/*.h
 	@${C++} ${CPPSTD} -c ${CFLAGS} $< -o $@
 
@@ -162,8 +162,6 @@ gui: rungui
 #------------------------------------------------------
 
 clean:
-	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJS} ${VOBJDIR}/* *.wlf vproc.rdsn vproc.rwsp* dataset.asdb compile library.cfg transcript
-	@if [ -d "./work" ]; then                           \
-	    vdel -all;                                      \
-	fi
+	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJS} ${VOBJDIR}/* work *.wlf vproc.rdsn vproc.rwsp* dataset.asdb compile library.cfg transcript
+
 
