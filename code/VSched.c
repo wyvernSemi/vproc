@@ -44,6 +44,7 @@ pSchedState_t ns[VP_MAX_NODES];
 // If not PLI TF, use VPI
 #if defined(VPROC_PLI_VPI)
 
+
 /////////////////////////////////////////////////////////////
 // Registers the increment system task
 //

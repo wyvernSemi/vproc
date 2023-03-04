@@ -59,11 +59,17 @@
 #define VPROC_RTN_TYPE    int
 
 # else
+#  ifndef MEM_MODEL_VPI_TBL
+#define MEM_MODEL_VPI_TBL       {0}
+#define MEM_MODEL_VPI_TBL_SIZE  0
+#  endif
+
 #define VPROC_VPI_TBL \
        {vpiSysTask, 0, "$vinit",     VInit,     0, 0, 0}, \
-       {vpiSysTask, 0, "$vsched",    VSched,    0, 0, 0}
+       {vpiSysTask, 0, "$vsched",    VSched,    0, 0, 0}, \
+        MEM_MODEL_VPI_TBL
 
-#define VPROC_VPI_TBL_SIZE 2
+#define VPROC_VPI_TBL_SIZE (2 + MEM_MODEL_VPI_TBL_SIZE)
 #define VPROC_TF_TBL_SIZE  1
 #define VPROC_TF_TBL       {0}
 
