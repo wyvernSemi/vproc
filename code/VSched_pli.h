@@ -52,9 +52,6 @@
 
 #define VINIT_PARAMS      void
 #define VSCHED_PARAMS     void
-#define VPROCUSER_PARAMS  void
-#define VACCESS_PARAMS    void
-#define VHALT_PARAMS      int data, int reason
 
 #define VPROC_RTN_TYPE    int
 
@@ -75,9 +72,6 @@
 
 #define VINIT_PARAMS      char* userdata
 #define VSCHED_PARAMS     char* userdata
-#define VPROCUSER_PARAMS  char* userdata
-#define VACCESS_PARAMS    char* userdata
-#define VHALT_PARAMS      int data, int reason
 
 #define VPROC_RTN_TYPE    int
 

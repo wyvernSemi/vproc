@@ -75,13 +75,11 @@
 
 #define VPNODENUM_ARG           1
 #define VPINTERRUPT_ARG         2
-#define VPINDEX_ARG             2
 #define VPDATAIN_ARG            3
 #define VPDATAOUT_ARG           4
 #define VPADDR_ARG              5
 #define VPRW_ARG                6
 #define VPTICKS_ARG             7
-#define VPRESTORE_ARG           8
 
 #define DEFAULT_STR_BUF_SIZE    32
 

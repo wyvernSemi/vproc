@@ -52,7 +52,6 @@ void register_vpi_tasks()
 {
     s_vpi_systf_data data[] = {VPROC_VPI_TBL};
 
-
     for (int idx= 0; idx < VPROC_VPI_TBL_SIZE; idx++)
     {
         DebugVPrint("registering %s\n", data[idx].tfname);
@@ -88,7 +87,8 @@ static int getArgs (vpiHandle taskHdl, int value[])
     vpi_get_value(argh, &argval);
     value[idx]         = argval.value.integer;
 
-    DebugVPrint("VPI routine received %d\n", value[idx++]);
+    DebugVPrint("VPI routine received %d\n", value[idx]);
+    idx++;
   }
 
   return idx;
@@ -107,10 +107,14 @@ static int updateArgs (vpiHandle taskHdl, int value[])
 
   while (argh = vpi_scan(args_iter))
   {
-    argval.format        = vpiIntVal;
-    argval.value.integer = value[idx++];
-    
-    vpi_put_value(argh, &argval, NULL, vpiNoDelay);
+      if (idx >= (VPDATAOUT_ARG-1))
+      {
+          argval.format        = vpiIntVal;
+          argval.value.integer = value[idx];
+          
+          vpi_put_value(argh, &argval, NULL, vpiNoDelay);
+      }
+      idx++;
   }
 
   return idx;
@@ -141,6 +145,8 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
     taskHdl            = vpi_handle(vpiSysTfCall, NULL);
 
     getArgs(taskHdl, &args[1]);
+    
+    vpi_free_object(taskHdl);
 
     // Get single argument value of $vinit call
     node = args[VPNODENUM_ARG];
@@ -251,12 +257,13 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     tf_putp (VPRW_ARG,      VPRw_int);
     tf_putp (VPTICKS_ARG,   VPTicks_int);
 #else
-    args[VPDATAOUT_ARG] = VPDataOut_int;
-    args[VPADDR_ARG]    = VPAddr_int;
-    args[VPRW_ARG]      = VPRw_int;
-    args[VPTICKS_ARG]   = VPTicks_int;
+    args[VPDATAOUT_ARG]   = VPDataOut_int;
+    args[VPADDR_ARG]      = VPAddr_int;
+    args[VPRW_ARG]        = VPRw_int;
+    args[VPTICKS_ARG]     = VPTicks_int;
 
     updateArgs(taskHdl, &args[1]);
+    vpi_free_object(taskHdl);
 #endif
 
     return 0;
