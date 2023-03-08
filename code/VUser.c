@@ -33,6 +33,17 @@
 #include "VProc.h"
 #include "VUser.h"
 
+#ifdef WIN32
+# include <windows.h>
+
+// Map Linux dynamic loading calls to Windows equivalents
+# define dlsym GetProcAddress
+# define dlopen(_dll, _args) {LoadLibrary(_dll)}
+# define dlerror() ""
+# define dlclose FreeLibrary
+
+#endif
+
 static void VUserInit (int node);
 
 /////////////////////////////////////////////////////////////
