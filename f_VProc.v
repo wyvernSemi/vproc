@@ -140,7 +140,7 @@ begin
                     Update  = ~Update;
 
                     if (VPTicks >= 0)
-		    begin
+                    begin
                         TickVal = VPTicks;
                     end
 
