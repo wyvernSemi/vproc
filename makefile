@@ -76,9 +76,11 @@ endif
 
 CC              = gcc
 C++             = g++
+ARCHFLAG        = -m32
 CFLAGS          = -fPIC                                 \
-                  -m32                                  \
+                  ${ARCHFLAG}                           \
                   -g                                    \
+                  -D_GNU_SOURCE                         \
                   ${USRFLAGS}                           \
                   -I${SRCDIR}                           \
                   -I${USRCDIR}                          \

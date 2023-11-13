@@ -35,9 +35,7 @@
 #include <stdlib.h>
 #include <strings.h>
 
-#define __USE_GNU
 #include <dlfcn.h>
-#undef __USE_GNU
 #include <pthread.h>
 #include <sched.h>
 
