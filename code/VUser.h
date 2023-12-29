@@ -2,7 +2,7 @@
 //
 // VUser.h                                            Date: 2005/01/10 
 //
-// Copyright (c) 2005-2010 Simon Southwell.
+// Copyright (c) 2005-2024 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -18,9 +18,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
-//
-// $Id: VUser.h,v 1.5 2021/05/04 15:38:37 simon Exp $
-// $Source: /home/simon/CVS/src/HDL/VProc/code/VUser.h,v $
 //
 //=====================================================================
 
@@ -40,13 +37,14 @@
 typedef void *(*pThreadFunc_t)(void *);
 
 // VUser function prototypes
-extern int  VUser         (int node);
-extern int  VWrite        (unsigned int addr, unsigned int  data, int delta, unsigned int node);
-extern int  VRead         (unsigned int addr, unsigned int *data, int delta, unsigned int node);
-extern int  VSwap         (unsigned int addr, void         *data, int delta, unsigned int node);
-extern int  VTick         (unsigned int ticks, unsigned int node);
-extern void VRegInterrupt (int level, pVUserInt_t func, unsigned int node);
-extern void VRegUser      (pVUserCB_t func, uint32 node);
+extern int  VUser         (const unsigned node);
+extern int  VWrite        (const unsigned addr,   const unsigned    data, const int      delta, const unsigned node);
+extern int  VRead         (const unsigned addr,   unsigned         *data, const int      delta, const unsigned node);
+extern int  VBurstWrite   (const unsigned addr,   void             *data, const unsigned len,   const unsigned node);
+extern int  VBurstRead    (const unsigned addr,   void             *data, const unsigned len,   const unsigned node);
+extern int  VTick         (const unsigned ticks,  const unsigned    node);
+extern void VRegInterrupt (const int      level,  const pVUserInt_t func, const unsigned int node);
+extern void VRegUser      (const pVUserCB_t func, const unsigned int node);
 
 #ifdef VPROC_VHDL
 

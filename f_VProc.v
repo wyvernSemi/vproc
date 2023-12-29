@@ -2,7 +2,7 @@
  * Verilog side Virtual Processor, for running host
  * programs as control in simulation.
  *
- * Copyright (c) 2004-2016 Simon Southwell.
+ * Copyright (c) 2004-2024 Simon Southwell.
  *
  * This file is part of VProc.
  *
@@ -19,8 +19,6 @@
  * You should have received a copy of the GNU General Public License
  * along with VProc. If not, see <http://www.gnu.org/licenses/>.
  *
- * $Id: f_VProc.v,v 1.5 2021/05/15 07:45:17 simon Exp $
- * $Source: /home/simon/CVS/src/HDL/VProc/f_VProc.v,v $
  */
 
  `include "extradefs.v"
@@ -29,63 +27,93 @@
 
 `define WEbit       0
 `define RDbit       1
+`define BlkBits     13:2
 `define DeltaCycle -1
+`define DontCare                 0
 
-module VProc (Clk, Addr, WE, RD, DataOut, DataIn, WRAck, RDAck, Interrupt, Update, UpdateResponse, Node);
+module VProc
+(
+    // Clock
+    input             Clk,
 
-input         Clk;
-input         RDAck;
-input         WRAck;
-input         UpdateResponse;
-input   [3:0] Node;
-input   [2:0] Interrupt;
-input  [31:0] DataIn;
-output [31:0] Addr, DataOut;
-output        WE;
-output        RD;
-output        Update;
+    // Bus interface
+    output reg [31:0] Addr,
+    output reg        WE,
+    output reg        RD,
+    output reg [31:0] DataOut,
+    input      [31:0] DataIn,
+    input             WRAck,
+    input             RDAck,
 
-integer       VPDataOut;
-integer       VPAddr;
-integer       VPRW;
-integer       VPTicks;
-integer       TickVal;
+    // Interrupt
+    input  [`INTBITS] Interrupt,
 
-reg    [31:0] DataOut;
-integer       DataInSamp;
-reg    [31:0] Addr;
-integer       IntSamp;
-integer       NodeI;
-reg           WE;
-reg           RD;
-reg           RdAckSamp;
-reg           WRAckSamp;
-reg           Initialised;
-reg           Update;
+    // Delta cycle control
+    output reg        Update,
+    input             UpdateResponse,
+
+`ifdef VPROC_BURST_IF
+    // Burst count
+    output reg [11:0] Burst,
+    output reg        BurstFirst,
+    output reg        BurstLast,
+`endif
+
+    // Node number
+    input [`NODEBITS] Node
+);
+
+// $vsched/$vaccess outputs
+integer               VPDataOut;
+integer               VPAddr;
+integer               VPRW;
+integer               VPTicks;
+
+// Sampled VProc inputs
+integer               DataInSamp;
+integer               IntSamp;
+integer               NodeI;
+reg                   RdAckSamp;
+reg                   WRAckSamp;
+
+// Internal initialised flag (set after $vinit called)
+reg                   Initialised;
+
+// Internal state
+integer               TickCount;
+integer               BlkCount;
+integer               AccIdx;
+
+`ifndef VPROC_BURST_IF
+reg [11:0]            Burst;
+reg                   BurstFirst;
+reg                   BurstLast;
+`endif
 
 initial
 begin
-    TickVal      = 1;
-    Initialised  = 0;
-    WE           = 0;
-    RD           = 0;
-    Update       = 0;
+    TickCount                   = 1;
+    Initialised                 = 0;
+    WE                          = 0;
+    RD                          = 0;
+    Update                      = 0;
+    BlkCount                    = 0;
 
     // Don't remove delay! Needed to allow Node to be assigned
     #0
     $vinit(Node);
-    Initialised  = 1;
+    Initialised                 = 1;
 end
 
 
 always @(posedge Clk)
 begin
     // Cleanly sample the inputs and make them integers
-    DataInSamp   = DataIn;
-    RdAckSamp    = RDAck;
-    WRAckSamp    = WRAck;
-    IntSamp      = {1'b0, Interrupt};
-    NodeI        = Node;
+    RdAckSamp                   = RDAck;
+    WRAckSamp                   = WRAck;
+    IntSamp                     = {1'b0, Interrupt};
+    NodeI                       = Node;
+    VPTicks                     = `DeltaCycle;
 
     if (Initialised == 1'b1)
     begin
@@ -97,61 +125,108 @@ begin
             // current tick value. Otherwise, leave at present value.
             if (VPTicks > 0)
             begin
-                TickVal = VPTicks;
+                TickCount       = VPTicks;
             end
         end
 
         // If tick, write or a read has completed...
-        if ((RD === 1'b0 && WE === 1'b0 && TickVal === 0) ||
-            (RD === 1'b1 && RdAckSamp === 1'b1)           ||
+        if ((RD === 1'b0 && WE        === 1'b0 && TickCount === 0) ||
+            (RD === 1'b1 && RdAckSamp === 1'b1)                    ||
             (WE === 1'b1 && WRAckSamp === 1'b1))
         begin
-            // Host process message scheduler called
-            IntSamp = 0;
-            $vsched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
-
-            #`RegDel
-            WE      = VPRW[`WEbit];
-            RD      = VPRW[`RDbit];
-            DataOut = VPDataOut;
-            Addr    = VPAddr;
-            Update  = ~Update;
-
-            @(UpdateResponse);
-
-            // Update current tick value with returned number (if not zero)
-            if (VPTicks > 0)
+            BurstFirst         = 1'b0;
+            BurstLast          = 1'b0;
+             
+            // Loop while new accesses in this delta cycle
+            while (VPTicks < 0)
             begin
-                TickVal = VPTicks;
-            end
-            else if ( VPTicks < 0)
-            begin
-                while (VPTicks == `DeltaCycle)
+                // Clear any interrupt (already dealt with)
+                IntSamp         = 0;
+                
+                // Sample the data in port
+                DataInSamp      = DataIn;
+                
+                if (BlkCount <= 1)
                 begin
-                    // Resample delta input data
-                    DataInSamp = DataIn;
-                    IntSamp    = 0;
+                    // If this is the last transfer in a burst, call $vaccess with
+                    // the last data input sample.
+                    if (BlkCount == 1)
+                    begin
+                        AccIdx  = AccIdx + 1;
+`ifdef VPROC_BURST_IF
+                        $vaccess(NodeI, AccIdx, DataInSamp, VPDataOut);
+`endif
+                    end
+                
+                    // Host process message scheduler called
                     $vsched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
+                    
+                    // Update the outputs
+                    //#0
+                    Burst       = VPRW[`BlkBits];
+                    WE          = VPRW[`WEbit];
+                    RD          = VPRW[`RDbit];
+                    Addr        = VPAddr;
+                
+                    // If new BlkCount is non-zero, setup burst transfer
+                    if (Burst !== 0)
+                    begin
+                        BlkCount        = Burst;
+                        BurstFirst      = 1'b1;
 
-                    WE      = VPRW[`WEbit];
-                    RD      = VPRW[`RDbit];
-                    DataOut = VPDataOut;
-                    Addr    = VPAddr;
-                    Update  = ~Update;
+                        // On writes, override VPDataOut to get from burst access task $vaccess at index 0
+                        if (WE)
+                        begin
+                            AccIdx      = 0;
+`ifdef VPROC_BURST_IF 
+                            $vaccess(NodeI, AccIdx, `DontCare, VPDataOut);
+`endif
+                        end
+                        else
+                        begin
+                            // For reads, intialise index to -1, as it's pre-incremented at next $vaccess call
+                            AccIdx      = -1;
+                        end
+                    end
+                    
+                    // Update DataOut port
+                    DataOut     = VPDataOut;
+                end
+                // If a block access is valid (BlkCount is non-zero), get the next data out/send back latest sample
+                else
+                begin
+                    AccIdx              = AccIdx + 1;
+`ifdef VPROC_BURST_IF
+                    $vaccess(NodeI, AccIdx, DataInSamp, VPDataOut);
+`endif
+                    DataOut             = VPDataOut;
+                    Addr                = Addr + 1;
+                    BlkCount            = BlkCount - 1;
 
-                    if (VPTicks >= 0)
-		    begin
-                        TickVal = VPTicks;
+                    if (BlkCount == 1)
+                    begin
+                        BurstLast       = 1'b1;
                     end
 
-                    @(UpdateResponse);
+                    // When bursting, reassert non-delta VPTicks value to break out of loop.
+                    VPTicks             = 0;
                 end
+                
+                // Update current tick value with returned number (if not negative)
+                if (VPTicks >= 0)
+                begin
+                    TickCount         = VPTicks;
+                end
+                
+                // Flag to update externally and wait for response
+                Update          = ~Update;
+                @(UpdateResponse);
             end
         end
         else
         begin
             // Count down to zero and stop
-            TickVal  = (TickVal > 0) ? TickVal - 1 : 0;
+            TickCount           = (TickCount > 0) ? TickCount - 1 : 0;
         end
     end
 end

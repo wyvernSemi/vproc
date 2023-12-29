@@ -2,7 +2,7 @@
 //
 // veriuser.c                                         Date: 2002/07/10 
 //
-// Copyright (c) 2002-2010 Simon Southwell.
+// Copyright (c) 2002-2024 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -18,9 +18,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
-//
-// $Id: veriuser.c,v 1.5 2021/05/15 07:45:18 simon Exp $
-// $Source: /home/simon/CVS/src/HDL/VProc/code/veriuser.c,v $
 //
 //=====================================================================
 // 

@@ -1,7 +1,7 @@
 ###################################################################
 # Makefile for Virtual Processor testcode in Modelsim
 #
-# Copyright (c) 2005-2010 Simon Southwell.
+# Copyright (c) 2005-2024 Simon Southwell.
 #
 # This file is part of VProc.
 #
@@ -18,47 +18,45 @@
 # You should have received a copy of the GNU General Public License
 # along with VProc. If not, see <http://www.gnu.org/licenses/>.
 #
-# $Id: makefile,v 1.8 2021/05/15 07:45:17 simon Exp $
-# $Source: /home/simon/CVS/src/HDL/VProc/makefile,v $
-#
 ###################################################################
 
-# $MODELSIM and MODEL_TECH environment variables must be set
+# MODEL_TECH environment variable must be set
 
 # Define the maximum number of supported VProcs in the compile pli library
-MAX_NUM_VPROC   = 64
+MAX_NUM_VPROC      = 64
 
-SRCDIR          = code
-USRCDIR         = usercode
-TESTDIR         = .
-VOBJDIR         = ${TESTDIR}/obj
-MEMMODELDIR     = .
+SRCDIR             = code
+USRCDIR            = usercode
+TESTDIR            = .
+VOBJDIR            = ${TESTDIR}/obj
+MEMMODELDIR        = .
 
 # VPROC C source code
-VPROC_C         = VSched.c \
-                  VUser.c
-                  
+VPROC_C            = VSched.c \
+                     VUser.c
+
 # Memory model C code
-MEM_C           = 
+MEM_C              =
 
 # Test user code
-USER_C          = VUserMain0.c VUserMain1.c
+USER_C             = VUserMain0.c VUserMain1.c
 
-USER_CPP_BASE   = $(notdir $(filter %cpp, ${USER_C}))
-USER_C_BASE     = $(notdir $(filter %c, ${USER_C}))
-MEM_CPP_BASE    = $(notdir $(filter %cpp, ${MEM_C}))
-MEM_C_BASE      = $(notdir $(filter %c, ${MEM_C}))
+USER_CPP_BASE      = $(notdir $(filter %cpp, ${USER_C}))
+USER_C_BASE        = $(notdir $(filter %c, ${USER_C}))
+MEM_CPP_BASE       = $(notdir $(filter %cpp, ${MEM_C}))
+MEM_C_BASE         = $(notdir $(filter %c, ${MEM_C}))
 
-VOBJS           = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} \
-                  ${VPROC_C:%.c=%.o} ${MEM_C_BASE:%.c=%.o} ${MEM_CPP_BASE:%.cpp=%.o}}
+VOBJS              = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} \
+                     ${VPROC_C:%.c=%.o} ${MEM_C_BASE:%.c=%.o} ${MEM_CPP_BASE:%.cpp=%.o}}
 
-USRFLAGS        = 
+USRFLAGS           =
+VLOGFLAGS          = +define+VPROC_BURST_IF
 
 # Generated  PLI C library
-VPROC_PLI       = ${TESTDIR}/VProc.so
-VLIB            = ${TESTDIR}/libvproc.a
+VPROC_PLI          = ${TESTDIR}/VProc.so
+VLIB               = ${TESTDIR}/libvproc.a
 
-VPROC_TOP       = test
+VPROC_TOP          = test
 
 # Get OS type
 OSTYPE:=$(shell uname)
@@ -74,23 +72,23 @@ else
   MODELSIMBINDIR   = win32aloem
 endif
 
-CC              = gcc
-C++             = g++
-ARCHFLAG        = -m32
-CFLAGS          = -fPIC                                 \
-                  ${ARCHFLAG}                           \
-                  -g                                    \
-                  -D_GNU_SOURCE                         \
-                  ${USRFLAGS}                           \
-                  -I${SRCDIR}                           \
-                  -I${USRCDIR}                          \
-                  -I${MODEL_TECH}/../include            \
-                  -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
-                  -DMODELSIM                            \
-                  -D_REENTRANT
+CC                 = gcc
+C++                = g++
+ARCHFLAG           = -m32
+CFLAGS             = -fPIC                                 \
+                     ${ARCHFLAG}                           \
+                     -g                                    \
+                     -D_GNU_SOURCE                         \
+                     ${USRFLAGS}                           \
+                     -I${SRCDIR}                           \
+                     -I${USRCDIR}                          \
+                     -I${MODEL_TECH}/../include            \
+                     -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
+                     -DMODELSIM                            \
+                     -D_REENTRANT
 
-# Comman flags for vsim
-VSIMFLAGS = -pli ${VPROC_PLI} ${VPROC_TOP}
+# Common flags for vsim
+VSIMFLAGS          = -pli ${VPROC_PLI} ${VPROC_TOP}
 
 #------------------------------------------------------
 # BUILD RULES
@@ -98,18 +96,21 @@ VSIMFLAGS = -pli ${VPROC_PLI} ${VPROC_TOP}
 
 all: ${VPROC_PLI} verilog
 
-${VOBJDIR}/%.o: ${SRCDIR}/%.c
+${VOBJDIR}/%.o: ${SRCDIR}/%.c ${SRCDIR}/*.h
 	@${CC} -c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${SRCDIR}/%.cpp ${SRCDIR}/*.h
+	@${C++}-c ${CFLAGS} $< -o $@
 
 ${VOBJDIR}/%.o: ${USRCDIR}/%.c
 	@${CC} -Wno-write-strings -c ${CFLAGS} $< -o $@
 
 ${VOBJDIR}/%.o: ${USRCDIR}/%.cpp
 	@${C++} ${CPPSTD} -Wno-write-strings -c ${CFLAGS} $< -o $@
-    
+
 ${VOBJDIR}/%.o: ${MEMMODELDIR}/%.c ${MEMMODELDIR}/*.h
 	@${CC} -c ${CFLAGS} $< -o $@
-    
+
 ${VOBJDIR}/%.o: ${MEMMODELDIR}/%.cpp ${MEMMODELDIR}/*.h
 	@${C++} -c ${CFLAGS} $< -o $@
 
@@ -122,39 +123,39 @@ ${VOBJDIR}:
 	@mkdir ${VOBJDIR}
 
 ${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o
-	@${C++} ${CPPSTD}                                   \
-           ${CFLAGS_SO}                                \
-           -Wl,-whole-archive                          \
-           ${CFLAGS}                                   \
-           ${VOBJDIR}/veriuser.o                       \
-           -lpthread                                   \
-           -L${MODEL_TECH}                             \
-           -lmtipli                                    \
-           -L${TESTDIR} -lvproc                        \
-           -Wl,-no-whole-archive                       \
+	@${C++} ${CPPSTD}                                      \
+           ${CFLAGS_SO}                                    \
+           -Wl,-whole-archive                              \
+           ${CFLAGS}                                       \
+           ${VOBJDIR}/veriuser.o                           \
+           -lpthread                                       \
+           -L${MODEL_TECH}                                 \
+           -lmtipli                                        \
+           -L${TESTDIR} -lvproc                            \
+           -Wl,-no-whole-archive                           \
            -o $@
 
 # Let modelsim decide what's changed in the verilog
 .PHONY: verilog
 
 verilog: ${VPROC_PLI}
-	@if [ ! -d "./work" ]; then                        \
-	      vlib work;                                   \
+	@if [ ! -d "./work" ]; then                            \
+	      vlib work;                                       \
 	fi
-	@vlog -f test.vc
+	@vlog ${VLOGFLAGS} -f test.vc
 
 #------------------------------------------------------
 # EXECUTION RULES
 #------------------------------------------------------
 
 run: verilog
-	@vsim -c ${VSIMFLAGS}
+	@vsim -c ${VSIMFLAGS} -do "run -all" -do "quit"
 
 rungui: verilog
-	@if [ -e wave.do ]; then                           \
-	    vsim -gui -do wave.do ${VSIMFLAGS};            \
-	else                                               \
-	    vsim -gui ${VSIMFLAGS};                        \
+	@if [ -e wave.do ]; then                               \
+	    vsim -gui -do wave.do ${VSIMFLAGS} -do "run -all"; \
+	else                                                   \
+	    vsim -gui ${VSIMFLAGS};                            \
 	fi
 
 gui: rungui
@@ -164,8 +165,8 @@ gui: rungui
 #------------------------------------------------------
 
 clean:
-	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJS} ${VOBJDIR}/* *.wlf
-	@if [ -d "./work" ]; then                           \
-	    vdel -all;                                      \
+	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJDIR} *.wlf transcript
+	@if [ -d "./work" ]; then                              \
+	    vdel -all;                                         \
 	fi
 

@@ -1,7 +1,7 @@
 /*
  * Top level demonstration test environment for VProc
  *
- * Copyright (c) 2004-2010 Simon Southwell. Confidential
+ * Copyright (c) 2004-2024 Simon Southwell.
  *
  * This file is part of VProc.
  *
@@ -18,8 +18,6 @@
  * You should have received a copy of the GNU General Public License
  * along with VProc. If not, see <http://www.gnu.org/licenses/>.
  *
- * $Id: test.v,v 1.2 2016/09/29 08:41:33 simon Exp $
- * $Source: /home/simon/CVS/src/HDL/VProc/test.v,v $
  */
 
 `ifdef resol_10ps
@@ -38,76 +36,119 @@
 
 module test;
 
-reg Clk;
-integer Count, Seed;
+reg           Clk;
+integer       Count, Seed;
+              
+integer       Interrupt0, Interrupt1;
+reg [31:0]    VPDataIn0;
+reg           notReset_H;
+integer       restart;
+              
+wire [31:0]   VPAddr0, VPDataOut0;
+wire [31:0]   VPAddr1, VPDataOut1, VPDataIn1;
+wire          VPWE0, VPWE1;
+wire          VPRD0, VPRD1;
+wire  [1:0]   Update;
 
-integer Interrupt0, Interrupt1;
-reg [31:0] VPDataIn0;
-reg notReset_H;
-integer restart;
-reg [1:0] UpdateResponse;
-
-wire [31:0] VPAddr0, VPDataOut0;
-wire [31:0] VPAddr1, VPDataOut1, VPDataIn1;
-wire VPWE0, VPWE1;
-wire VPRD0, VPRD1;
-wire [1:0] Update;
-
+// Generate reset signals
 wire #`RegDel notReset = (Count > 5);
-wire ResetInt = notReset & ~notReset_H;
+wire          ResetInt = notReset & ~notReset_H;
 
- VProc vp0 (Clk, VPAddr0, VPWE0, VPRD0, VPDataOut0, VPDataIn0, VPWE0, VPRD0, {ResetInt, Interrupt0[1:0]}, Update[0], UpdateResponse[0], 4'b0000);
+ // =========================================================
+ // Virtual Processor 0
+ // =========================================================
+ VProc vp0 (.Clk                (Clk),
+            .Addr               (VPAddr0),
+            .WE                 (VPWE0),
+            .RD                 (VPRD0),
+`ifdef VPROC_BURST_IF
+            .Burst              (),
+            .BurstFirst         (),
+            .BurstLast          (),
+`endif
+            .DataOut            (VPDataOut0),
+            .DataIn             (VPDataIn0),
+            .WRAck              (VPWE0),
+            .RDAck              (VPRD0),
+            .Interrupt          ({{(`INTWIDTH-3){1'b0}}, ResetInt, Interrupt0[1:0]}),
+            .Update             (Update[0]),
+            .UpdateResponse     (Update[0]),
+            .Node               (0)
+           );
 
- VProc vp1 (Clk, VPAddr1, VPWE1, VPRD1, VPDataOut1, VPDataIn1, VPWE1, VPRD1, Interrupt1[2:0], Update[1], UpdateResponse[1], 4'b0001);
+ // =========================================================
+ // Virtual Processor 1
+ // =========================================================
+ VProc vp1 (.Clk                (Clk),
+            .Addr               (VPAddr1),
+            .WE                 (VPWE1),
+            .RD                 (VPRD1),
+`ifdef VPROC_BURST_IF
+            .Burst              (),
+            .BurstFirst         (),
+            .BurstLast          (),
+`endif
+            .DataOut            (VPDataOut1),
+            .DataIn             (VPDataIn1),
+            .WRAck              (VPWE1),
+            .RDAck              (VPRD1),
+            .Interrupt          (Interrupt1[`INTBITS]),
+            .Update             (Update[1]),
+            .UpdateResponse     (Update[1]),
+            .Node               (1)
+           );
 
+ // =========================================================
+ // Memory
+ // =========================================================
 
+// Memory chip select in segment 0xa
 wire CS1 = (VPAddr1[31:28] == 4'ha) ? 1'b1 : 1'b0;
 
- Mem m (Clk, VPDataOut1, VPDataIn1, VPWE1, VPAddr1[9:0], CS1);
+ Mem m     (.Clk                (Clk),
+            .DI                 (VPDataOut1),
+            .DO                 (VPDataIn1),
+            .WE                 (VPWE1),
+            .A                  (VPAddr1[9:0]),
+            .CS                 (CS1)
+           );
 
+// ---------------------------------------------------------
+// Initialise state and generate a clock
+// ---------------------------------------------------------
 initial
 begin
-   UpdateResponse = 2'b11;
-end
-
-always @(Update[0])
-    UpdateResponse[0] = ~UpdateResponse[0];
-
-always @(Update[1])
-    UpdateResponse[1] = ~UpdateResponse[1];
-
-initial
-begin
-    //$dumpfile("wave.vcd");
-    //$dumpvars(1, test);
-    Clk = 1;
+    Clk        = 1;
     Interrupt0 = 0;
     Interrupt1 = 0;
-    Seed  = 32'h00250864;
-    
+    Seed       = 32'h00250864;
+
     #0			// Ensure first x->1 clock edge is complete before initialisation
-    Count = 0;
+    Count      = 0;
     forever # (`ClkPeriod/2) Clk = ~Clk;
 end
 
+// ---------------------------------------------------------
+// Simulation control and interrupt generation process
+// ---------------------------------------------------------
 always @(posedge Clk)
 begin
     notReset_H <= #`RegDel notReset;
-    Count = Count + 1;
+    Count      = Count + 1;
     if(Count == `StopCount)
     begin
         $stop;
     end
-    Seed = {$dist_uniform(Seed, 32'hffffffff, 32'h7fffffff)};
+    Seed       = {$dist_uniform(Seed, 32'hffffffff, 32'h7fffffff)};
 
     #`RegDel
 
     VPDataIn0  = Seed;
 
-    Seed = {$dist_uniform(Seed, 32'hffffffff, 32'h7fffffff)};
+    Seed       = {$dist_uniform(Seed, 32'hffffffff, 32'h7fffffff)};
     Interrupt0 = ((Seed % 16) == 0) ? 1 : 0;
 
-    Seed = {$dist_uniform(Seed, 32'hffffffff, 32'h7fffffff)};
+    Seed       = {$dist_uniform(Seed, 32'hffffffff, 32'h7fffffff)};
     Interrupt1 <= #`RegDel ((Seed % 16) == 0) ? 1 : 0;
 end
 
@@ -123,21 +164,27 @@ end
 
 endmodule
 
-module Mem (Clk, DI, DO, WE, A, CS);
-input Clk;
-input WE, CS;
-input [31:0] DI;
-input [9:0] A;
-output [31:0] DO;
+ // =========================================================
+ // Simple 1K word memory model
+ // =========================================================
+
+module Mem (
+    input         Clk,
+    input         WE,
+    input         CS,
+    input  [31:0] DI,
+    input   [9:0] A,
+    output [31:0] DO
+);
 
 reg [31:0] Mem [0:1023];
 
-assign #1200 DO = Mem[A];
+assign #1 DO   = Mem[A];
 
 always @(posedge Clk)
 begin
-   if (WE && CS)
-       Mem[A] <= #`RegDel DI;
+    if (WE && CS)
+        Mem[A] <= #`RegDel DI;
 end
 
 endmodule

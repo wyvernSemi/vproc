@@ -2,7 +2,7 @@
 //
 // VSched_pli.h                                       Date: 2004/12/13
 //
-// Copyright (c) 2004-2010 Simon Southwell.
+// Copyright (c) 2004-2024 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -18,9 +18,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
-//
-// $Id: VSched_pli.h,v 1.5 2021/05/15 07:45:17 simon Exp $
-// $Source: /home/simon/CVS/src/HDL/VProc/code/VSched_pli.h,v $
 //
 //=====================================================================
 //

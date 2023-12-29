@@ -2,7 +2,7 @@
 //
 // VProc.h                                            Date: 2004/12/13 
 //
-// Copyright (c) 2004-2010 Simon Southwell.
+// Copyright (c) 2004-2024 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -19,9 +19,6 @@
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
 //
-// $Id: VProc.h,v 1.3 2016/09/28 07:12:00 simon Exp $
-// $Source: /home/simon/CVS/src/HDL/VProc/code/VProc.h,v $
-//
 //=====================================================================
 //
 // Internal header for VProc definitions and data types
@@ -33,44 +30,23 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
-
 #include <dlfcn.h>
 #include <pthread.h>
-#include <sched.h>
-
 #include <semaphore.h>
-
-// For file IO
-#include <fcntl.h>
-
-// For inode manipulation
-#include <unistd.h>
 
 #ifndef VP_MAX_NODES
 #define VP_MAX_NODES            64
 #endif
 
-
-#define M_TICK                  0x100
-#define M_IO                    0x200
-#define M_STOP                  0x300
-#define M_PRINT                 0x400
-
+// Definitions for accessess
 #define V_IDLE                  0
 #define V_WRITE                 1
 #define V_READ                  2
-#define V_HALT                  4
-#define V_SWAP                  8
 
-#define VP_EXIT_OK              0
-#define VP_QUEUE_ERR            1
-#define VP_KEY_ERR              2
-#define VP_USER_ERR             3
-#define VP_SYSCALL_ERR          4
+// Error types
+#define VP_USER_ERR             1
 
-#define UNDEF                   -1
-
+// Indexes for PLI function arguments
 #define VPNODENUM_ARG           1
 #define VPINTERRUPT_ARG         2
 #define VPINDEX_ARG             2
@@ -81,17 +57,14 @@
 #define VPTICKS_ARG             7
 #define VPRESTORE_ARG           8
 
+// A default string buffer size
 #define DEFAULT_STR_BUF_SIZE    32
 
+// Range of valid interrupt states
 #define MIN_INTERRUPT_LEVEL     1
 #define MAX_INTERRUPT_LEVEL     7
 
-#define MONITOR_SEG_SIZE        4096 
-
-typedef unsigned short          uint16;
-typedef unsigned int            uint32;
-typedef unsigned long long      uint64;
-
+// User thread to simulation exchange structure
 typedef struct {
     unsigned int        addr;
     unsigned int        data_out;
@@ -100,27 +73,17 @@ typedef struct {
     int                 ticks;
 } send_buf_t, *psend_buf_t;
 
+// Simulation to user thread exchange structure
 typedef struct {
     unsigned int        data_in;
     unsigned int        interrupt;
 } rcv_buf_t, *prcv_buf_t;
 
-typedef struct {
-    int                 VPDataIn;
-    int                 VPDataOut;
-    int                 VPAddr;
-    int                 VPTicks;
-    short               VPRw;
-    short               Interrupt;
-} monitor_t, *pmonitor_t;
-
-// Shared object handle type
-typedef void * handle_t;
-
-// Interrupt function pointer type
+// Callback pointer types
 typedef int  (*pVUserInt_t)      (void);
 typedef int  (*pVUserCB_t)       (int);
 
+// Scheduler node state structure
 typedef struct {
     sem_t               snd;
     sem_t               rcv;
@@ -130,6 +93,7 @@ typedef struct {
     pVUserCB_t          VUserCB;
 } SchedState_t, *pSchedState_t;
 
+// Reference to node state array
 extern pSchedState_t ns[VP_MAX_NODES];
 
 #endif

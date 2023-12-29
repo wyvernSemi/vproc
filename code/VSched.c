@@ -2,7 +2,7 @@
 //
 // VSched.c                                           Date: 2004/12/13
 //
-// Copyright (c) 2004-2010 Simon Southwell.
+// Copyright (c) 2004-2024 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -18,9 +18,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
-//
-// $Id: VSched.c,v 1.6 2021/05/15 07:45:17 simon Exp $
-// $Source: /home/simon/CVS/src/HDL/VProc/code/VSched.c,v $
 //
 //=====================================================================
 //
@@ -113,7 +110,7 @@ static int updateArgs (vpiHandle taskHdl, int value[])
   {
     argval.format        = vpiIntVal;
     argval.value.integer = value[idx++];
-    
+
     vpi_put_value(argh, &argval, NULL, vpiNoDelay);
   }
 
@@ -132,7 +129,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 #ifndef VPROC_VHDL
 
     int node;
-    
+
 # ifndef VPROC_PLI_VPI
 
     // Get single argument value of $vinit call
@@ -142,7 +139,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 # else
     vpiHandle          taskHdl;
     int                args[10];
-    
+
     // Obtain a handle to the argument list
     taskHdl            = vpi_handle(vpiSysTfCall, NULL);
 
@@ -173,11 +170,13 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
     // Set up semaphores for this node
     debug_io_printf("VInit(): initialising semaphores for node %d\n", node);
 
-    if (sem_init(&(ns[node]->snd), 0, 0) == -1) {
+    if (sem_init(&(ns[node]->snd), 0, 0) == -1)
+    {
         io_printf("***Error: VInit() failed to initialise semaphore\n");
         exit(1);
     }
-    if (sem_init(&(ns[node]->rcv), 0, 0) == -1) {
+    if (sem_init(&(ns[node]->rcv), 0, 0) == -1)
+    {
         io_printf("***Error: VInit() failed to initialise semaphore\n");
         exit(1);
     }
@@ -226,11 +225,11 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 {
 
     int VPDataOut_int, VPAddr_int, VPRw_int, VPTicks_int;
-    
+
 #ifndef VPROC_VHDL
     int node;
     int Interrupt, VPDataIn;
-    
+
 # ifndef VPROC_PLI_VPI
 
     // Get the input argument values of $vsched
@@ -253,7 +252,6 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     Interrupt    = args[VPINTERRUPT_ARG];
     VPDataIn     = args[VPDATAIN_ARG];
 
-    //vpi_printf("VSched(): node=%d, Interrupt=%d, VPDataIn=0x%08x\n", node, Interrupt, VPDataIn);
 # endif
 #endif
 
@@ -270,15 +268,14 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     sem_wait(&(ns[node]->snd));
 
     // Update outputs of $vsched task
-    if (ns[node]->send_buf.ticks >= DELTA_CYCLE) {
+    if (ns[node]->send_buf.ticks >= DELTA_CYCLE)
+    {
         VPDataOut_int = ns[node]->send_buf.data_out;
         VPAddr_int    = ns[node]->send_buf.addr;
         VPRw_int      = ns[node]->send_buf.rw;
         VPTicks_int   = ns[node]->send_buf.ticks;
         debug_io_printf("VSched(): VPTicks=%08x\n", VPTicks_int);
     }
-
-    //vpi_printf("VSched(): node=%d Interrupt=%d VPDataIn=%08x VPDataOut=%08x VPAddr=%08x VPRw=%d VPTicks=%d\n", node, Interrupt, VPDataIn, VPDataOut_int, VPAddr_int, VPRw_int, VPTicks_int);
 
     debug_io_printf("VSched(): returning to simulation from node %d\n\n", node);
 
@@ -341,7 +338,9 @@ VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 #endif
 
     if (ns[node]->VUserCB != NULL)
+    {
         (*(ns[node]->VUserCB))(value);
+    }
 
 #ifndef VPROC_VHDL
     return 0;
@@ -361,8 +360,8 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
     int node, idx;
 
 # ifndef VPROC_PLI_VPI
-    node = tf_getp (VPNODENUM_ARG);
-    idx  = tf_getp (VPINDEX_ARG);
+    node      = tf_getp (VPNODENUM_ARG);
+    idx       = tf_getp (VPINDEX_ARG);
 
     tf_putp (VPDATAOUT_ARG, ((int *) ns[node]->send_buf.data_p)[idx]);
     ((int *) ns[node]->send_buf.data_p)[idx] = tf_getp (VPDATAIN_ARG);
