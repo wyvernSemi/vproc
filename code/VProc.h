@@ -79,6 +79,9 @@ typedef struct {
     unsigned int        interrupt;
 } rcv_buf_t, *prcv_buf_t;
 
+// Shared object handle typedef
+typedef void * handle_t;
+
 // Callback pointer types
 typedef int  (*pVUserInt_t)      (void);
 typedef int  (*pVUserCB_t)       (int);

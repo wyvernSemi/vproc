@@ -1,27 +1,24 @@
 -- =============================================================
---  
---  Copyright (c) 2021 Simon Southwell. All rights reserved.
--- 
+--
+--  Copyright (c) 2021-2023 Simon Southwell. All rights reserved.
+--
 --  Date: 4th May 2021
--- 
+--
 --  This file is part of the VProc package.
--- 
+--
 --  VProc is free software: you can redistribute it and/or modify
 --  it under the terms of the GNU General Public License as published by
 --  the Free Software Foundation, either version 3 of the License, or
 --  (at your option) any later version.
--- 
+--
 --  VProc is distributed in the hope that it will be useful,
 --  but WITHOUT ANY WARRANTY; without even the implied warranty of
 --  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 --  GNU General Public License for more details.
--- 
+--
 --  You should have received a copy of the GNU General Public License
 --  along with VProc. If not, see <http://www.gnu.org/licenses/>.
--- 
---  $Id: f_vproc.vhd,v 1.2 2021/05/05 08:07:40 simon Exp $
---  $Source: /home/simon/CVS/src/HDL/VProc/f_vproc.vhd,v $
--- 
+--
 -- =============================================================
 -- altera vhdl_input_version vhdl_2008
 
@@ -34,6 +31,7 @@ use work.vproc_pkg.all;
 entity VProc is
   port (
     Clk             : in  std_logic;
+
     Addr            : out std_logic_vector(31 downto 0) := 32x"0";
     WE              : out std_logic := '0';
     RD              : out std_logic := '0';
@@ -41,9 +39,16 @@ entity VProc is
     DataIn          : in  std_logic_vector(31 downto 0);
     WRAck           : in  std_logic;
     RDAck           : in  std_logic;
+
     Interrupt       : in  std_logic_vector(2 downto 0);
+
     Update          : out std_logic := '0';
     UpdateResponse  : in  std_logic;
+
+    Burst           : out std_logic_vector(11 downto 0);
+    BurstFirst      : out std_logic;
+    BurstLast       : out std_logic;
+
     Node            : in  std_logic_vector(3 downto 0)
   );
 end;
@@ -52,7 +57,10 @@ architecture model of VProc is
 
 constant      WEbit       : integer := 0;
 constant      RDbit       : integer := 1;
+constant      BLKHIBIT    : integer := 13;
+constant      BLKLOBIT    : integer := 2;
 constant      DeltaCycle  : integer := -1;
+
 
 signal        Initialised : integer := 0;
 
@@ -65,7 +73,7 @@ begin
 
       VInit(to_integer(unsigned(Node)));
 
-      Initialised        <= 1;
+      Initialised               <= 1;
 
       wait;
   end process;
@@ -79,6 +87,8 @@ begin
     variable VPRW        : integer;
     variable VPTicks     : integer;
     variable TickVal     : integer := 1;
+    variable BlkCount    : integer := 0;
+    variable AccIdx      : integer := 0;
 
     variable DataInSamp  : integer;
     variable IntSamp     : integer;
@@ -94,10 +104,11 @@ begin
       wait until Clk'event and Clk = '1';
 
       -- Cleanly sample the inputs
-      DataInSamp   := to_integer(signed(DataIn));
-      IntSamp      := to_integer(signed("0" & Interrupt));
-      RdAckSamp    := RDAck;
-      WRAckSamp    := WRAck;
+      DataInSamp                := to_integer(signed(DataIn));
+      IntSamp                   := to_integer(signed("0" & Interrupt));
+      RdAckSamp                 := RDAck;
+      WRAckSamp                 := WRAck;
+      VPTicks                   := DeltaCycle;
 
       if Initialised = 1 then
 
@@ -114,80 +125,118 @@ begin
           -- If interrupt routine returns non-zero tick, then override
           -- current tick value. Otherwise, leave at present value.
           if VPTicks > 0 then
-            TickVal      := VPTicks;
+            TickVal             := VPTicks;
           end if;
         end if;
 
-        -- If tick, write or a read has completed...
+        -- If tick, write or a read has completed (or in last cycle)...
         if  (RD = '0' and WE = '0' and TickVal = 0) or
             (RD = '1' and RdAckSamp = '1')          or
             (WE = '1' and WRAckSamp = '1') then
 
-          -- Host process message scheduler called
-          VSched(to_integer(unsigned(Node)),
-                 0,
-                 DataInSamp,
-                 VPDataOut,
-                 VPAddr,
-                 VPRW,
-                 VPTicks);
+          BurstFirst            <= '0';
+          BurstLast             <= '0';
 
-          --wait for 0 ns;
+          -- Loop accessing new commands until VPTicks is not a delta cycle update
+          while VPTicks < 0 loop
+            -- Clear any interrupt (already dealt with)
+            IntSamp             := 0;
 
-          WE             <= to_unsigned(VPRW, 2)(WEbit);
-          RD             <= to_unsigned(VPRW, 2)(RDbit);
-          DataOut        <= std_logic_vector(to_signed(VPDataOut, 32));
-          Addr           <= std_logic_vector(to_signed(VPAddr, 32));
-          Update         <= not Update;
+            -- Sample the data in port
+            DataInSamp          := to_integer(signed(DataIn));
 
-          wait on UpdateResponse;
+            if BlkCount <= 1 then
 
-          -- Update current tick value with returned number (if not zero)
-          if VPTicks > 0 then
-          
-            TickVal      := VPTicks;
-            
-          elsif VPTicks < 0 then
-          
-            while VPTicks = DeltaCycle loop
+              -- If this is the last transfer in a burst, call $vaccess with
+              -- the last data input sample.
+              if BlkCount = 1 then
+                AccIdx          := AccIdx + 1;
 
-              -- Resample delta input data
-              DataInSamp := to_integer(signed(DataIn));
+                VAccess(to_integer(unsigned(Node)),
+                        AccIdx,
+                        DataInSamp,
+                        VPDataOut);
+              end if;
 
+              -- Host process message scheduler called
               VSched(to_integer(unsigned(Node)),
-                     0,
+                     IntSamp,
                      DataInSamp,
                      VPDataOut,
                      VPAddr,
                      VPRW,
                      VPTicks);
 
-              WE         <= to_unsigned(VPRW, 2)(WEbit);
-              RD         <= to_unsigned(VPRW, 2)(RDbit);
-              DataOut    <= std_logic_vector(to_signed(VPDataOut, 32));
-              Addr       <= std_logic_vector(to_signed(VPAddr, 32));
-              Update     <= not Update;
+              Burst             <= std_logic_vector(to_unsigned(VPRW, 14)(BLKHIBIT downto BLKLOBIT));
+              WE                <= to_unsigned(VPRW, 14)(WEbit);
+              RD                <= to_unsigned(VPRW, 14)(RDbit);
+              Addr              <= std_logic_vector(to_signed(VPAddr, 32));
 
-              if VPTicks >= 0 then
-                TickVal  := VPTicks;
+              BlkCount          := to_integer(to_unsigned(VPRW, 14)(BLKHIBIT downto BLKLOBIT));
+
+              -- If new BlkCount is non-zero, setup burst transfer
+              if BlkCount /= 0 then
+                BurstFirst      <= '1';
+
+                -- On writes, override VPDataOut to get from burst access task $VAccess at index 0
+                if to_unsigned(VPRW, 14)(WEbit)  = '1' then
+                  AccIdx        := 0;
+
+                  VAccess(to_integer(unsigned(Node)),
+                          AccIdx,
+                          0,
+                          VPDataOut);
+                else
+                  AccIdx        := -1;
+                end if;
               end if;
 
-              wait on UpdateResponse;
+              -- Update DataOut port
+              DataOut           <= std_logic_vector(to_signed(VPDataOut, 32));
 
-            end loop;
-          end if;
+            -- If a block access is valid (BlkCount is non-zero), get the next data out/send back latest sample
+            else
+              AccIdx            := AccIdx + 1;
+
+              VAccess(to_integer(unsigned(Node)),
+                      AccIdx,
+                      DataInSamp,
+                      VPDataOut);
+
+              DataOut           <= std_logic_vector(to_signed(VPDataOut, 32));
+              Addr              <= std_logic_vector(unsigned(Addr) + 1);
+              BlkCount          := BlkCount - 1;
+
+              if BlkCount = 1 then
+                  BurstLast     <= '1';
+              end if;
+
+              -- When bursting, reassert non-delta VPTicks value to break out of loop.
+              VPTicks           := 0;
+
+            end if;
+
+            -- Update current tick value with returned number (if not zero)
+            if VPTicks > 0 then
+              TickVal           := VPTicks;
+            end if;
+
+            -- Flag to update externally and wait for response
+            Update              <= not Update;
+            wait on UpdateResponse;
+
+          end loop;
 
         else
-        
+
           -- Count down to zero and stop
           if TickVal > 0 then
-            TickVal      := TickVal - 1;
+            TickVal             := TickVal - 1;
           else
-            TickVal      := 0;
+            TickVal             := 0;
           end if;
-          
-        end if;
 
+        end if;
       end if;
     end loop;
   end process;

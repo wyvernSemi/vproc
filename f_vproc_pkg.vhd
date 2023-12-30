@@ -1,6 +1,6 @@
 -- =============================================================
 --  
---  Copyright (c) 2021 Simon Southwell. All rights reserved.
+--  Copyright (c) 2021-2023 Simon Southwell. All rights reserved.
 -- 
 --  Date: 4th May 2021
 -- 
@@ -18,9 +18,6 @@
 -- 
 --  You should have received a copy of the GNU General Public License
 --  along with VProc. If not, see <http://www.gnu.org/licenses/>.
--- 
---  $Id: f_vproc_pkg.vhd,v 1.2 2021/05/05 08:07:40 simon Exp $
---  $Source: /home/simon/CVS/src/HDL/VProc/f_vproc_pkg.vhd,v $
 -- 
 -- =============================================================
 -- altera vhdl_input_version vhdl_2008
