@@ -1,35 +1,32 @@
-/*
- * Verilog side Virtual Processor, for running host
- * programs as control in simulation.
- *
- * Copyright (c) 2004-2024 Simon Southwell.
- *
- * This file is part of VProc.
- *
- * VProc is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * VProc is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with VProc. If not, see <http://www.gnu.org/licenses/>.
- *
- */
+// ====================================================================
+//
+// Verilog side Virtual Processor, for running host
+// programs as control in simulation.
+//
+// Copyright (c) 2004-2024 Simon Southwell.
+//
+// This file is part of VProc.
+//
+// VProc is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// VProc is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with VProc. If not, see <http://www.gnu.org/licenses/>.
+//
+// ====================================================================
 
- `include "extradefs.v"
+`include "vprocdefs.vh"
 
-`VProcTimeScale
-
-`define WEbit       0
-`define RDbit       1
-`define BlkBits     13:2
-`define DeltaCycle -1
-`define DontCare                 0
+// ============================================================
+// VProc module
+// ============================================================
 
 module VProc
 (
@@ -63,6 +60,10 @@ module VProc
     input [`NODEBITS] Node
 );
 
+// ------------------------------------------------------------
+// Register definitions
+// ------------------------------------------------------------
+
 // $vsched/$vaccess outputs
 integer               VPDataOut;
 integer               VPAddr;
@@ -90,33 +91,45 @@ reg                   BurstFirst;
 reg                   BurstLast;
 `endif
 
+// ------------------------------------------------------------
+// Initial process
+// ------------------------------------------------------------
+
 initial
 begin
-    TickCount                   = 1;
-    Initialised                 = 0;
-    WE                          = 0;
-    RD                          = 0;
-    Update                      = 0;
-    BlkCount                    = 0;
+    TickCount                           = 1;
+    Initialised                         = 0;
+    WE                                  = 0;
+    RD                                  = 0;
+    Update                              = 0;
+    BlkCount                            = 0;
 
     // Don't remove delay! Needed to allow Node to be assigned
+    // before the call to $vinit
     #0
     $vinit(Node);
-    Initialised                 = 1;
+    Initialised                         = 1;
 end
 
+
+// ------------------------------------------------------------
+/// Main scheduler process
+// ------------------------------------------------------------
 
 always @(posedge Clk)
 begin
     // Cleanly sample the inputs and make them integers
-    RdAckSamp                   = RDAck;
-    WRAckSamp                   = WRAck;
-    IntSamp                     = {1'b0, Interrupt};
-    NodeI                       = Node;
-    VPTicks                     = `DeltaCycle;
+    RdAckSamp                           = RDAck;
+    WRAckSamp                           = WRAck;
+    IntSamp                             = {1'b0, Interrupt};
+    NodeI                               = Node;
+    VPTicks                             = `DELTACYCLE;
 
+    // Wait until the VProc software is initialised for this node ($vinit called)
+    // before starting accesses
     if (Initialised == 1'b1)
     begin
+        // If an interrupt active, call $vsched with interrupt value
         if (IntSamp > 0)
         begin
             $vsched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
@@ -125,26 +138,26 @@ begin
             // current tick value. Otherwise, leave at present value.
             if (VPTicks > 0)
             begin
-                TickCount       = VPTicks;
+                TickCount               = VPTicks;
             end
         end
 
-        // If tick, write or a read has completed...
+        // If tick, write or a read has completed (or in last cycle)...
         if ((RD === 1'b0 && WE        === 1'b0 && TickCount === 0) ||
             (RD === 1'b1 && RdAckSamp === 1'b1)                    ||
             (WE === 1'b1 && WRAckSamp === 1'b1))
         begin
-            BurstFirst         = 1'b0;
-            BurstLast          = 1'b0;
+            BurstFirst                  = 1'b0;
+            BurstLast                   = 1'b0;
              
-            // Loop while new accesses in this delta cycle
+            // Loop accessing new commands until VPTicks is not a delta cycle update
             while (VPTicks < 0)
             begin
                 // Clear any interrupt (already dealt with)
-                IntSamp         = 0;
+                IntSamp                 = 0;
                 
                 // Sample the data in port
-                DataInSamp      = DataIn;
+                DataInSamp              = DataIn;
                 
                 if (BlkCount <= 1)
                 begin
@@ -152,21 +165,20 @@ begin
                     // the last data input sample.
                     if (BlkCount == 1)
                     begin
-                        AccIdx  = AccIdx + 1;
+                        AccIdx          = AccIdx + 1;
 `ifdef VPROC_BURST_IF
                         $vaccess(NodeI, AccIdx, DataInSamp, VPDataOut);
 `endif
                     end
                 
-                    // Host process message scheduler called
+                    // Get new access command
                     $vsched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
                     
                     // Update the outputs
-                    //#0
-                    Burst       = VPRW[`BlkBits];
-                    WE          = VPRW[`WEbit];
-                    RD          = VPRW[`RDbit];
-                    Addr        = VPAddr;
+                    Burst               = VPRW[`BLKBITS];
+                    WE                  = VPRW[`WEBIT];
+                    RD                  = VPRW[`RDBIT];
+                    Addr                = VPAddr;
                 
                     // If new BlkCount is non-zero, setup burst transfer
                     if (Burst !== 0)
@@ -179,7 +191,7 @@ begin
                         begin
                             AccIdx      = 0;
 `ifdef VPROC_BURST_IF 
-                            $vaccess(NodeI, AccIdx, `DontCare, VPDataOut);
+                            $vaccess(NodeI, AccIdx, `DONTCARE, VPDataOut);
 `endif
                         end
                         else
@@ -190,7 +202,7 @@ begin
                     end
                     
                     // Update DataOut port
-                    DataOut     = VPDataOut;
+                    DataOut             = VPDataOut;
                 end
                 // If a block access is valid (BlkCount is non-zero), get the next data out/send back latest sample
                 else
@@ -215,18 +227,18 @@ begin
                 // Update current tick value with returned number (if not negative)
                 if (VPTicks >= 0)
                 begin
-                    TickCount         = VPTicks;
+                    TickCount           = VPTicks;
                 end
                 
                 // Flag to update externally and wait for response
-                Update          = ~Update;
+                Update                  = ~Update;
                 @(UpdateResponse);
             end
         end
         else
         begin
             // Count down to zero and stop
-            TickCount           = (TickCount > 0) ? TickCount - 1 : 0;
+            TickCount                   = (TickCount > 0) ? TickCount - 1 : 0;
         end
     end
 end

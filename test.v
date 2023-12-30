@@ -19,6 +19,8 @@
  * along with VProc. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+ 
+ `include "vprocdefs.vh"
 
 `ifdef resol_10ps
 `timescale 1 ps / 10 ps
