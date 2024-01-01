@@ -46,7 +46,7 @@ extern int  VRead         (const unsigned   addr,  unsigned          *data, cons
 extern int  VBurstWrite   (const unsigned   addr,  void              *data, const unsigned len,   const unsigned node);
 extern int  VBurstRead    (const unsigned   addr,  void              *data, const unsigned len,   const unsigned node);
 extern int  VTick         (const unsigned   ticks, const unsigned     node);
-extern void VRegInterrupt (const int        level, const pVUserInt_t  func, const unsigned int node);
+extern void VRegInterrupt (const int        level, const pVUserInt_t  func, const unsigned node);
 extern void VRegUser      (const pVUserCB_t func,  const unsigned int node);
 
 // VUser function prototype for VInit in VSched.c

@@ -35,13 +35,13 @@ public:
          VProc        (const unsigned   nodeIn) : node(nodeIn) {};
 
     // API methods
-    int  write        (const unsigned   addr,   const unsigned    data, const int      delta)  {return VWrite        (addr,  data, delta,  node);};
-    int  read         (const unsigned   addr,         unsigned   *data, const int      delta)  {return VRead         (addr,  data, delta,  node);};
-    int  burstWrite   (const unsigned   addr,         void       *data, const unsigned length) {return VBurstWrite   (addr,  data, length, node);};
-    int  burstRead    (const unsigned   addr,         void       *data, const unsigned length) {return VBurstRead    (addr,  data, length, node);};
-    int  tick         (const unsigned   ticks)                                                 {return VTick         (ticks,               node);};
-    void regInterrupt (const int        level,  const pVUserInt_t func)                        {       VRegInterrupt (level, func,         node);};
-    void regUser      (const pVUserCB_t func)                                                  {       VRegUser      (func,                node);};
+    int  write        (const unsigned   addr,   const unsigned    data, const int      delta = 0)  {return VWrite        (addr,  data, delta,  node);};
+    int  read         (const unsigned   addr,         unsigned   *data, const int      delta = 0)  {return VRead         (addr,  data, delta,  node);};
+    int  burstWrite   (const unsigned   addr,         void       *data, const unsigned length)     {return VBurstWrite   (addr,  data, length, node);};
+    int  burstRead    (const unsigned   addr,         void       *data, const unsigned length)     {return VBurstRead    (addr,  data, length, node);};
+    int  tick         (const unsigned   ticks)                                                     {return VTick         (ticks,               node);};
+    void regInterrupt (const int        level,  const pVUserInt_t func)                            {       VRegInterrupt (level, func,         node);};
+    void regUser      (const pVUserCB_t func)                                                      {       VRegUser      (func,                node);};
 
 private:
 
