@@ -25,7 +25,7 @@ module axi4bfm
 #(parameter ADDRWIDTH           = 32,
             DATAWIDTH           = 32,
             IRQWIDTH            = 32,
-            NODE                = 0,
+            NODE                = 0
 )
 (
   input                         clk,
@@ -75,7 +75,7 @@ wire                            VPRDAck;
 
 // Delta cycle signals
 wire                            Update;
-wire                            UpdateResponse;
+reg                             UpdateResponse;
 
 // Internal state to flag an AXI channel has been acknowleged,
 // but transaction is still pending
