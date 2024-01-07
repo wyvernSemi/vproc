@@ -89,7 +89,7 @@ static int getArgs (vpiHandle taskHdl, int value[])
     vpi_get_value(argh, &argval);
     value[idx]         = argval.value.integer;
 
-    debug_io_printf("VPI routine received %d\n", value[idx++]);
+    debug_io_printf("VPI routine received %x at offset %d\n", value[idx++], idx);
   }
 
   return idx;
@@ -382,7 +382,7 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
 
     ((int *) ns[node]->send_buf.data_p)[idx] = args[VPDATAIN_ARG];
 
-    updateArgs(taskHdl, args);
+    updateArgs(taskHdl, &args[1]);
 
 # endif
 
