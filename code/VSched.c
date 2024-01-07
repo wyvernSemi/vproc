@@ -382,7 +382,7 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
 
     ((int *) ns[node]->send_buf.data_p)[idx] = args[VPDATAIN_ARG];
 
-    updateArgs(taskHdl, args);
+    updateArgs(taskHdl, &args[1]);
 
 # endif
 
