@@ -130,13 +130,13 @@ assign VPRDAck                  = rvalid;
 
 initial
 begin
-  aracked                       <= 1'b0;
-  awacked                       <= 1'b0;
-  wacked                        <= 1'b0;
+  aracked                       = 1'b0;
+  awacked                       = 1'b0;
+  wacked                        = 1'b0;
   
-  UpdateResponse                <= 1'b1;
+  UpdateResponse                = 1'b1;
   
-  irqlast                       <= {IRQWIDTH{1'b0}};
+  irqlast                       = {IRQWIDTH{1'b0}};
 end
 
 // ---------------------------------------------------------
@@ -212,7 +212,7 @@ end
 
             .Update             (Update),
             .UpdateResponse     (UpdateResponse),
-            .Node               (NODE)
+            .Node               (NODE[3:0])
            );
 
 endmodule
