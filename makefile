@@ -20,7 +20,6 @@
 #
 ###################################################################
 
-# MODEL_TECH environment variable must be set
 
 # Define the maximum number of supported VProcs in the compile pli library
 MAX_NUM_VPROC      = 64
@@ -30,6 +29,11 @@ USRCDIR            = usercode
 TESTDIR            = .
 VOBJDIR            = ${TESTDIR}/obj
 MEMMODELDIR        = .
+
+# If run from a place where MODEL_TECH is not defined, construct from path to vsim
+ifeq ("${MODEL_TECH}", "")
+  MODEL_TECH=$(shell dirname `which vsim`)
+endif
 
 # VPROC C source code
 VPROC_C            = VSched.c \
@@ -147,6 +151,9 @@ verilog: ${VPROC_PLI}
 #------------------------------------------------------
 # EXECUTION RULES
 #------------------------------------------------------
+
+sim: verilog
+	@vsim -c ${VSIMFLAGS}
 
 run: verilog
 	@vsim -c ${VSIMFLAGS} -do "run -all" -do "quit"
