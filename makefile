@@ -30,9 +30,21 @@ TESTDIR            = .
 VOBJDIR            = ${TESTDIR}/obj
 MEMMODELDIR        = .
 
-# If run from a place where MODEL_TECH is not defined, construct from path to vsim
+# Get OS type
+OSTYPE:=$(shell uname)
+
+# If run from a place where MODEL_TECH is not defined, construct from path to PLI library
 ifeq ("${MODEL_TECH}", "")
-  MODEL_TECH=$(shell dirname `which vsim`)
+  ifeq (${OSTYPE}, Linux)
+    PLILIB=libmtipli.so
+  else
+    PLILIB=mtipli.dll
+  endif
+  
+  VSIMPATH=$(shell which vsim)
+  SIMROOT=$(shell dirname ${VSIMPATH})/..
+  PLILIBPATH=$(shell find ${SIMROOT} -name "${PLILIB}")
+  MODEL_TECH=$(shell dirname ${PLILIBPATH})
 endif
 
 # VPROC C source code
@@ -61,9 +73,6 @@ VPROC_PLI          = ${TESTDIR}/VProc.so
 VLIB               = ${TESTDIR}/libvproc.a
 
 VPROC_TOP          = test
-
-# Get OS type
-OSTYPE:=$(shell uname)
 
 # Set OS specific variables between Linux and Windows (MinGW)
 ifeq (${OSTYPE}, Linux)
