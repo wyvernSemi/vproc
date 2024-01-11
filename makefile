@@ -36,15 +36,15 @@ OSTYPE:=$(shell uname)
 # If run from a place where MODEL_TECH is not defined, construct from path to PLI library
 ifeq ("${MODEL_TECH}", "")
   ifeq (${OSTYPE}, Linux)
-    PLILIB=libmtipli.so
+    PLILIB         = libmtipli.so
   else
-    PLILIB=mtipli.dll
+    PLILIB         = mtipli.dll
   endif
   
-  VSIMPATH=$(shell which vsim)
-  SIMROOT=$(shell dirname ${VSIMPATH})/..
-  PLILIBPATH=$(shell find ${SIMROOT} -name "${PLILIB}")
-  MODEL_TECH=$(shell dirname ${PLILIBPATH})
+  VSIMPATH         = $(shell which vsim)
+  SIMROOT          = $(shell dirname ${VSIMPATH})/..
+  PLILIBPATH       = $(shell find ${SIMROOT} -name "${PLILIB}")
+  MODEL_TECH       = $(shell dirname ${PLILIBPATH})
 endif
 
 # VPROC C source code

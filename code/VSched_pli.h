@@ -35,18 +35,53 @@
 
 #ifndef _VSCHED_PLI_H_
 #define _VSCHED_PLI_H_
+#endif
+
+// VHPI implies VHDL
+#ifdef VPROC_VHDL_VHPI
+
+# ifndef VPROC_VHDL
+#define VPROC_VHDL
+# endif
+
+#endif
 
 # ifdef VPROC_VHDL
-
-#  ifdef DEBUG
-#  define debug_io_printf printf
-#  else
-#  define debug_io_printf //
-#  endif
 
 #define VPROC_TF_TBL_SIZE  0
 #define VPROC_TF_TBL       {0}
 
+#  ifdef VPROC_VHDL_VHPI
+
+#   ifdef DEBUG
+#   define debug_io_printf vhpi_printf
+#   else
+#   define debug_io_printf //
+#   endif
+
+#include <vhpi_user.h>
+
+#define VINIT_PARAMS       const struct vhpiCbDataS* cb
+#define VSCHED_PARAMS      const struct vhpiCbDataS* cb
+#define VPROCUSER_PARAMS   const struct vhpiCbDataS* cb
+#define VACCESS_PARAMS     const struct vhpiCbDataS* cb
+#define VHALT_PARAMS       int, int
+
+#define VINIT_NUM_ARGS     1
+#define VSCHED_NUM_ARGS    7
+#define VPROCUSER_NUM_ARGS 2
+#define VACCESS_NUM_ARGS   4
+
+#define VPROC_RTN_TYPE     void
+
+#  else
+
+#   ifdef DEBUG
+#   define debug_io_printf mti_PrintFormatted
+#   else
+#   define debug_io_printf //
+#   endif
+    
 #define VINIT_PARAMS       int  node
 #define VSCHED_PARAMS      int  node, int Interrupt, int VPDataIn, int* VPDataOut, int* VPAddr, int* VPRw,int* VPTicks
 #define VPROCUSER_PARAMS   int  node, int value
@@ -55,9 +90,11 @@
 
 #define VPROC_RTN_TYPE     void
 
+#  endif
+
 # else
 
-# ifndef VPROC_PLI_VPI
+#  ifndef VPROC_PLI_VPI
 #  ifdef DEBUG
 #  define debug_io_printf io_printf
 #  else
@@ -109,4 +146,3 @@ extern VPROC_RTN_TYPE VProcUser (VPROCUSER_PARAMS);
 extern VPROC_RTN_TYPE VAccess   (VACCESS_PARAMS);
 extern int            VHalt     (VHALT_PARAMS);
 
-#endif

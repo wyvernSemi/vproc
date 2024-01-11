@@ -28,6 +28,7 @@ package vproc_pkg is
     node : in integer
   );
   attribute foreign of VInit : procedure is "VInit VProc.so";
+--attribute foreign of VInit : procedure is "VHPI VProc.so; VInit";
 
   procedure VSched (
     node      : in  integer;
@@ -38,13 +39,15 @@ package vproc_pkg is
     VPRw      : out integer;
     VPTicks   : out integer
   );
-  attribute foreign of VSched : procedure is "VSched VProc.so";
+attribute foreign of VSched : procedure is "VSched VProc.so";
+--attribute foreign of VSched : procedure is "VHPI VProc.so; VSched";
 
   procedure VProcUser (
     node      : in  integer;
     value     : in  integer
   );
   attribute foreign of VProcUser : procedure is "VProcUser VProc.so";
+--attribute foreign of VProcUser : procedure is "VHPI VProc.so; VProcUser";
 
   procedure VAccess (
     node      : in  integer;
@@ -53,6 +56,7 @@ package vproc_pkg is
     VPDataOut : out integer
   );
   attribute foreign of VAccess : procedure is "VAccess VProc.so";
+--attribute foreign of VAccess : procedure is "VHPI VProc.so; VAccess";
 
 end;
 

@@ -38,8 +38,102 @@
 // Pointers to state for each node (up to VP_MAX_NODES)
 pSchedState_t ns[VP_MAX_NODES];
 
-// If not VHDL FLI or PLI TF, use VPI
-#if !defined (VPROC_VHDL) && defined(VPROC_PLI_VPI)
+#if defined(VPROC_VHDL_VHPI)
+
+// -------------------------------------------------------------------------
+// Function setting up table of foreign procedure registration data
+// and registering with VHPI
+// -------------------------------------------------------------------------
+
+VPROC_RTN_TYPE reg_foreign_procs() {
+    int idx;
+    vhpiForeignDataT foreignDataArray[] = {
+        {vhpiProcF, (char*)"VProc", (char*)"VInit",           NULL, VInit},
+        {vhpiProcF, (char*)"VProc", (char*)"VSched",          NULL, VSched},
+        {vhpiProcF, (char*)"VProc", (char*)"VProcUser",       NULL, VProcUser},
+        {vhpiProcF, (char*)"VProc", (char*)"VAccess",         NULL, VAccess},
+        {0}
+    };
+
+    for (idx = 0; idx < ((sizeof(foreignDataArray)/sizeof(foreignDataArray[0]))-1); idx++)
+    {
+        vhpi_register_foreignf(&(foreignDataArray[idx]));
+    }
+}
+
+// -------------------------------------------------------------------------
+// List of user startup functions to call
+// -------------------------------------------------------------------------
+#ifdef WIN32
+__declspec ( dllexport )
+#endif
+
+VPROC_RTN_TYPE (*vhpi_startup_routines[])() = {
+    reg_foreign_procs,
+    0L
+};
+
+// -------------------------------------------------------------------------
+// getVhpiParams()
+//
+// Get the parameter values of a foreign procedure using VHPI methods
+//
+// -------------------------------------------------------------------------
+
+static void getVhpiParams(const struct vhpiCbDataS* cb, int args[], int args_size)
+{
+    int         idx      = 0;
+    vhpiValueT  value;
+
+    vhpiHandleT hParam;
+    vhpiHandleT hScope   = cb->obj;
+    vhpiHandleT hIter    = vhpi_iterator(vhpiParamDecls, hScope);
+
+    while ((hParam = vhpi_scan(hIter)) && idx < args_size)
+    {
+        value.format     = vhpiIntVal;
+        value.bufSize    = 0;
+        value.value.intg = 0;
+        vhpi_get_value(hParam, &value);
+        args[idx++]      = value.value.intg;
+        DebugVPrint("getVhpiParams(): %s = %d\n", vhpi_get_str(vhpiNameP, hParam), value.value.intg);
+    }
+}
+
+// -------------------------------------------------------------------------
+// setVhpiParams()
+//
+// Set the parameters values of a foreign procedure using VHPI methods
+//
+// -------------------------------------------------------------------------
+
+static void setVhpiParams(const struct vhpiCbDataS* cb, int args[], int start_of_outputs, int args_size)
+{
+    int         idx      = 0;
+    vhpiValueT  value;
+
+    vhpiHandleT hParam;
+    vhpiHandleT hScope   = cb->obj;
+    vhpiHandleT hIter    = vhpi_iterator(vhpiParamDecls, hScope);
+
+    while ((hParam = vhpi_scan(hIter)) && idx < args_size)
+    {
+        if (idx >= start_of_outputs)
+        {
+            DebugVPrint("setVhpiParams(): %s = %d\n", vhpi_get_str(vhpiNameP, hParam), args[idx]);
+            value.format     = vhpiIntVal;
+            value.bufSize    = 0;
+            value.value.intg = args[idx];
+            vhpi_put_value(hParam, &value, vhpiDeposit);
+        }
+        idx++;
+    }
+}
+
+#endif
+
+// If not VHDL FLI, VHDL VPI or PLI TF, use VPI
+#if !defined (VPROC_VHDL) && !defined(VPROC_VHDL_VHPI) && defined(VPROC_PLI_VPI)
 
 /////////////////////////////////////////////////////////////
 // Registers the increment system task
@@ -127,7 +221,6 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 {
 
 #ifndef VPROC_VHDL
-
     int node;
 
 # ifndef VPROC_PLI_VPI
@@ -137,8 +230,8 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
     io_printf("VInit(%d): initialising PLI TF interface\n", node);
 
 # else
-    vpiHandle          taskHdl;
     int                args[10];
+    vpiHandle          taskHdl;
 
     // Obtain a handle to the argument list
     taskHdl            = vpi_handle(vpiSysTfCall, NULL);
@@ -148,8 +241,24 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
     // Get single argument value of $vinit call
     node = args[VPNODENUM_ARG];
 
-    vpi_printf("VInit(%d): initialising PLI VPI interface\n", node);;
+    vpi_printf("VInit(%d): initialising VPI interface\n", node);
 
+
+
+# endif
+#else
+# ifdef VPROC_VHDL_VHPI
+    int node;
+    int args[10];
+
+    getVhpiParams(cb, &args[1], VINIT_NUM_ARGS);
+
+    // Get single argument value of $vinit call
+    node = args[VPNODENUM_ARG];
+
+    VPrint("VInit(%d): initialising VHPI interface\n", node);
+# else
+    VPrint("VInit(%d): initialising FLI interface\n", node);
 # endif
 #endif
 
@@ -223,10 +332,11 @@ int VHalt (int data, int reason)
 
 VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 {
-
     int VPDataOut_int, VPAddr_int, VPRw_int, VPTicks_int;
+    int args[10];
 
 #ifndef VPROC_VHDL
+
     int node;
     int Interrupt, VPDataIn;
 
@@ -240,7 +350,6 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 # else
 
     vpiHandle    taskHdl;
-    int          args[10];
 
     // Obtain a handle to the argument list
     taskHdl      = vpi_handle(vpiSysTfCall, NULL);
@@ -251,6 +360,17 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     node         = args[VPNODENUM_ARG];
     Interrupt    = args[VPINTERRUPT_ARG];
     VPDataIn     = args[VPDATAIN_ARG];
+
+# endif
+
+#else
+
+# ifdef VPROC_VHDL_VHPI
+
+    int node;
+    int Interrupt, VPDataIn;
+
+    getVhpiParams(cb, &args[1], VSCHED_NUM_ARGS);
 
 # endif
 #endif
@@ -280,11 +400,21 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     debug_io_printf("VSched(): returning to simulation from node %d\n\n", node);
 
 #ifdef VPROC_VHDL
+#  ifndef VPROC_VHDL_VHPI
+
     // Export outputs over FLI
     *VPDataOut = VPDataOut_int;
     *VPAddr    = VPAddr_int;
     *VPRw      = VPRw_int;
     *VPTicks   = VPTicks_int;
+#   else
+    args[VPDATAOUT_ARG] = VPDataOut_int;
+    args[VPADDR_ARG]    = VPAddr_int;
+    args[VPRW_ARG]      = VPRw_int;
+    args[VPTICKS_ARG]   = VPTicks_int;
+
+    setVhpiParams(cb, &args[1], VPDATAOUT_ARG-1, VSCHED_NUM_ARGS);
+#   endif
 
 #else
 # ifndef VPROC_PLI_VPI
@@ -314,6 +444,7 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 {
 #ifndef VPROC_VHDL
+
     int node, value;
 
 # ifndef VPROC_PLI_VPI
@@ -330,7 +461,20 @@ VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 
     getArgs(taskHdl, &args[1]);
 
-    // Get single argument value of $vinit call
+    // Get argument values of $vprocuser call
+    node      = args[VPNODENUM_ARG];
+    value     = args[VPINTERRUPT_ARG];
+
+# endif
+#else
+# ifdef VPROC_VHDL_VHPI
+
+     int      node, value;
+    int       args[10];
+
+    getVhpiParams(cb, &args[1], VPROCUSER_NUM_ARGS);
+
+    // Get argument values of VProcUser VHPI call
     node      = args[VPNODENUM_ARG];
     value     = args[VPINTERRUPT_ARG];
 
@@ -353,11 +497,32 @@ VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 //
 VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
 {
+    int       args[10];
+
 #ifdef VPROC_VHDL
+# ifndef VPROC_VHDL_VHPI
     *VPDataOut                               = ((int *) ns[node]->send_buf.data_p)[idx];
     ((int *) ns[node]->send_buf.data_p)[idx] = VPDataIn;
-#else
+# else
+
     int node, idx;
+
+    getVhpiParams(cb, &args[1], VACCESS_NUM_ARGS);
+
+    node      = args[VPNODENUM_ARG];
+    idx       = args[VPINDEX_ARG];
+
+    args[VPDATAOUT_ARG] = ((int *) ns[node]->send_buf.data_p)[idx];
+
+    ((int *) ns[node]->send_buf.data_p)[idx] = args[VPDATAIN_ARG];
+
+    setVhpiParams(cb, &args[1], VPDATAOUT_ARG-1, VACCESS_NUM_ARGS);
+
+# endif
+
+#else
+
+   int node, idx;
 
 # ifndef VPROC_PLI_VPI
     node      = tf_getp (VPNODENUM_ARG);
@@ -368,7 +533,6 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
 
 # else
     vpiHandle taskHdl;
-    int       args[10];
 
     // Obtain a handle to the argument list
     taskHdl   = vpi_handle(vpiSysTfCall, NULL);
