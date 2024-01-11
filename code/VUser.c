@@ -39,6 +39,13 @@
 # define dlerror() ""
 # define dlclose FreeLibrary
 
+# ifdef _WIN64
+typedef long long nodecast_t;
+# else
+typedef long      nodecast_t;
+# endif
+#else
+typedef long      nodecast_t;
 #endif
 
 static void VUserInit (const unsigned node);
@@ -64,7 +71,7 @@ int VUser (const unsigned node)
     debug_io_printf("VUser(): initialised interrupt table node %d\n", node);
 
     // Set off the user code thread
-    if (status = pthread_create(&thread, NULL, (pThreadFunc_t)VUserInit, (void *)((long)node)))
+    if (status = pthread_create(&thread, NULL, (pThreadFunc_t)VUserInit, (void *)((nodecast_t)node)))
     {
         debug_io_printf("VUser(): pthread_create returned %d\n", status);
         return 1;
