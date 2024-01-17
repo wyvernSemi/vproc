@@ -39,6 +39,16 @@ static int VInterrupt_4(void)
 }
 
 // ------------------------------------------------------------
+// Interrupt callback function for vector IRQ
+// ------------------------------------------------------------
+
+static int VInterrupt_irq(int irq)
+{
+    VPrint("Node %d: VInterrupt_irq() irq = 0x%08x\n", node, irq);
+    return 0;
+}
+
+// ------------------------------------------------------------
 // VuserMainX entry point for node 0
 // ------------------------------------------------------------
 
@@ -54,6 +64,7 @@ void VUserMain0()
     // Register functions as interrupt levels 1 and 4 routines
     VRegInterrupt(1, VInterrupt_1, node);
     VRegInterrupt(4, VInterrupt_4, node);
+    VRegIrq      (VInterrupt_irq, node);
 
     do
     {
