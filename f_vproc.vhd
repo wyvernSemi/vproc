@@ -29,6 +29,10 @@ use ieee.numeric_std.all;
 use work.vproc_pkg.all;
 
 entity VProc is
+  generic (INT_WIDTH       : integer := 3;
+           NODE_WIDTH      : integer := 4;
+           BURST_ADDR_INCR : integer := 1
+  );
   port (
     Clk             : in  std_logic;
 
@@ -40,7 +44,7 @@ entity VProc is
     WRAck           : in  std_logic;
     RDAck           : in  std_logic;
 
-    Interrupt       : in  std_logic_vector(2 downto 0);
+    Interrupt       : in  std_logic_vector(INT_WIDTH-1 downto 0);
 
     Update          : out std_logic := '0';
     UpdateResponse  : in  std_logic;
@@ -49,7 +53,7 @@ entity VProc is
     BurstFirst      : out std_logic;
     BurstLast       : out std_logic;
 
-    Node            : in  std_logic_vector(3 downto 0)
+    Node            : in  std_logic_vector(NODE_WIDTH-1 downto 0)
   );
 end;
 
@@ -60,7 +64,6 @@ constant      RDbit       : integer := 1;
 constant      BLKHIBIT    : integer := 13;
 constant      BLKLOBIT    : integer := 2;
 constant      DeltaCycle  : integer := -1;
-
 
 signal        Initialised : integer := 0;
 
@@ -92,6 +95,7 @@ begin
 
     variable DataInSamp  : integer;
     variable IntSamp     : integer;
+    variable IntSampLast : integer;
     variable RdAckSamp   : std_logic;
     variable WRAckSamp   : std_logic;
 
@@ -99,12 +103,13 @@ begin
 
     while true loop
 
-      -- Can't have a sensitivity list for the process and process delta cyclies in VHDL,
+      -- Can't have a sensitivity list for the process and process delta cycles in VHDL,
       -- so emulate the clock edge with a wait here.
       wait until Clk'event and Clk = '1';
 
       -- Cleanly sample the inputs
       DataInSamp                := to_integer(signed(DataIn));
+      IntSampLast               := IntSamp;
       IntSamp                   := to_integer(signed("0" & Interrupt));
       RdAckSamp                 := RDAck;
       WRAckSamp                 := WRAck;
@@ -114,6 +119,7 @@ begin
 
         if IntSamp > 0 then
 
+          -- If an interrupt active, call $vsched with interrupt value
           VSched(to_integer(unsigned(Node)),
                  IntSamp,
                  DataInSamp,
@@ -127,6 +133,12 @@ begin
           if VPTicks > 0 then
             TickVal             := VPTicks;
           end if;
+        end if;
+
+        -- Call $virq when interrupt value changes, passing in
+        -- new value
+        if IntSamp /= IntSampLast then
+          VIrq(to_integer(unsigned(Node)), IntSamp);
         end if;
 
         -- If tick, write or a read has completed (or in last cycle)...
@@ -204,7 +216,7 @@ begin
                       VPDataOut);
 
               DataOut           <= std_logic_vector(to_signed(VPDataOut, 32));
-              Addr              <= std_logic_vector(unsigned(Addr) + 1);
+              Addr              <= std_logic_vector(unsigned(Addr) + BURST_ADDR_INCR);
               BlkCount          := BlkCount - 1;
 
               if BlkCount = 1 then

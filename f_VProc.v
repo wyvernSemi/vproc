@@ -29,35 +29,39 @@
 // ============================================================
 
 module VProc
+#(parameter               INT_WIDTH       = 3,
+                          NODE_WIDTH      = 4,
+                          BURST_ADDR_INCR = 1
+)
 (
     // Clock
-    input             Clk,
+    input                  Clk,
 
     // Bus interface
-    output reg [31:0] Addr,
-    output reg        WE,
-    output reg        RD,
-    output reg [31:0] DataOut,
-    input      [31:0] DataIn,
-    input             WRAck,
-    input             RDAck,
+    output reg [31:0]      Addr,
+    output reg             WE,
+    output reg             RD,
+    output reg [31:0]      DataOut,
+    input      [31:0]      DataIn,
+    input                  WRAck,
+    input                  RDAck,
 
     // Interrupt
-    input  [`INTBITS] Interrupt,
+    input [INT_WIDTH-1:0]  Interrupt,
 
     // Delta cycle control
-    output reg        Update,
-    input             UpdateResponse,
+    output reg             Update,
+    input                  UpdateResponse,
 
 `ifdef VPROC_BURST_IF
     // Burst count
-    output reg [11:0] Burst,
-    output reg        BurstFirst,
-    output reg        BurstLast,
+    output reg [11:0]      Burst,
+    output reg             BurstFirst,
+    output reg             BurstLast,
 `endif
 
     // Node number
-    input [`NODEBITS] Node
+    input [NODE_WIDTH-1:0] Node
 );
 
 // ------------------------------------------------------------
@@ -73,6 +77,7 @@ integer               VPTicks;
 // Sampled VProc inputs
 integer               DataInSamp;
 integer               IntSamp;
+integer               IntSampLast;
 integer               NodeI;
 reg                   RdAckSamp;
 reg                   WRAckSamp;
@@ -86,9 +91,26 @@ integer               BlkCount;
 integer               AccIdx;
 
 `ifndef VPROC_BURST_IF
+
+// When no burst interface define some local dummy registers to
+// replace the missing ports
 reg [11:0]            Burst;
 reg                   BurstFirst;
 reg                   BurstLast;
+
+task vdummy (input integer a, input integer b, input integer c, output integer d);
+begin
+end
+endtask
+
+// $vaccess is not defined when no burst interface
+`define vaccess vdummy
+
+`else
+
+// When a burst interface defined, use $vaccess
+`define vaccess $vaccess
+
 `endif
 
 // ------------------------------------------------------------
@@ -121,6 +143,7 @@ begin
     // Cleanly sample the inputs and make them integers
     RdAckSamp                           = RDAck;
     WRAckSamp                           = WRAck;
+    IntSampLast                         = IntSamp;
     IntSamp                             = {1'b0, Interrupt};
     NodeI                               = Node;
     VPTicks                             = `DELTACYCLE;
@@ -142,23 +165,30 @@ begin
             end
         end
 
+        // If vector IRQ enabled, call $virq when interrupt value changes, passing in
+        // new value
+        if (IntSamp != IntSampLast)
+        begin
+          $virq(NodeI, IntSamp);
+        end
+
         // If tick, write or a read has completed (or in last cycle)...
         if ((RD === 1'b0 && WE        === 1'b0 && TickCount === 0) ||
             (RD === 1'b1 && RdAckSamp === 1'b1)                    ||
             (WE === 1'b1 && WRAckSamp === 1'b1))
         begin
-            BurstFirst                  = 1'b0;
-            BurstLast                   = 1'b0;
-             
+            BurstFirst                  <= 1'b0;
+            BurstLast                   <= 1'b0;
+
             // Loop accessing new commands until VPTicks is not a delta cycle update
             while (VPTicks < 0)
             begin
                 // Clear any interrupt (already dealt with)
                 IntSamp                 = 0;
-                
+
                 // Sample the data in port
                 DataInSamp              = DataIn;
-                
+
                 if (BlkCount <= 1)
                 begin
                     // If this is the last transfer in a burst, call $vaccess with
@@ -166,33 +196,33 @@ begin
                     if (BlkCount == 1)
                     begin
                         AccIdx          = AccIdx + 1;
-`ifdef VPROC_BURST_IF
-                        $vaccess(NodeI, AccIdx, DataInSamp, VPDataOut);
-`endif
+                        BlkCount        = 0;
+                        `vaccess(NodeI, AccIdx, DataInSamp, VPDataOut);
                     end
-                
+
                     // Get new access command
                     $vsched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
-                    
+
                     // Update the outputs
-                    Burst               = VPRW[`BLKBITS];
-                    WE                  = VPRW[`WEBIT];
-                    RD                  = VPRW[`RDBIT];
-                    Addr                = VPAddr;
-                
+                    Burst               <= VPRW[`BLKBITS];
+                    WE                  <= VPRW[`WEBIT];
+                    RD                  <= VPRW[`RDBIT];
+                    Addr                <= VPAddr;
+
                     // If new BlkCount is non-zero, setup burst transfer
-                    if (Burst !== 0)
+                    if (VPRW[`BLKBITS] !== 0)
                     begin
-                        BlkCount        = Burst;
-                        BurstFirst      = 1'b1;
+                        // Flag burst as first in block
+                        BurstFirst      <= 1'b1;
+                        
+                        // Initialise the burst block counter with count bits
+                        BlkCount        = VPRW[`BLKBITS];
 
                         // On writes, override VPDataOut to get from burst access task $vaccess at index 0
-                        if (WE)
+                        if (VPRW[`WEBIT])
                         begin
                             AccIdx      = 0;
-`ifdef VPROC_BURST_IF 
-                            $vaccess(NodeI, AccIdx, `DONTCARE, VPDataOut);
-`endif
+                            `vaccess(NodeI, AccIdx, `DONTCARE, VPDataOut);
                         end
                         else
                         begin
@@ -200,38 +230,40 @@ begin
                             AccIdx      = -1;
                         end
                     end
-                    
+
                     // Update DataOut port
-                    DataOut             = VPDataOut;
+                    DataOut             <= VPDataOut;
                 end
                 // If a block access is valid (BlkCount is non-zero), get the next data out/send back latest sample
                 else
                 begin
                     AccIdx              = AccIdx + 1;
-`ifdef VPROC_BURST_IF
-                    $vaccess(NodeI, AccIdx, DataInSamp, VPDataOut);
-`endif
-                    DataOut             = VPDataOut;
-                    Addr                = Addr + 1;
+                    `vaccess(NodeI, AccIdx, DataInSamp, VPDataOut);
                     BlkCount            = BlkCount - 1;
 
                     if (BlkCount == 1)
                     begin
-                        BurstLast       = 1'b1;
+                        BurstLast       <= 1'b1;
                     end
 
                     // When bursting, reassert non-delta VPTicks value to break out of loop.
                     VPTicks             = 0;
+                    
+                    // Update address and data outputs
+                    DataOut             <= VPDataOut;
+                    Addr                <= Addr + BURST_ADDR_INCR;
                 end
-                
+
                 // Update current tick value with returned number (if not negative)
                 if (VPTicks >= 0)
                 begin
                     TickCount           = VPTicks;
                 end
-                
-                // Flag to update externally and wait for response
-                Update                  = ~Update;
+
+                // Flag to update externally and wait for response.
+                // The #0 ensures it's not updated until other outputs
+                // are updated.
+                Update                  <= #0 ~Update;
                 @(UpdateResponse);
             end
         end

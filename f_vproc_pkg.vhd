@@ -49,6 +49,13 @@ attribute foreign of VSched : procedure is "VSched VProc.so";
   attribute foreign of VProcUser : procedure is "VProcUser VProc.so";
 --attribute foreign of VProcUser : procedure is "VHPI VProc.so; VProcUser";
 
+  procedure VIrq (
+    node      : in  integer;
+    irq       : in  integer
+  );
+  attribute foreign of VIrq : procedure is "VIrq VProc.so";
+--attribute foreign of VIrq : procedure is "VHPI VProc.so; VIrq";
+
   procedure VAccess (
     node      : in  integer;
     idx       : in  integer;
@@ -85,6 +92,14 @@ package body vproc_pkg is
   procedure VProcUser (
     node      : in  integer;
     value     : in  integer
+  ) is
+  begin
+    report "ERROR: foreign subprogram out_params not called";
+  end;
+  
+  procedure VIrq (
+    node      : in  integer;
+    irq       : in  integer
   ) is
   begin
     report "ERROR: foreign subprogram out_params not called";
