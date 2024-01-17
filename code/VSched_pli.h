@@ -25,7 +25,7 @@
 //
 //=====================================================================
 
-#include "string.h"
+#include <string.h>
 #include "veriuser.h"
 #include "vpi_user.h"
 
@@ -64,6 +64,7 @@
 #define VINIT_PARAMS       const struct vhpiCbDataS* cb
 #define VSCHED_PARAMS      const struct vhpiCbDataS* cb
 #define VPROCUSER_PARAMS   const struct vhpiCbDataS* cb
+#define VIRQ_PARAMS        const struct vhpiCbDataS* cb
 #define VACCESS_PARAMS     const struct vhpiCbDataS* cb
 #define VHALT_PARAMS       int, int
 
@@ -85,6 +86,7 @@
 #define VINIT_PARAMS       int  node
 #define VSCHED_PARAMS      int  node, int Interrupt, int VPDataIn, int* VPDataOut, int* VPAddr, int* VPRw,int* VPTicks
 #define VPROCUSER_PARAMS   int  node, int value
+#define VIRQ_PARAMS        int  node, int value
 #define VACCESS_PARAMS     int  node, int  idx, int VPDataIn, int* VPDataOut
 #define VHALT_PARAMS       int, int
 
@@ -105,13 +107,15 @@
     {usertask, 0, NULL, 0, VInit,     VHalt, "$vinit",     1}, \
     {usertask, 0, NULL, 0, VSched,    NULL,  "$vsched",    1}, \
     {usertask, 0, NULL, 0, VAccess,   NULL,  "$vaccess",   1}, \
-    {usertask, 0, NULL, 0, VProcUser, NULL,  "$vprocuser", 1}
+    {usertask, 0, NULL, 0, VProcUser, NULL,  "$vprocuser", 1}, \
+    {usertask, 0, NULL, 0, VIrq,      NULL,  "$virq",      1}
 
-#define VPROC_TF_TBL_SIZE 4
+#define VPROC_TF_TBL_SIZE 5
 
 #define VINIT_PARAMS      void
 #define VSCHED_PARAMS     void
 #define VPROCUSER_PARAMS  void
+#define VIRQ_PARAMS       void
 #define VACCESS_PARAMS    void
 #define VHALT_PARAMS      int data, int reason
 
@@ -131,6 +135,7 @@
 #define VINIT_PARAMS      char* userdata
 #define VSCHED_PARAMS     char* userdata
 #define VPROCUSER_PARAMS  char* userdata
+#define VIRQ_PARAMS       char* userdata
 #define VACCESS_PARAMS    char* userdata
 #define VHALT_PARAMS      int data, int reason
 
@@ -143,6 +148,7 @@
 extern VPROC_RTN_TYPE VInit     (VINIT_PARAMS);
 extern VPROC_RTN_TYPE VSched    (VSCHED_PARAMS);
 extern VPROC_RTN_TYPE VProcUser (VPROCUSER_PARAMS);
+extern VPROC_RTN_TYPE VIrq      (VIRQ_PARAMS);
 extern VPROC_RTN_TYPE VAccess   (VACCESS_PARAMS);
 extern int            VHalt     (VHALT_PARAMS);
 

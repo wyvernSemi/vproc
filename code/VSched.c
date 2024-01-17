@@ -51,6 +51,7 @@ VPROC_RTN_TYPE reg_foreign_procs() {
         {vhpiProcF, (char*)"VProc", (char*)"VInit",           NULL, VInit},
         {vhpiProcF, (char*)"VProc", (char*)"VSched",          NULL, VSched},
         {vhpiProcF, (char*)"VProc", (char*)"VProcUser",       NULL, VProcUser},
+        {vhpiProcF, (char*)"VProc", (char*)"VIrq",            NULL, VIrq},
         {vhpiProcF, (char*)"VProc", (char*)"VAccess",         NULL, VAccess},
         {0}
     };
@@ -132,11 +133,11 @@ static void setVhpiParams(const struct vhpiCbDataS* cb, int args[], int start_of
 
 #endif
 
-// If not VHDL FLI, VHDL VPI or PLI TF, use VPI
+// If not VHDL FLI, VHDL VHPI or PLI TF, use VPI
 #if !defined (VPROC_VHDL) && !defined(VPROC_VHDL_VHPI) && defined(VPROC_PLI_VPI)
 
 /////////////////////////////////////////////////////////////
-// Registers the increment system task
+// Registers the VProc system tasks
 //
 void register_vpi_tasks()
 {
@@ -145,10 +146,11 @@ void register_vpi_tasks()
        {vpiSysTask, 0, "$vsched",    VSched,    0, 0, 0},
        {vpiSysTask, 0, "$vaccess",   VAccess,   0, 0, 0},
        {vpiSysTask, 0, "$vprocuser", VProcUser, 0, 0, 0},
+       {vpiSysTask, 0, "$virq",      VIrq,      0, 0, 0},
       };
 
 
-    for (int idx= 0; idx < 4; idx++)
+    for (int idx= 0; idx < sizeof(data)/sizeof(s_vpi_systf_data); idx++)
     {
         debug_io_printf("registering %s\n", data[idx].tfname);
         vpi_register_systf(&data[idx]);
@@ -304,7 +306,6 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 // Called for a 'reason'. Holding procedure to catch 'finish'
 // in case of any tidying up required.
 //
-#if !defined(VPROC_PLI_VPI) || defined(VPROC_VHDL)
 
 int VHalt (int data, int reason)
 {
@@ -323,7 +324,6 @@ int VHalt (int data, int reason)
         return 0;
     }
 }
-#endif
 
 /////////////////////////////////////////////////////////////
 // Main routine called whenever $vsched task invoked, on
@@ -439,7 +439,7 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 
 /////////////////////////////////////////////////////////////
 // Calls a user registered function (if available) when
-// $vprocuser(node) called in verilog
+// $vprocuser(node, value) called in verilog
 //
 VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 {
@@ -484,6 +484,60 @@ VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
     if (ns[node]->VUserCB != NULL)
     {
         (*(ns[node]->VUserCB))(value);
+    }
+
+#ifndef VPROC_VHDL
+    return 0;
+#endif
+}
+
+/////////////////////////////////////////////////////////////
+// Calls a irq registered function (if available) when
+// $virq(node, irq) called in verilog
+//
+VPROC_RTN_TYPE VIrq(VIRQ_PARAMS)
+{
+#ifndef VPROC_VHDL
+
+    int node, value;
+
+# ifndef VPROC_PLI_VPI
+
+    node      = tf_getp (VPNODENUM_ARG);
+    value     = tf_getp (VPINTERRUPT_ARG);
+
+# else
+    vpiHandle taskHdl;
+    int       args[10];
+
+    // Obtain a handle to the argument list
+    taskHdl   = vpi_handle(vpiSysTfCall, NULL);
+
+    getArgs(taskHdl, &args[1]);
+
+    // Get argument values of $vprocuser call
+    node      = args[VPNODENUM_ARG];
+    value     = args[VPINTERRUPT_ARG];
+
+# endif
+#else
+# ifdef VPROC_VHDL_VHPI
+
+    int       node, value;
+    int       args[10];
+
+    getVhpiParams(cb, &args[1], VPROCUSER_NUM_ARGS);
+
+    // Get argument values of VProcUser VHPI call
+    node      = args[VPNODENUM_ARG];
+    value     = args[VPINTERRUPT_ARG];
+
+# endif
+#endif
+
+    if (ns[node]->VUserIrqCB != NULL)
+    {
+        (*(ns[node]->VUserIrqCB))(value);
     }
 
 #ifndef VPROC_VHDL

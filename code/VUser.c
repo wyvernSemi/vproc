@@ -62,15 +62,19 @@ int VUser (const unsigned node)
 
     debug_io_printf("VUser(): node %d\n", node);
 
-    // Interrupt table initialisation
+    // Level interrupt callback table initialisation
     for (jdx = 0; jdx < 8; jdx++)
+    {
         ns[node]->VInt_table[jdx] = NULL;
+    }
 
-    ns[node]->VUserCB = NULL;
+    // Callback intialisation
+    ns[node]->VUserIrqCB = NULL;
+    ns[node]->VUserCB    = NULL;
 
-    debug_io_printf("VUser(): initialised interrupt table node %d\n", node);
+    debug_io_printf("VUser(): initialised callbacks at node %d\n", node);
 
-    // Set off the user code thread
+    // Set off the user code thread using VUserInit to initialise before entering user code
     if (status = pthread_create(&thread, NULL, (pThreadFunc_t)VUserInit, (void *)((nodecast_t)node)))
     {
         debug_io_printf("VUser(): pthread_create returned %d\n", status);
@@ -163,7 +167,7 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
         {
             debug_io_printf("VExch(): node %d processing interrupt (%d)\n", node, prbuf->interrupt);
 
-            if (prbuf->interrupt >= 8)
+            if (prbuf->interrupt > MAX_INTERRUPT_LEVEL)
             {
                 io_printf("***Error: invalid interrupt level %d (VExch)\n", prbuf->interrupt);
                 exit(1);
@@ -307,6 +311,16 @@ void VRegInterrupt (const int level, const pVUserInt_t func, const unsigned node
     }
 
     ns[node]->VInt_table[level] = func;
+}
+
+/////////////////////////////////////////////////////////////
+// Registers a user function as a vector IRQ callback
+//
+void VRegIrq (const pVUserIrqCB_t func, const unsigned node)
+{
+    debug_io_printf("VRegIrq(): at node %d, registering irq callback\n", node);
+
+    ns[node]->VUserIrqCB = func;
 }
 
 /////////////////////////////////////////////////////////////

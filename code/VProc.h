@@ -84,6 +84,7 @@ typedef void * handle_t;
 
 // Callback pointer types
 typedef int  (*pVUserInt_t)      (void);
+typedef int  (*pVUserIrqCB_t)    (int);
 typedef int  (*pVUserCB_t)       (int);
 
 // Scheduler node state structure
@@ -93,6 +94,7 @@ typedef struct {
     send_buf_t          send_buf;
     rcv_buf_t           rcv_buf;
     pVUserInt_t         VInt_table[MAX_INTERRUPT_LEVEL+1];
+    pVUserIrqCB_t       VUserIrqCB;
     pVUserCB_t          VUserCB;
 } SchedState_t, *pSchedState_t;
 
