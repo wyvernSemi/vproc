@@ -1,7 +1,7 @@
 ###################################################################
 # Makefile for Virtual Processor testcode in Icarus Verilog
 #
-# Copyright (c) 2005-2021 Simon Southwell.
+# Copyright (c) 2005-2024 Simon Southwell.
 #
 # This file is part of VProc.
 #
@@ -18,53 +18,149 @@
 # You should have received a copy of the GNU General Public License
 # along with VProc. If not, see <http://www.gnu.org/licenses/>.
 #
-# $Id: makefile.ica,v 1.5 2021/05/15 07:45:17 simon Exp $
-# $Source: /home/simon/CVS/src/HDL/VProc/makefile.ica,v $
-#
 ###################################################################
+#
+# Assumes Ubuntu Linux (22.04 LTS 64-bit) installation and mingw64
+# on Windows. ARCHFLAG and ICADIR need updating for other
+# configurations.
+#
 
 # Requirements: iverilog
 #     on RHEL 7 "yum install iverilog" to install Icarus
 # To run: vvp -m ./VProc.so sim
+
 # Define the maximum number of supported VProcs in the compile pli library
-MAX_NUM_VPROC   = 64
+MAX_NUM_VPROC      = 64
 
-USER_C          = VUserMain0.c VUserMain1.c
+SRCDIR             = code
+USRCDIR            = usercode
+TESTDIR            = .
+VOBJDIR            = ${TESTDIR}/obj
 
-SRCDIR          = ${PWD}/code
-USRCDIR         = ${PWD}/usercode
-ICADIR          = /usr/include/iverilog
+# Get OS type
+OSTYPE:=$(shell uname)
 
-VPROC_C         = ${SRCDIR}/VSched.c 		\
-                  ${SRCDIR}/VUser.c
+# VPROC C source code
+VPROC_C            = VSched.c \
+                     VUser.c
 
-USRFLAGS =
+# Memory model C code
+MEM_C              =
 
-CC		= gcc
-CFLAGS  = -shared -rdynamic                 \
-          -Wno-incompatible-pointer-types   \
-          ${USRFLAGS}                       \
-          -I${ICADIR}                       \
-          -I${SRCDIR}                       \
-          -I${USRCDIR}                      \
-          -DVP_MAX_NODES=${MAX_NUM_VPROC}   \
-          -D_REENTRANT                      \
-          -DICARUS                          \
-          -fPIC
-LDFLAGS = -lveriuser -lvpi -lpthread -lrt
+# Test user code
+USER_C             = VUserMain0.c VUserMain1.cpp
 
-ALL_C   = ${USER_C:%.c=${USRCDIR}/%.c} ${VPROC_C} ${SRCDIR}/veriuser.c
+USER_CPP_BASE      = $(notdir $(filter %cpp, ${USER_C}))
+USER_C_BASE        = $(notdir $(filter %c, ${USER_C}))
+MEM_CPP_BASE       = $(notdir $(filter %cpp, ${MEM_C}))
+MEM_C_BASE         = $(notdir $(filter %c, ${MEM_C}))
 
-all: VProc.so verilog
+VOBJS              = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} \
+                     ${VPROC_C:%.c=%.o} ${MEM_C_BASE:%.c=%.o} ${MEM_CPP_BASE:%.cpp=%.o}}
 
-verilog: test.v f_VProc.v
-	@iverilog -o sim test.v f_VProc.v
+USRFLAGS           =
+PLIFLAG            = -DVPROC_PLI_VPI
+VLOGFLAGS          = -DVPROC_BURST_IF
+VLOGFILES          = test.v f_VProc.v
 
-VProc.so: ${ALL_C}
-	@${CC} ${CFLAGS} ${ALL_C} -o $@ ${LDFLAGS}
+# Generated  PLI C library
+VPROC_PLI          = ${TESTDIR}/VProc.so
+VLIB               = ${TESTDIR}/libvproc.a
+
+# Set OS specific variables between Linux and Windows (MinGW)
+ifeq (${OSTYPE}, Linux)
+  CFLAGS_SO        = -shared -lpthread -lrt -rdynamic
+  ICADIR           = /usr/include/iverilog
+else
+  CFLAGS_SO        = -shared -Wl,-export-all-symbols
+  ICADIR           = /mingw64/include/iverilog
+endif
+
+CC                 = gcc
+C++                = g++
+CPPSTD             = -std=c++11
+ARCHFLAG           = -m64
+CFLAGS             = -fPIC                                 \
+                     ${ARCHFLAG}                           \
+                     ${PLIFLAG}                            \
+                     -g                                    \
+                     -D_GNU_SOURCE                         \
+                     ${USRFLAGS}                           \
+                     -I${SRCDIR}                           \
+                     -I${USRCDIR}                          \
+                     -I${ICADIR}                           \
+                     -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
+                     -DICARUS                              \
+                     -D_REENTRANT
+
+#------------------------------------------------------
+# BUILD RULES
+#------------------------------------------------------
+
+all: ${VPROC_PLI} verilog
+
+${VOBJDIR}/%.o: ${SRCDIR}/%.c ${SRCDIR}/*.h
+	@${CC} -c ${CFLAGS} -Wno-incompatible-pointer-types $< -o $@
+
+${VOBJDIR}/%.o: ${SRCDIR}/%.cpp ${SRCDIR}/*.h
+	@${C++}-c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${USRCDIR}/%.c
+	@${CC} -Wno-write-strings -c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${USRCDIR}/%.cpp
+	@${C++} ${CPPSTD} -Wno-write-strings -c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${MEMMODELDIR}/%.c ${MEMMODELDIR}/*.h
+	@${CC} -c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${MEMMODELDIR}/%.cpp ${MEMMODELDIR}/*.h
+	@${C++} -c ${CFLAGS} $< -o $@
+
+${VLIB} : ${VOBJS} ${VOBJDIR}
+	@ar cr ${VLIB} ${VOBJS}
+
+${VOBJS}: | ${VOBJDIR}
+
+${VOBJDIR}:
+	@mkdir ${VOBJDIR}
+
+${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o
+	@${C++} ${CPPSTD}                                      \
+           ${CFLAGS_SO}                                    \
+           -Wl,-whole-archive                              \
+           ${CFLAGS}                                       \
+           ${VOBJDIR}/veriuser.o                           \
+           -lpthread                                       \
+           -lveriuser -lvpi                                \
+           -L${TESTDIR} -lvproc                            \
+           -Wl,-no-whole-archive                           \
+           -o $@
+
+verilog: ${VLOGFILES}
+	@iverilog ${VLOGFLAGS} ${PLIFLAG} -o sim ${VLOGFILES}
+
+verilog_debug: ${VLOGFILES}
+	iverilog -Ptest.DEBUG_STOP=1 ${VLOGFLAGS} ${PLIFLAG} -o sim ${VLOGFILES}
+
+sim: all
+	@vvp -s -m ${VPROC_PLI} sim
+
+debug: clean ${VPROC_PLI} verilog_debug
+	@vvp -m ${VPROC_PLI} sim
 
 run: all
-	@vvp -m ./VProc.so sim
+	@vvp -n -m ${VPROC_PLI} sim
+
+rungui: all
+	@vvp -n -m ${VPROC_PLI} sim
+	@if [ -e waves.gtkw ]; then                            \
+	    gtkwave -A waves.vcd;                              \
+	else                                                   \
+	    gtkwave waves.vcd;                                 \
+	fi
+
+gui : rungui
 
 clean:
-	@rm -f VProc.so sim
+	@rm -rf ${VPROC_PLI} ${VLIB} obj sim *.vcd
