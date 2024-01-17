@@ -12,7 +12,8 @@
 // DEFINITIONS
 // ------------------------------------------------------------
 
-#define SLEEP {while(1) VTick(0x7fffffff, node);}
+#define SLEEP       {while(1) VTick(0x7fffffff, node);}
+#define SIMSTOPADDR 0xb0000000
 
 // ------------------------------------------------------------
 // LOCAL STATICS
@@ -127,6 +128,10 @@ extern "C" void VUserMain1()
     }
     
     VPrint("Node %d: burst read 8 words from addr %08x\n", node, addr);
+    
+    // Wait a bit and then stop the simulation
+    vp1.tick(10);
+    vp1.write(SIMSTOPADDR, 0);
 
     SLEEP;
 }

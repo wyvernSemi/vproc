@@ -19,50 +19,80 @@
  * along with VProc. If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
- `include "vprocdefs.vh"
 
-`ifdef resol_10ps
-`timescale 1 ps / 10 ps
-`else
-`timescale 1 ps / 1 ps
-`endif
+`include "vprocdefs.vh"
 
-`define ClkPeriod 2000
-`define StopCount 100
+// ---------------------------------------------------------
+// Local definitions
+// ---------------------------------------------------------
 
-`ifdef RegDel
-`else
-`define RegDel 200
-`endif
+`define       CLKPERIOD      (2 * `NSEC)
+`define       TIMEOUTCOUNT   1000
+                             
+`define       INTWIDTH       3
+`define       NODEWIDTH      32
 
-module test;
+// =========================================================
+// Top level test module
+// =========================================================
 
-reg           Clk;
-integer       Count, Seed;
-              
-integer       Interrupt0, Interrupt1;
+module test
+#(parameter   DEBUG_STOP    = 0,
+              VCD_DUMP      = 0
+);
+
+// ---------------------------------------------------------
+// Local state
+// ---------------------------------------------------------
+
+reg           clk;
+integer       Count;
+integer       Seed;
+integer       Interrupt0;
+integer       Interrupt1;
 reg [31:0]    VPDataIn0;
-reg           notReset_H;
+reg           nreset_h;
 integer       restart;
-              
-wire [31:0]   VPAddr0, VPDataOut0;
-wire [31:0]   VPAddr1, VPDataOut1, VPDataIn1;
-wire          VPWE0, VPWE1;
-wire          VPRD0, VPRD1;
+
+// ---------------------------------------------------------
+// Signals
+// ---------------------------------------------------------
+
+wire [31:0]   VPAddr0;
+wire [31:0]   VPDataOut0;
+wire [31:0]   VPAddr1;
+wire [31:0]   VPDataOut1;
+wire [31:0]   VPDataIn1;
+wire          VPWE0;
+wire          VPWE1;
+wire          VPRD0;
+wire          VPRD1;
 wire  [1:0]   Update;
 
-// Generate reset signals
-wire #`RegDel notReset = (Count > 5);
-wire          ResetInt = notReset & ~notReset_H;
+// ---------------------------------------------------------
+// Combinatorial logic
+// ---------------------------------------------------------
 
- // =========================================================
+// Generate reset signals
+wire #`RegDel nreset = (Count > 5);
+wire          reset_irq = nreset & ~nreset_h;
+
+// Memory chip select in segment 0xa
+wire CS1 = (VPAddr1[31:28] == 4'ha) ? 1'b1 : 1'b0;
+wire CS2 = (VPAddr1[31:28] == 4'hb) ? 1'b1 : 1'b0;
+
+ // ---------------------------------------------------------
  // Virtual Processor 0
- // =========================================================
- VProc vp0 (.Clk                (Clk),
+ // ---------------------------------------------------------
+
+ VProc    #(.INT_WIDTH          (`INTWIDTH),
+            .NODE_WIDTH         (`NODEWIDTH)
+           ) vp0
+           (.Clk                (clk),
             .Addr               (VPAddr0),
             .WE                 (VPWE0),
             .RD                 (VPRD0),
+
 `ifdef VPROC_BURST_IF
             .Burst              (),
             .BurstFirst         (),
@@ -72,19 +102,24 @@ wire          ResetInt = notReset & ~notReset_H;
             .DataIn             (VPDataIn0),
             .WRAck              (VPWE0),
             .RDAck              (VPRD0),
-            .Interrupt          ({{(`INTWIDTH-3){1'b0}}, ResetInt, Interrupt0[1:0]}),
+            .Interrupt          ({{(`INTWIDTH-3){1'b0}}, reset_irq, Interrupt0[1:0]}),
             .Update             (Update[0]),
             .UpdateResponse     (Update[0]),
             .Node               (0)
            );
 
- // =========================================================
+ // ---------------------------------------------------------
  // Virtual Processor 1
- // =========================================================
- VProc vp1 (.Clk                (Clk),
+ // ---------------------------------------------------------
+
+ VProc    #(.INT_WIDTH          (`INTWIDTH),
+            .NODE_WIDTH         (`NODEWIDTH)
+           ) vp1
+           (.Clk                (clk),
             .Addr               (VPAddr1),
             .WE                 (VPWE1),
             .RD                 (VPRD1),
+
 `ifdef VPROC_BURST_IF
             .Burst              (),
             .BurstFirst         (),
@@ -94,20 +129,17 @@ wire          ResetInt = notReset & ~notReset_H;
             .DataIn             (VPDataIn1),
             .WRAck              (VPWE1),
             .RDAck              (VPRD1),
-            .Interrupt          (Interrupt1[`INTBITS]),
+            .Interrupt          (Interrupt1[`INTWIDTH-1:0]),
             .Update             (Update[1]),
             .UpdateResponse     (Update[1]),
             .Node               (1)
            );
 
- // =========================================================
+ // ---------------------------------------------------------
  // Memory
- // =========================================================
+ // ---------------------------------------------------------
 
-// Memory chip select in segment 0xa
-wire CS1 = (VPAddr1[31:28] == 4'ha) ? 1'b1 : 1'b0;
-
- Mem m     (.Clk                (Clk),
+ Mem m     (.clk                (clk),
             .DI                 (VPDataOut1),
             .DO                 (VPDataIn1),
             .WE                 (VPWE1),
@@ -120,44 +152,80 @@ wire CS1 = (VPAddr1[31:28] == 4'ha) ? 1'b1 : 1'b0;
 // ---------------------------------------------------------
 initial
 begin
-    Clk        = 1;
-    Interrupt0 = 0;
-    Interrupt1 = 0;
-    Seed       = 32'h00250864;
+    // If enabled, dump all the signals to a VCD file
+    if (VCD_DUMP != 0)
+    begin
+      $dumpfile("waves.vcd");
+      $dumpvars(0, test);
+    end
 
-    #0			// Ensure first x->1 clock edge is complete before initialisation
+    // Initialise local state
+    clk         = 1;
+    Interrupt0  = 0;
+    Interrupt1  = 0;
+    Seed        = 32'h00250864;
+
+    #0         // Ensure first x->1 clock edge is complete before initialisation
     Count      = 0;
-    forever # (`ClkPeriod/2) Clk = ~Clk;
+
+    // Stop the simulation when debugging to allow a debugger to connect
+    if (DEBUG_STOP != 0)
+    begin
+      $display("\n***********************************************");
+      $display("* Stopping simulation for debugger attachment *");
+      $display("***********************************************\n");
+      $stop;
+    end
+
+    // Generate a clock
+    forever #(`CLKPERIOD/2) clk = ~clk;
 end
 
 // ---------------------------------------------------------
 // Simulation control and interrupt generation process
 // ---------------------------------------------------------
-always @(posedge Clk)
+
+always @(posedge clk)
 begin
-    notReset_H <= #`RegDel notReset;
+    // Generate delayed version of reset
+    nreset_h <= #`RegDel nreset;
+
+    // Increment count and stop if reached stop count
     Count      = Count + 1;
-    if(Count == `StopCount)
+    if (Count == `TIMEOUTCOUNT || (VPWE1 == 1'b1 && VPAddr1[31:28] == 4'hb))
     begin
+        if (Count == `TIMEOUTCOUNT)
+        begin
+          $display("***ERROR: Simulation timed out");
+        end
+        else
+        begin
+          $display("\n--- Simulation completed ---\n");
+        end
+        
         $stop;
     end
+
+    // Generate a new seed each clock cycle
     Seed       = {$dist_uniform(Seed, 32'hffffffff, 32'h7fffffff)};
 
+    // Random data input for VProc node 0
     #`RegDel
-
     VPDataIn0  = Seed;
 
+    // Random interrupt for node 0
     Seed       = {$dist_uniform(Seed, 32'hffffffff, 32'h7fffffff)};
     Interrupt0 = ((Seed % 16) == 0) ? 1 : 0;
 
+    // Random interrupt for node 1
     Seed       = {$dist_uniform(Seed, 32'hffffffff, 32'h7fffffff)};
     Interrupt1 <= #`RegDel ((Seed % 16) == 0) ? 1 : 0;
 end
 
 `ifdef VCS
-always @(negedge Clk)
+always @(negedge clk)
 begin
-    if (Count == (`StopCount/2))
+    if (Count == (`TIMEOUTCOUNT/2))
     begin
        $save("simv.snapshot");
     end
@@ -166,12 +234,12 @@ end
 
 endmodule
 
- // =========================================================
- // Simple 1K word memory model
- // =========================================================
+// =========================================================
+// Simple 1K word memory model
+// =========================================================
 
 module Mem (
-    input         Clk,
+    input         clk,
     input         WE,
     input         CS,
     input  [31:0] DI,
@@ -183,10 +251,12 @@ reg [31:0] Mem [0:1023];
 
 assign #1 DO   = Mem[A];
 
-always @(posedge Clk)
+always @(posedge clk)
 begin
     if (WE && CS)
-        Mem[A] <= #`RegDel DI;
+    begin
+      Mem[A] <= DI;
+    end
 end
 
 endmodule
