@@ -77,7 +77,7 @@ extern "C" void VUserMain1()
     if (data != 0x12345678)
     {
         VPrint("***Error: data miscompare in node %d (%08x)\n", node, data);
-        //SLEEP;
+        SLEEP;
     }
     else
     {
@@ -95,7 +95,7 @@ extern "C" void VUserMain1()
     if (data != 0xfedcba98)
     {
         VPrint("***Error: data miscompare in node %d (%08x)\n", node, data);
-        //SLEEP;
+        SLEEP;
     }
     else
     {
@@ -122,7 +122,7 @@ extern "C" void VUserMain1()
         if (rbuf[idx] != wbuf[idx])
         {
             VPrint("***Error: burst data miscompare in node %d (%08x v %08x at index %d)\n", node, rbuf[idx], wbuf[idx], idx);
-            //SLEEP;
+            SLEEP;
         }
     }
     
