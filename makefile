@@ -55,7 +55,7 @@ VPROC_C            = VSched.c \
 MEM_C              =
 
 # Test user code
-USER_C             = VUserMain0.c VUserMain1.c
+USER_C             = VUserMain0.c VUserMain1.cpp
 
 USER_CPP_BASE      = $(notdir $(filter %cpp, ${USER_C}))
 USER_C_BASE        = $(notdir $(filter %c, ${USER_C}))
@@ -66,6 +66,7 @@ VOBJS              = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_
                      ${VPROC_C:%.c=%.o} ${MEM_C_BASE:%.c=%.o} ${MEM_CPP_BASE:%.cpp=%.o}}
 
 USRFLAGS           =
+PLIFLAG            = -DVPROC_PLI_VPI
 VLOGFLAGS          = +define+VPROC_BURST_IF
 
 # Generated  PLI C library
@@ -90,6 +91,7 @@ C++                = g++
 ARCHFLAG           = -m32
 CFLAGS             = -fPIC                                 \
                      ${ARCHFLAG}                           \
+                     ${PLIFLAG}                            \
                      -g                                    \
                      -D_GNU_SOURCE                         \
                      ${USRFLAGS}                           \
