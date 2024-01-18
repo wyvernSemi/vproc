@@ -1,8 +1,12 @@
 // ====================================================================
 //
-// Verilog AXI bus functional model wrapper for VProc
+// Verilog AXI bus functional model (BFM) wrapper for VProc.
 //
 // Copyright (c) 2024 Simon Southwell.
+//
+// Implements minimal compliant manager interface at 32-bits wide.
+// Also has a 32-bit vectored irq input. Does not (yet) utilise
+// VProc's burst capabilities.
 //
 // This file is part of VProc.
 //
@@ -22,9 +26,10 @@
 // ====================================================================
 
 module axi4bfm
-#(parameter ADDRWIDTH           = 32,
-            DATAWIDTH           = 32,
-            IRQWIDTH            = 32,
+#(parameter ADDRWIDTH           = 32,       // For future proofing. Do not change
+            DATAWIDTH           = 32,       // For future proofing. Do not change
+            IRQWIDTH            = 32,       // Valid ranges => 1 to 32
+            BURST_ADDR_INCR     = 1,        // Valid values => 1, 2, 4
             NODE                = 0
 )
 (
@@ -66,24 +71,22 @@ module axi4bfm
 // ---------------------------------------------------------
 
 // Virtual processor memory mapped address port signals
-wire                     [31:0] VPDataOut;
-wire                     [31:0] VPAddr;
-wire                            VPWE;
-wire                            VPRD;
-wire                            VPWRAck;
-wire                            VPRDAck;
+wire                     [31:0] vpdataout;
+wire                     [31:0] vpaddr;
+wire                            vpwe;
+wire                            vprd;
+wire                            vpwrack;
+wire                            vprdack;
 
 // Delta cycle signals
-wire                            Update;
-reg                             UpdateResponse;
+wire                            update;
+reg                             updateresponse;
 
 // Internal state to flag an AXI channel has been acknowleged,
 // but transaction is still pending
 reg                             awacked;
 reg                             wacked;
 reg                             aracked;
-
-reg                             irqlast;
 
 // ---------------------------------------------------------
 // Combinatorial logic
@@ -96,33 +99,33 @@ assign bready                   = bvalid;
 
 // The address/write data ports are only valid when their valid signals active,
 // else driven X. This ensures external IP does not use invalid held values.
-assign awaddr                   = awvalid ? VPAddr    : {ADDRWIDTH{1'bx}};
-assign araddr                   = arvalid ? VPAddr    : {ADDRWIDTH{1'bx}};
-assign wdata                    = wvalid  ? VPDataOut : {DATAWIDTH{1'bx}};
+assign awaddr                   = awvalid ? vpaddr    : {ADDRWIDTH{1'bx}};
+assign araddr                   = arvalid ? vpaddr    : {ADDRWIDTH{1'bx}};
+assign wdata                    = wvalid  ? vpdataout : {DATAWIDTH{1'bx}};
 
 // The write address and valid signals active when VProc writing,
 // but only until they have been acknowledged.
-assign awvalid                  = VPWE & ~awacked;
-assign wvalid                   = VPWE & ~wacked;
+assign awvalid                  = vpwe & ~awacked;
+assign wvalid                   = vpwe & ~wacked;
 
 // VProc write acknowledged only once both address and write channels have
 // been acknowledged. This could be if both channels acknowledged together,
 // if write address acknowledged first then write data, or write data acknowledged
 // first and then write address.
-assign VPWRAck                  = (awready & wready) | (awacked & wready) | (awready & wacked);
+assign vpwrack                  = (awready & wready) | (awacked & wready) | (awready & wacked);
 
 // Write Last always signalled when data valid as only one word at a time.
 assign wlast                    = wvalid;
 
 // The read address is valid when VProc RD strobe active until it has
 // been acknowledged.
-assign arvalid                  = VPRD & ~aracked;
+assign arvalid                  = vprd & ~aracked;
 
 // Read data always accepted.
 assign rready                   = rvalid;
 
 // The VProc read acknowlege comes straight from the AXI read data bus valid.
-assign VPRDAck                  = rvalid;
+assign vprdack                  = rvalid;
 
 // ---------------------------------------------------------
 // Initialise the internal state.
@@ -133,10 +136,7 @@ begin
   aracked                       = 1'b0;
   awacked                       = 1'b0;
   wacked                        = 1'b0;
-  
-  UpdateResponse                = 1'b1;
-  
-  irqlast                       = {IRQWIDTH{1'b0}};
+  updateresponse                = 1'b1;
 end
 
 // ---------------------------------------------------------
@@ -152,16 +152,14 @@ begin
   // is acknowledged back to VProc.
 
   // Read address channel
-  aracked                       <= (aracked | (VPRD & arready)) & ~VPRDAck;
+  aracked                       <= (aracked | (vprd & arready)) & ~vprdack;
 
   // Write address channel
-  awacked                       <= (awacked | (VPWE & awready)) & ~VPWRAck;
+  awacked                       <= (awacked | (vpwe & awready)) & ~vpwrack;
 
   // Write data channel
-  wacked                        <= (wacked  | (VPWE & wready))  & ~VPWRAck;
-  
-  // Delayed version of irq input port
-  irqlast                       <= irq;
+  wacked                        <= (wacked  | (vpwe & wready))  & ~vpwrack;
+
 end
 
 // ---------------------------------------------------------
@@ -170,49 +168,35 @@ end
 // for wider bus architecture.
 // ---------------------------------------------------------
 
-always @(Update)
+always @(update)
 begin
-  UpdateResponse                <= ~UpdateResponse;
+  updateresponse                <= ~updateresponse;
 end
-
-// ---------------------------------------------------------
-// Interrupt handling process
-// ---------------------------------------------------------
-always @(clk)
-begin
-  // So we can handle up to a 32 bit interrupt vector, will use
-  // $vprocuser to pass in the IRQ value whenever it changes. This
-  // also ensures single clock edge triggered interrupt signals
-  // are logged with the software (and held there) and can be freely
-  // mixed with level triggered interrupts.
-  if (irq ^ irqlast)
-  begin
-    $vprocuser(NODE, irq);
-  end
-end
-
 
 // ---------------------------------------------------------
 // Virtual Processor
 // ---------------------------------------------------------
 
-  VProc vp (.Clk                (clk),
+  VProc    #(.INT_WIDTH         (IRQWIDTH),
+             .BURST_ADDR_INCR   (BURST_ADDR_INCR)
+            ) vp
+            (.Clk               (clk),
 
-            .Addr               (VPAddr),
+             .Addr              (vpaddr),
 
-            .DataOut            (VPDataOut),
-            .WE                 (VPWE),
-            .WRAck              (VPWRAck),
+             .DataOut           (vpdataout),
+             .WE                (vpwe),
+             .WRAck             (vpwrack),
 
-            .DataIn             (rdata),
-            .RD                 (VPRD),
-            .RDAck              (VPRDAck),
+             .DataIn            (rdata),
+             .RD                (vprd),
+             .RDAck             (vprdack),
 
-            .Interrupt          (3'b000),
+             .Interrupt         (irq),
 
-            .Update             (Update),
-            .UpdateResponse     (UpdateResponse),
-            .Node               (NODE[3:0])
-           );
+             .update            (update),
+             .updateresponse    (updateresponse),
+             .Node              (NODE[3:0])
+            );
 
 endmodule
