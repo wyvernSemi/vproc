@@ -48,6 +48,13 @@ typedef long      nodecast_t;
 typedef long      nodecast_t;
 #endif
 
+// For Icarus
+#ifdef ICARUS
+# ifndef RTLD_DEFAULT
+# define RTLD_DEFAULT ((void *) 0)
+# endif
+#endif
+
 static void VUserInit (const unsigned node);
 
 /////////////////////////////////////////////////////////////
