@@ -194,8 +194,8 @@ end
 
              .Interrupt         (irq),
 
-             .update            (update),
-             .updateresponse    (updateresponse),
+             .Update            (update),
+             .UpdateResponse    (updateresponse),
              .Node              (NODE[3:0])
             );
 
