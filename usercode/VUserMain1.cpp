@@ -23,13 +23,13 @@
 static int node = 1;
 
 // ------------------------------------------------------------
-// Interrupt callback function for level 1
+// Interrupt callback function for vector IRQ
 // ------------------------------------------------------------
 
-static int VInterrupt_1(void)
+static int VInterrupt_irq(int irq)
 {
-    VPrint("Node %d: VInterrupt_1()\n", node);
-    return -1;
+    VPrint("Node %d: VInterrupt_irq() irq = 0x%08x\n", node, irq);
+    return 0;
 }
 
 // ------------------------------------------------------------
@@ -47,8 +47,8 @@ extern "C" void VUserMain1()
 
     VPrint("VUserMain1(): node=%d\n", node);
 
-    // Register function as interrupt level 1 routine
-    vp1.regInterrupt(1, VInterrupt_1);
+    // Register function as irq
+    VRegIrq (VInterrupt_irq, node);
 
     vp1.tick(10);
 
