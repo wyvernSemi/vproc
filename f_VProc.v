@@ -125,6 +125,7 @@ begin
     RD                                  = 0;
     Update                              = 0;
     BlkCount                            = 0;
+    IntSampLast                         = 0;
 
     // Don't remove delay! Needed to allow Node to be assigned
     // before the call to $vinit
@@ -143,7 +144,6 @@ begin
     // Cleanly sample the inputs and make them integers
     RdAckSamp                           = RDAck;
     WRAckSamp                           = WRAck;
-    IntSampLast                         = IntSamp;
     IntSamp                             = {1'b0, Interrupt};
     NodeI                               = Node;
     VPTicks                             = `DELTACYCLE;
@@ -170,6 +170,7 @@ begin
         if (IntSamp != IntSampLast)
         begin
           $virq(NodeI, IntSamp);
+          IntSampLast                   <= IntSamp;
         end
 
         // If tick, write or a read has completed (or in last cycle)...
