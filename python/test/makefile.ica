@@ -1,0 +1,191 @@
+###################################################################
+# Makefile for Python Virtual Processor testcode in Icarus Verilog
+#
+# Copyright (c) 2005-2024 Simon Southwell.
+#
+# This file is part of VProc.
+#
+# VProc is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VProc is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with VProc. If not, see <http://www.gnu.org/licenses/>.
+#
+###################################################################
+#
+# Assumes Ubuntu Linux (22.04 LTS 64-bit) installation and mingw64
+# on Windows. ARCHFLAG and ICADIR need updating for other
+# configurations.
+#
+
+# Requirements: iverilog
+#     on RHEL 7 "yum install iverilog" to install Icarus
+# To run: vvp -m ./VProc.so sim
+
+# Flags that can be overridden by the user or external call
+USRFLAGS           =
+SRCDIR             = ../../code
+PYSRCDIR           = ../src
+TESTDIR            = .
+ARCHFLAG           = -m64
+
+# Define the maximum number of supported VProcs in the compile pli library
+MAX_NUM_VPROC      = 16
+
+# Object directory for intermediate compile files
+VOBJDIR            = ${TESTDIR}/obj
+
+# Name of the Python executable
+PYEXENAME          = python3
+
+# If PYTHONHOME environment variable not set give an error
+ifeq ("${PYTHONHOME}", "")
+  $(error "PYTHONHOME environment variable not set.")
+endif
+
+# Extract the python version number in the format python.<major>.<minor#1>
+# which is the name of the python libray to link.
+SHELLCMD           = ${PYEXENAME} -V | awk -F"[. ]" '{print "python" $$2 "." $$3}'
+PYVER              = $(shell ${SHELLCMD})
+
+# Get OS type
+OSTYPE:=$(shell uname)
+
+# VPROC C source code
+VPROC_C            = VSched.c \
+                     VUser.c
+# Python interface C code compiled into PyVProc.so
+PYTHON_C           = PythonVProc.c
+
+# Python user main code compiled into VProc.so
+USER_C             = VUserMainPy.c
+
+VOBJS              = ${addprefix ${VOBJDIR}/, ${USER_C:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} ${VPROC_C:%.c=%.o}}
+
+PLIFLAG            = -DVPROC_PLI_VPI
+VLOGFLAGS          = -DVPROC_BURST_IF -Ptest.VCD_DUMP=1 -I../..
+VLOGDEBUGFLAGS     = -Ptest.DEBUG_STOP=1
+VLOGFILES          = test.v ../../f_VProc.v
+
+# Generated  PLI C library
+VPROC_PLI          = ${TESTDIR}/VProc.so
+VLIB               = ${TESTDIR}/libvproc.a
+
+# Python interface foreign module shared object
+PYVRPOC_PLI        = ${TESTDIR}/PyVProc.so
+
+VPROC_TOP          = test
+
+# Set OS specific variables between Linux and Windows (MinGW)
+ifeq (${OSTYPE}, Linux)
+  CFLAGS_SO        = -shared -lpthread -lrt -rdynamic
+  ICADIR           = /usr/include/iverilog
+else
+  CFLAGS_SO        = -shared -Wl,-export-all-symbols
+  ICADIR           = /mingw64/include/iverilog
+endif
+
+CC                 = gcc
+C++                = g++
+CPPSTD             = -std=c++11
+CFLAGS             = -fPIC                                 \
+                     ${ARCHFLAG}                           \
+                     ${PLIFLAG}                            \
+                     -g                                    \
+                     -D_GNU_SOURCE                         \
+                     ${USRFLAGS}                           \
+                     -I${SRCDIR}                           \
+                     -I${PYSRCDIR}                         \
+                     -I${PYTHONHOME}/include/${PYVER}      \
+                     -I${ICADIR}                           \
+                     -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
+                     -DICARUS                              \
+                     -D_REENTRANT
+
+#------------------------------------------------------
+# BUILD RULES
+#------------------------------------------------------
+
+all: ${VPROC_PLI} verilog
+
+${VOBJDIR}/%.o: ${SRCDIR}/%.c ${SRCDIR}/*.h
+	@${CC} -c ${CFLAGS} -Wno-incompatible-pointer-types $< -o $@
+
+${VOBJDIR}/%.o: ${SRCDIR}/%.cpp ${SRCDIR}/*.h
+	@${C++}-c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${PYSRCDIR}/%.c
+	@${CC} -Wno-write-strings -c ${CFLAGS} $< -o $@
+
+${VLIB} : ${VOBJS} ${VOBJDIR}
+	@ar cr ${VLIB} ${VOBJS}
+
+${VOBJS}: | ${VOBJDIR}
+
+${VOBJDIR}:
+	@mkdir ${VOBJDIR}
+
+${VPROC_PLI}: ${PYVRPOC_PLI} ${VLIB} ${VOBJDIR}/veriuser.o
+	@${C++} ${CPPSTD}                                      \
+           ${CFLAGS_SO}                                    \
+           -Wl,-whole-archive                              \
+           ${CFLAGS}                                       \
+           ${VOBJDIR}/veriuser.o                           \
+           -lpthread                                       \
+           -lveriuser -lvpi                                \
+           -L${TESTDIR} -lvproc -l:PyVProc.so              \
+           -Wl,-no-whole-archive                           \
+           -o $@
+
+${PYVRPOC_PLI}: ${PYSRCDIR}/${PYTHON_C}
+	@${CC} -fPIC -shared -DNO_PLI_INCLUDE                  \
+           $^                                              \
+           -I../../code -L../../                           \
+           ${ARCHFLAG}                                     \
+           -I${PYTHONHOME}/include/${PYVER}                \
+           -L${PYTHONHOME}/lib -l${PYVER}                  \
+           -ldl                                            \
+           -o $@
+
+verilog: ${VLOGFILES}
+	@iverilog ${VLOGFLAGS} ${PLIFLAG} -o sim ${VLOGFILES}
+
+verilog_debug: ${VLOGFILES}
+	@iverilog ${VLOGDEBUGFLAGS} ${VLOGFLAGS} ${PLIFLAG} -o sim ${VLOGFILES}
+
+#------------------------------------------------------
+# EXECUTION RULES
+#------------------------------------------------------
+
+sim: all
+	@vvp -s -m ${VPROC_PLI} sim
+
+debug: clean ${VPROC_PLI} verilog_debug
+	@vvp -m ${VPROC_PLI} sim
+
+run: all
+	@vvp -n -m ${VPROC_PLI} sim
+
+rungui: all
+	@vvp -n -m ${VPROC_PLI} sim
+	@if [ -e waves.gtkw ]; then                            \
+	    gtkwave -A waves.vcd;                              \
+	else                                                   \
+	    gtkwave waves.vcd;                                 \
+	fi
+
+gui : rungui
+
+#------------------------------------------------------
+# CLEAN RULES
+#------------------------------------------------------
+
+clean:
+	@rm -rf ${VPROC_PLI} ${VLIB} obj sim *.vcd
