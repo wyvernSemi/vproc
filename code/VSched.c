@@ -378,6 +378,13 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     // Sample inputs and update node state
     ns[node]->rcv_buf.data_in   = VPDataIn;
     ns[node]->rcv_buf.interrupt = Interrupt;
+    
+    // If call to VSched is for interrupt and vector IRQ enabled (with callback registered)
+    // don't process here with the level interrupt code and just return.
+    if (Interrupt && ns[node]->VUserIrqCB != NULL)
+    {
+        return 0;
+    }
 
     // Send message to VUser with VPDataIn value
     debug_io_printf("VSched(): setting rcv[%d] semaphore\n", node);
