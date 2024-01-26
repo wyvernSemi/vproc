@@ -180,17 +180,14 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
                 exit(1);
             }
 
-            if (ns[node]->VInt_table[prbuf->interrupt] == NULL)
+            if (ns[node]->VInt_table[prbuf->interrupt] != NULL)
             {
-                io_printf("***Error: interrupt to unregistered level %d on node %d (VExch)\n", prbuf->interrupt, node);
-                exit(1);
+                // Call user registered interrupt function
+                psbuf->ticks       = (*(ns[node]->VInt_table[prbuf->interrupt]))();
+                ns[node]->send_buf = *psbuf;
+
+                debug_io_printf("VExch(): interrupt send_buf[node].ticks = %d\n", ns[node]->send_buf.ticks);
             }
-
-            // Call user registered interrupt function
-            psbuf->ticks       = (*(ns[node]->VInt_table[prbuf->interrupt]))();
-            ns[node]->send_buf = *psbuf;
-
-            debug_io_printf("VExch(): interrupt send_buf[node].ticks = %d\n", ns[node]->send_buf.ticks);
 
             // Send new message to simulation
             debug_io_printf("VExch(): setting snd[%d] semaphore (interrupt)\n", node);
