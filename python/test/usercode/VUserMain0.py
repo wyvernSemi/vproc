@@ -20,12 +20,9 @@
 #
 ###################################################################
 
-import os
+from ctypes import *
 import sys
 sys.path.append('../modules')
-
-# Load ctypes library to get access to C domain
-from ctypes import *
 import pyvproc
 
 # Define some local constants
@@ -41,6 +38,7 @@ seenreset = 0
 # ---------------------------------------------------------------
 
 def irqCb (irq) :
+
     # Get access to global variable
     global seenreset
 
@@ -54,15 +52,6 @@ def irqCb (irq) :
     return 0
 
 # ---------------------------------------------------------------
-# Function to wrap python IRQ callback as a C function object
-# ---------------------------------------------------------------
-
-def pyIrqFuncCwrap (func) :
-  cb_ftype = CFUNCTYPE(c_int, c_int)
-
-  return cb_ftype(func)
-
-# ---------------------------------------------------------------
 # Function to wait for reset deassertion event
 # ---------------------------------------------------------------
 
@@ -70,18 +59,6 @@ def waitForResetDeassert (vpapi, polltime = 10) :
 
   while seenreset == 0 :
     vpapi.tick(polltime)
-
-# ---------------------------------------------------------------
-# Function to load Python C API module
-# ---------------------------------------------------------------
-
-def loadPyModule(name = "./PyVproc.so") :
-
-  module = CDLL(name)
-  module.argtypes = [c_int32]
-  module.restype  = [c_int32]
-
-  return module
 
 # ---------------------------------------------------------------
 # Main entry point for node 0
@@ -146,10 +123,3 @@ def VUserMain0() :
   # Should not get here
   while True :
     vpapi.tick(__LONGTIME)
-
-# ###############################################################
-# Only run if not imported
-#
-if __name__ == '__main__' :
-
-  VUserMain0()
