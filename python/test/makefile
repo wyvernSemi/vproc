@@ -110,7 +110,6 @@ CFLAGS             = -fPIC                                 \
                      -I${MODEL_TECH}/../include            \
                      -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
                      -DMODELSIM                            \
-                     -DDISABLE_LEVEL_INT                   \
                      -D_REENTRANT
 
 # Common flags for vsim

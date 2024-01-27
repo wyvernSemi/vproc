@@ -188,4 +188,4 @@ gui : rungui
 #------------------------------------------------------
 
 clean:
-	@rm -rf ${VPROC_PLI} ${VLIB} obj sim *.vcd
+	@rm -rf ${PYVRPOC_PLI} ${VPROC_PLI} ${VLIB} obj sim *.vcd

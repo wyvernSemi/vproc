@@ -33,12 +33,12 @@ class PyVProcClass :
   api  = None
 
   # Constructor
-  def __init__(self, nodeIn, cmodulename = "./PyVproc.so") :
+  def __init__(self, nodeIn, cmodulename = "./PyVProc.so") :
     self.node = nodeIn
     self.api  = self.__loadPyModule(cmodulename)
 
   # Method to load Python C module
-  def __loadPyModule(self, name = "./PyVproc.so") :
+  def __loadPyModule(self, name = "./PyVProc.so") :
 
     module = CDLL(name)
     module.argtypes = [c_int32]

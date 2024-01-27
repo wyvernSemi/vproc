@@ -383,7 +383,11 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     // don't process here with the level interrupt code and just return.
     if (Interrupt && ns[node]->VUserIrqCB != NULL)
     {
+#ifndef VPROC_VHDL
         return 0;
+#else
+        return;
+#endif
     }
 
     // Send message to VUser with VPDataIn value

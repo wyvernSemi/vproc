@@ -46,37 +46,37 @@ static regirqfunc_p VregIrq;
 static int BindToApiFuncs(void)
 {
     void*   hdl  = dlopen("VProc.so", RTLD_NOW | RTLD_GLOBAL);
-    
+
     if (hdl == NULL)
     {
         fprintf(stderr, "***ERROR: failed to load shared object\n");
         return 1;
     }
-    
+
     if ((Vwrite = (wfunc_p)dlsym(hdl, "VWrite")) == NULL)
     {
         fprintf(stderr, "***ERROR: failed to find symbol VWrite\n");
         return 1;
     }
-    
+
     if ((Vread = (rfunc_p)dlsym(hdl, "VRead")) == NULL)
     {
         fprintf(stderr, "***ERROR: failed to find symbol VRead\n");
         return 1;
     }
-    
+
     if ((Vtick = (tkfunc_p)dlsym(hdl, "VTick")) == NULL)
     {
         fprintf(stderr, "***ERROR: failed to find symbol VTick\n");
         return 1;
     }
-    
+
     if ((VregIrq = (regirqfunc_p)dlsym(hdl, "VRegIrq")) == NULL)
     {
         fprintf(stderr, "***ERROR: failed to find symbol VRegIrq\n");
         return 1;
     }
-    
+
     return 0;
 }
 
@@ -95,7 +95,7 @@ int RunPython(const int node)
     char strbuf[DEFAULTSTRBUFSIZE];
     int status;
     int rtnval = 0;
-    
+
     if (status = BindToApiFuncs())
     {
         return status;
@@ -151,7 +151,7 @@ int RunPython(const int node)
         fprintf(stderr, "***Error: RunPython() : Failed to load \"%s\"\n", strbuf);
         return 1;
     }
-    
+
     if (Py_FinalizeEx() < 0)
     {
         return 120;

@@ -95,7 +95,7 @@ begin
 
     variable DataInSamp  : integer;
     variable IntSamp     : integer;
-    variable IntSampLast : integer;
+    variable IntSampLast : integer := 0;
     variable RdAckSamp   : std_logic;
     variable WRAckSamp   : std_logic;
 
@@ -109,7 +109,6 @@ begin
 
       -- Cleanly sample the inputs
       DataInSamp                := to_integer(signed(DataIn));
-      IntSampLast               := IntSamp;
       IntSamp                   := to_integer(signed("0" & Interrupt));
       RdAckSamp                 := RDAck;
       WRAckSamp                 := WRAck;
@@ -139,6 +138,7 @@ begin
         -- new value
         if IntSamp /= IntSampLast then
           VIrq(to_integer(unsigned(Node)), IntSamp);
+          IntSampLast := IntSamp;
         end if;
 
         -- If tick, write or a read has completed (or in last cycle)...
