@@ -77,7 +77,7 @@ USER_C             = VUserMainPy.c
 VOBJS              = $(addprefix ${VOBJDIR}/, ${USER_C:%.c=%.o} ${VPROC_C:%.c=%.o})
 
 PLIFLAG            = -DVPROC_PLI_VPI
-VLOGFLAGS          = +define+VPROC_BURST_IF -incdir ../..
+VLOGFLAGS          = +define+VPROC_BURST_IF +incdir+../..
 
 # Generated  PLI C library
 VPROC_PLI          = ${TESTDIR}/VProc.so
