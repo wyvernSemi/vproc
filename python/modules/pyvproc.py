@@ -63,5 +63,9 @@ class PyVProcClass :
     cb_ftype = CFUNCTYPE(c_int, c_int)
     cb_wrap  = cb_ftype(irqCb)
     self.api.PyRegIrq(cb_wrap, self.node)
+    
+  def VPrint(self, printstr) :
+    bytestring = printstr.encode('utf-8')
+    self.api.PyPrint(c_char_p(bytestring))
 
 

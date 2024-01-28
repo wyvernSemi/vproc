@@ -33,6 +33,10 @@ __LONGTIME    = 0x7fffffff
 # event has occurred
 seenreset = 0
 
+# Define a global vproc API object handle so that the IRQ callback 
+# can use it.
+vpapi     = None
+
 # ---------------------------------------------------------------
 # Interrupt callback function
 # ---------------------------------------------------------------
@@ -40,13 +44,13 @@ seenreset = 0
 def irqCb (irq) :
 
     # Get access to global variable
-    global seenreset
+    global seenreset, vpapi
 
-    print("Interrupt = ", hex(irq))
+    vpapi.VPrint("Interrupt = " + hex(irq))
 
     # If irq[0] is 1, flag that seen a reset deassertion
     if irq & 0x1 :
-      print("  Seen reset deasserted!\n")
+      vpapi.VPrint("  Seen reset deasserted!\n")
       seenreset = 1
 
     return 0
@@ -67,7 +71,7 @@ def waitForResetDeassert (vpapi, polltime = 10) :
 def VUserMain0() :
 
   # Get access to global variable
-  global seenreset
+  global seenreset, vpapi
 
   # This is node 0
   node  = 0
@@ -88,12 +92,12 @@ def VUserMain0() :
   addr  = [0xa0001000, 0xa0001001]
   wdata = [0x12345678, 0x87654321]
 
-  print("Writing " + hex(wdata[0]) + " to   addr " + hex(addr[0]))
+  vpapi.VPrint("Writing " + hex(wdata[0]) + " to   addr " + hex(addr[0]))
   vpapi.write(addr[0], wdata[0])
 
   vpapi.tick(1)
 
-  print("Writing " + hex(wdata[1]) + " to   addr " + hex(addr[1]))
+  vpapi.VPrint("Writing " + hex(wdata[1]) + " to   addr " + hex(addr[1]))
   vpapi.write(addr[1], wdata[1])
 
   vpapi.tick(5)
@@ -101,20 +105,20 @@ def VUserMain0() :
   rdata = c_uint32(vpapi.read(addr[0])).value
   
   if rdata == wdata[0] :
-    print("Read    " + hex(c_uint32(rdata).value) + " from addr " + hex(addr[0]))
+    vpapi.VPrint("Read    " + hex(c_uint32(rdata).value) + " from addr " + hex(addr[0]))
   else :
-    print("***ERROR: Read    " + hex(c_uint32(rdata).value) + " from addr " + hex(addr[0]) + ", expected " + hex(wdata[0]))
+    vpapi.VPrint("***ERROR: Read    " + hex(c_uint32(rdata).value) + " from addr " + hex(addr[0]) + ", expected " + hex(wdata[0]))
   
   vpapi.tick(3)
 
   rdata = c_uint32(vpapi.read(addr[1])).value
   
   if rdata == wdata[1] :
-    print("Read    " + hex(c_uint32(rdata).value) + " from addr " + hex(addr[1]))
+    vpapi.VPrint("Read    " + hex(c_uint32(rdata).value) + " from addr " + hex(addr[1]))
   else :
-    print("***ERROR: Read    " + hex(c_uint32(rdata).value) + " from addr " + hex(addr[1]) + ", expected " + hex(wdata[1]))
+    vpapi.VPrint("***ERROR: Read    " + hex(c_uint32(rdata).value) + " from addr " + hex(addr[1]) + ", expected " + hex(wdata[1]))
 
-  print("\nTests complete, stopping simulation\n")
+  vpapi.VPrint("\nTests complete, stopping simulation\n")
   vpapi.tick(20)
 
   # Tell simulator to stop/finish

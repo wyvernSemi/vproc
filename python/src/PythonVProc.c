@@ -163,6 +163,17 @@ int RunPython(const int node)
 // Functions callable from Python
 
 // ------------------------------------------------------------
+// Extrnal print function alternative for when Python print
+// output not displayed on the console (E.g. Questa on Linux).
+// ------------------------------------------------------------
+
+uint32_t PyPrint(const char* str)
+{
+    printf("%s\n", str);
+    return 0;
+}
+
+// ------------------------------------------------------------
 // VWrite wrapper function for Python
 // ------------------------------------------------------------
 
