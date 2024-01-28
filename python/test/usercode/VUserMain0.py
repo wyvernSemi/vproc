@@ -102,21 +102,21 @@ def VUserMain0() :
 
   vpapi.tick(5)
 
-  rdata = c_uint32(vpapi.read(addr[0])).value
+  rdata = c_uint32(vpapi.read(addr[0])).value  # Unsigned value
   
   if rdata == wdata[0] :
-    vpapi.VPrint("Read    " + hex(c_uint32(rdata).value) + " from addr " + hex(addr[0]))
+    vpapi.VPrint("Read    " + hex(rdata) + " from addr " + hex(addr[0]))
   else :
-    vpapi.VPrint("***ERROR: Read    " + hex(c_uint32(rdata).value) + " from addr " + hex(addr[0]) + ", expected " + hex(wdata[0]))
+    vpapi.VPrint("***ERROR: Read    " + hex(rdata) + " from addr " + hex(addr[0]) + ", expected " + hex(wdata[0]))
   
   vpapi.tick(3)
 
-  rdata = c_uint32(vpapi.read(addr[1])).value
+  rdata = c_uint32(vpapi.read(addr[1])).value  # Unsigned value
   
   if rdata == wdata[1] :
-    vpapi.VPrint("Read    " + hex(c_uint32(rdata).value) + " from addr " + hex(addr[1]))
+    vpapi.VPrint("Read    " + hex(rdata) + " from addr " + hex(addr[1]))
   else :
-    vpapi.VPrint("***ERROR: Read    " + hex(c_uint32(rdata).value) + " from addr " + hex(addr[1]) + ", expected " + hex(wdata[1]))
+    vpapi.VPrint("***ERROR: Read    " + hex(rdata) + " from addr " + hex(addr[1]) + ", expected " + hex(wdata[1]))
 
   vpapi.VPrint("\nTests complete, stopping simulation\n")
   vpapi.tick(20)
