@@ -170,11 +170,6 @@ begin
         
         $stop;
     end
-
-
-    // Random interrupt for node 0
-    //Seed       = {$dist_uniform(Seed, 32'hffffffff, 32'h7fffffff)};
-    //Interrupt <= #`RegDel ((Seed % 16) == 0) ? 1 : 0;
 end
 
 `ifdef VCS
