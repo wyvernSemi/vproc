@@ -42,7 +42,7 @@ architecture sim of test is
 
   constant FREQ                        : real := 100.0e6;
   constant ClkPeriod                   : time := 1 sec / FREQ;
-  constant StopCount                   : integer := 100;
+  constant TimeoutCount                : integer := 1000;
 
   signal  Clk                          : std_logic                        := '1';
   signal  Count                        : integer                          := 0;
@@ -120,7 +120,13 @@ begin
   begin
     if Clk'event and Clk = '1' then
 
-      if Count = StopCount then
+      if Count = TimeoutCount or (VPWE = '1' and VPAddr(31 downto 28) = 4x"b") then
+        if Count = TimeoutCount then
+          report "***ERROR: Simulation timed out";
+        else
+          report ""\n--- Simulation completed ---\n";
+        end if;
+      
         stop(0);
       end if;
 
