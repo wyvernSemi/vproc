@@ -124,7 +124,7 @@ begin
         if Count = TimeoutCount then
           report "***ERROR: Simulation timed out";
         else
-          report ""\n--- Simulation completed ---\n";
+          report "\n--- Simulation completed ---\n";
         end if;
       
         stop(0);
