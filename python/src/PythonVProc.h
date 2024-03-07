@@ -1,6 +1,6 @@
 //=====================================================================
 //
-// PythonVProx.h                                     Date: 2024/01/25
+// PythonVProc.h                                     Date: 2024/01/25
 //
 // Copyright (c) 2024 Simon Southwell.
 //
@@ -31,10 +31,12 @@
 
 #define DEFAULTSTRBUFSIZE      256
 
-int      RunPython (const int node);
-uint32_t PyWrite   (const uint32_t addr, const uint32_t data, const int delta, const uint32_t node);
-uint32_t PyRead    (const uint32_t addr, const int delta, const uint32_t node);
-uint32_t PyTick    (const uint32_t ticks, const uint32_t node);
-uint32_t PyRegIrq  (const pVUserIrqCB_t func, const uint32_t node);
+int      RunPython      (const int      node);
+uint32_t PyWrite        (const uint32_t addr,  const uint32_t data, const int delta, const uint32_t node);
+uint32_t PyRead         (const uint32_t addr,  const int      delta, const uint32_t node);
+uint32_t PyTick         (const uint32_t ticks, const uint32_t node);
+uint32_t PyBurstWrite   (const uint32_t addr,  void *data, const uint32_t len,   const uint32_t node);
+uint32_t PyBurstRead    (const uint32_t addr,  void *data, const uint32_t len,   const uint32_t node);
+uint32_t PyRegIrq       (const pVUserIrqCB_t func, const uint32_t node);
 
 #endif

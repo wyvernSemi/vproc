@@ -53,10 +53,27 @@ class PyVProcClass :
   # API method to read a word
   def read (self, addr,  delta = 0) :
     return self.api.PyRead(addr, delta, self.node)
+    
+  # API method to read a word as unsigned value
+  def uread (self, addr,  delta = 0) :
+    return c_uint32(self.read(addr, delta)).value
 
   # API method to tick for specified number of clocks
   def tick (self, ticks) :
     self.api.PyTick(ticks, self.node)
+    
+  # API method to do a burst write
+  def burstWrite(self, addr, data, length) :
+    self.api.PyBurstWrite(addr, (c_int * len(data))(*data), length, self.node)
+    
+  # API method to do a burst read
+  def burstRead(self, addr, length) :
+    data = []
+    cdata = (c_int * length)(0)
+    self.api.PyBurstRead(addr, cdata, length, self.node)
+    for i in range(length) :
+      data.append(c_uint32(cdata[i]).value)
+    return data
 
   # API method to register a vectored interrupt callback
   def regIrq(self, irqCb) :

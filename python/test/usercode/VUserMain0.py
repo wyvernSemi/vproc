@@ -92,6 +92,7 @@ def VUserMain0() :
   addr  = [0xa0001000, 0xa0001001]
   wdata = [0x12345678, 0x87654321]
 
+  # Write test
   vpapi.VPrint("Writing " + hex(wdata[0]) + " to   addr " + hex(addr[0]))
   vpapi.write(addr[0], wdata[0])
 
@@ -102,7 +103,8 @@ def VUserMain0() :
 
   vpapi.tick(5)
 
-  rdata = c_uint32(vpapi.read(addr[0])).value  # Unsigned value
+  # Read Test
+  rdata = vpapi.uread(addr[0])  # Unsigned value
   
   if rdata == wdata[0] :
     vpapi.VPrint("Read    " + hex(rdata) + " from addr " + hex(addr[0]))
@@ -111,12 +113,27 @@ def VUserMain0() :
   
   vpapi.tick(3)
 
-  rdata = c_uint32(vpapi.read(addr[1])).value  # Unsigned value
+  rdata = vpapi.uread(addr[1])  # Unsigned value
   
   if rdata == wdata[1] :
     vpapi.VPrint("Read    " + hex(rdata) + " from addr " + hex(addr[1]))
   else :
     vpapi.VPrint("***ERROR: Read    " + hex(rdata) + " from addr " + hex(addr[1]) + ", expected " + hex(wdata[1]))
+    
+  vpapi.tick(1)
+  
+  # Burst write test
+  burstWrData = [0xcafebabe, 0xdeadbeef, 0x900ddeed, 0x0badf00d]
+  burstAddr   = 0xa0002000
+  vpapi.VPrint("Writing burst " + str(list(map(hex, burstWrData))) + " to   addr " + hex(burstAddr))
+  vpapi.burstWrite(burstAddr, burstWrData, len(burstWrData))
+  
+  # Burst read test
+  burstRdData = vpapi.burstRead(burstAddr, 4);
+  vpapi.VPrint("Read burst    " + str(list(map(hex, burstRdData))) + " from addr " + hex(burstAddr));
+  
+  if burstRdData != burstWrData :
+    vpapi.VPrint("***ERROR: mismatch in burst read data");
 
   vpapi.VPrint("\nTests complete, stopping simulation\n")
   vpapi.tick(20)

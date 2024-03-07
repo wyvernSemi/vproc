@@ -12,9 +12,9 @@ add wave -noupdate /test/reset_irq
 add wave -noupdate /test/Seed
 add wave -noupdate /test/Update
 add wave -noupdate /test/VCD_DUMP
-add wave -noupdate /test/VPAddr
-add wave -noupdate /test/VPDataIn
-add wave -noupdate /test/VPDataOut
+add wave -noupdate -radix hexadecimal /test/VPAddr
+add wave -noupdate -radix hexadecimal /test/VPDataIn
+add wave -noupdate -radix hexadecimal /test/VPDataOut
 add wave -noupdate /test/VPRD
 add wave -noupdate /test/VPWE
 TreeUpdate [SetDefaultTree]
@@ -34,4 +34,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {0 ps} {96600 ps}
+WaveRestoreZoom {83798 ps} {104683 ps}
