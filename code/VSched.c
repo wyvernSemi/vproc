@@ -276,7 +276,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
     debug_io_printf("VInit(): node = %d\n", node);
 
     // Allocate some space for the node state and update pointer
-    ns[node] = (pSchedState_t) malloc(sizeof(SchedState_t));
+    ns[node] = (pSchedState_t) calloc(1, sizeof(SchedState_t));
 
     // Set up semaphores for this node
     debug_io_printf("VInit(): initialising semaphores for node %d\n", node);
@@ -378,10 +378,10 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     // Sample inputs and update node state
     ns[node]->rcv_buf.data_in   = VPDataIn;
     ns[node]->rcv_buf.interrupt = Interrupt;
-    
+
     // If call to VSched is for interrupt and vector IRQ enabled (with callback registered)
     // don't process here with the level interrupt code and just return.
-    if (Interrupt && ns[node]->VUserIrqCB != NULL)
+    if (Interrupt && (ns[node]->VUserIrqCB != NULL || ns[node]->PyIrqCB != NULL))
     {
 #ifndef VPROC_VHDL
         return 0;
@@ -537,7 +537,7 @@ VPROC_RTN_TYPE VIrq(VIRQ_PARAMS)
     int       node, value;
     int       args[10];
 
-    getVhpiParams(cb, &args[1], VPROCUSER_NUM_ARGS);
+    getVhpiParams(cb, &args[1], VIRQ_NUM_ARGS);
 
     // Get argument values of VProcUser VHPI call
     node      = args[VPNODENUM_ARG];
@@ -545,10 +545,13 @@ VPROC_RTN_TYPE VIrq(VIRQ_PARAMS)
 
 # endif
 #endif
-
     if (ns[node]->VUserIrqCB != NULL)
     {
         (*(ns[node]->VUserIrqCB))(value);
+    }
+    else if (ns[node]->PyIrqCB != NULL)
+    {
+        (*(ns[node]->PyIrqCB))(value, node);
     }
 
 #ifndef VPROC_VHDL
@@ -617,4 +620,37 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
 
     return 0;
 #endif
+}
+
+/////////////////////////////////////////////////////////////
+// Python vectored irq callback function
+//
+int PyIrqCB(int vec, int node)
+{
+    // Implements a ring buffer
+    ns[node]->irqState.eventQueue[ns[node]->irqState.eventPtr] = vec;
+    ns[node]->irqState.eventPtr = (ns[node]->irqState.eventPtr + 1) % MAX_QUEUED_VEC_IRQ;
+
+    return 0;
+}
+
+/////////////////////////////////////////////////////////////
+// Python IRQ state fetch function
+//
+uint32_t PyFetchIrq (uint32_t *irq, const uint32_t node)
+{
+    //fprintf (stderr, "PyFetchIrq(): irq = %p node = %d", irq, node);
+
+    uint32_t eventsInQueue = ns[node]->irqState.eventPtr - ns[node]->irqState.eventPopPtr;
+
+    if (eventsInQueue)
+    {
+        // Get event from the beginning of the queue
+        *irq = ns[node]->irqState.eventQueue[ns[node]->irqState.eventPopPtr];
+
+        // Remove returned event from queue
+        ns[node]->irqState.eventPopPtr = (ns[node]->irqState.eventPopPtr + 1) % MAX_QUEUED_VEC_IRQ;;
+    }
+
+    return eventsInQueue;
 }

@@ -23,21 +23,15 @@
 
 #include "PythonVProc.h"
 
-// Pointer types for external API functions. Must match prototypes in VUser.h
-typedef int  (*wfunc_p)      (const unsigned, const unsigned, const int, const unsigned);
-typedef int  (*rfunc_p)      (const unsigned, unsigned *, const int, const unsigned);
-typedef int  (*wbfunc_p)     (const unsigned, void *, const unsigned, const unsigned);
-typedef int  (*rbfunc_p)     (const unsigned, void *, const unsigned, const unsigned);
-typedef int  (*tkfunc_p)     (const unsigned, const unsigned );
-typedef void (*regirqfunc_p) (const pVUserIrqCB_t, const unsigned);
-
 // Define pointers to the external API functions
 static wfunc_p      Vwrite;
 static rfunc_p      Vread;
 static wbfunc_p     VburstWrite;
 static rbfunc_p     VburstRead;
 static tkfunc_p     Vtick;
-static regirqfunc_p VregIrq;
+static regirqfunc_p VregIrqPy;
+static pyirqcb_p    PyIrqCB;
+static pyfetchirq_p PyFetchIrq_;
 
 // ------------------------------------------------------------
 // Function to load VProc shared object and create bindings to
@@ -68,13 +62,13 @@ static int BindToApiFuncs(void)
         fprintf(stderr, "***ERROR: failed to find symbol VRead\n");
         return 1;
     }
-    
+
     if ((VburstWrite = (wbfunc_p)dlsym(hdl, "VBurstWrite")) == NULL)
     {
         fprintf(stderr, "***ERROR: failed to find symbol VBurstWrite\n");
         return 1;
     }
-    
+
     if ((VburstRead = (rbfunc_p)dlsym(hdl, "VBurstRead")) == NULL)
     {
         fprintf(stderr, "***ERROR: failed to find symbol VBurstRead\n");
@@ -87,9 +81,21 @@ static int BindToApiFuncs(void)
         return 1;
     }
 
-    if ((VregIrq = (regirqfunc_p)dlsym(hdl, "VRegIrq")) == NULL)
+    if ((VregIrqPy = (regirqfunc_p)dlsym(hdl, "VRegIrqPy")) == NULL)
     {
-        fprintf(stderr, "***ERROR: failed to find symbol VRegIrq\n");
+        fprintf(stderr, "***ERROR: failed to find symbol VRegIrqPy\n");
+        return 1;
+    }
+
+    if ((PyIrqCB = (pyirqcb_p)dlsym(hdl, "PyIrqCB")) == NULL)
+    {
+        fprintf(stderr, "***ERROR: failed to find symbol PyIrqCB\n");
+        return 1;
+    }
+
+    if ((PyFetchIrq_ = (pyfetchirq_p)dlsym(hdl, "PyFetchIrq")) == NULL)
+    {
+        fprintf(stderr, "***ERROR: failed to find symbol PyFetchIrq\n");
         return 1;
     }
 
@@ -116,6 +122,9 @@ int RunPython(const int node)
     {
         return status;
     }
+
+    // Register the Python interface interrupt callback function
+    PyRegIrq(PyIrqCB, node);
 
     Py_Initialize();
 
@@ -195,8 +204,6 @@ uint32_t PyPrint(const char* str)
 
 uint32_t PyWrite (const uint32_t addr, const uint32_t data, const int delta, const uint32_t node)
 {
-    //printf("PyWrite: addr=0x%08x data=0x%08x delta=%d node=%d\n", addr, data, delta, node);
-
     return Vwrite(addr, data, delta, node);
 }
 
@@ -206,8 +213,6 @@ uint32_t PyWrite (const uint32_t addr, const uint32_t data, const int delta, con
 
 uint32_t PyRead (const uint32_t addr, const int delta, const uint32_t node)
 {
-    //printf("PyRead: addr=0x%08x delta=%d node=%d\n", addr, delta, node);
-
     uint32_t rdata;
 
     int status = Vread(addr, &rdata, delta, node);
@@ -221,8 +226,6 @@ uint32_t PyRead (const uint32_t addr, const int delta, const uint32_t node)
 
 uint32_t PyTick (const uint32_t ticks, const uint32_t node)
 {
-    //printf("PyTick: ticks=%d node=%d\n", ticks, node);
-
     return Vtick(ticks, node);
 }
 
@@ -232,7 +235,6 @@ uint32_t PyTick (const uint32_t ticks, const uint32_t node)
 
 uint32_t PyBurstWrite (const uint32_t addr, void *data, const uint32_t len, const uint32_t node)
 {
-    //printf("addr=0x%08x data_p=0x%p data[1]=0x%08x len = %d node = %d", addr, data, ((uint32_t*)data)[1], len, node);
     return VburstWrite(addr, data, len, node);
 }
 
@@ -242,7 +244,6 @@ uint32_t PyBurstWrite (const uint32_t addr, void *data, const uint32_t len, cons
 
 uint32_t PyBurstRead (const uint32_t addr, void *data, const uint32_t len, const uint32_t node)
 {
-
     return VburstRead(addr, data, len, node);
 }
 
@@ -250,11 +251,18 @@ uint32_t PyBurstRead (const uint32_t addr, void *data, const uint32_t len, const
 // VRegIrq wrapper function for Python
 // ------------------------------------------------------------
 
-uint32_t PyRegIrq (const pVUserIrqCB_t func, const uint32_t node)
+uint32_t PyRegIrq (const pPyIrqCB_t func, const uint32_t node)
 {
-    //printf("PyRegIrq %p %d\n", func, node);
-
-    VregIrq(func, node);
+    VregIrqPy(func, node);
 
     return 0;
+}
+
+// ------------------------------------------------------------
+// PyFetchIrq wrapper function
+// ------------------------------------------------------------
+
+uint32_t PyFetchIrq (void *irq, const uint32_t node)
+{
+    PyFetchIrq_(irq, node);
 }

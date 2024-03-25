@@ -322,9 +322,18 @@ void VRegInterrupt (const int level, const pVUserInt_t func, const unsigned node
 //
 void VRegIrq (const pVUserIrqCB_t func, const unsigned node)
 {
-    debug_io_printf("VRegIrq(): at node %d, registering irq callback\n", node);
+    printf("VRegIrq(): at node %d, registering irq callback\n", node);
 
     ns[node]->VUserIrqCB = func;
+}
+
+/////////////////////////////////////////////////////////////
+// Registers a python interface function as a vector IRQ
+// callback
+//
+void VRegIrqPy (const pPyIrqCB_t func, const unsigned node)
+{
+    ns[node]->PyIrqCB = func;
 }
 
 /////////////////////////////////////////////////////////////

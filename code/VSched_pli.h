@@ -71,6 +71,7 @@
 #define VINIT_NUM_ARGS     1
 #define VSCHED_NUM_ARGS    7
 #define VPROCUSER_NUM_ARGS 2
+#define VIRQ_NUM_ARGS      2
 #define VACCESS_NUM_ARGS   4
 
 #define VPROC_RTN_TYPE     void

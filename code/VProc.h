@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <dlfcn.h>
 #include <pthread.h>
 #include <semaphore.h>
@@ -63,6 +64,7 @@
 // Range of valid interrupt states
 #define MIN_INTERRUPT_LEVEL     1
 #define MAX_INTERRUPT_LEVEL     7
+#define MAX_QUEUED_VEC_IRQ      1024
 
 // User thread to simulation exchange structure
 typedef struct {
@@ -85,7 +87,14 @@ typedef void * handle_t;
 // Callback pointer types
 typedef int  (*pVUserInt_t)      (void);
 typedef int  (*pVUserIrqCB_t)    (int);
+typedef int  (*pPyIrqCB_t)       (int, int);
 typedef int  (*pVUserCB_t)       (int);
+
+typedef struct {
+    uint32_t eventPtr;
+    uint32_t eventPopPtr;
+    uint32_t eventQueue [MAX_QUEUED_VEC_IRQ];
+} vecIrqState_t;
 
 // Scheduler node state structure
 typedef struct {
@@ -95,10 +104,11 @@ typedef struct {
     rcv_buf_t           rcv_buf;
     pVUserInt_t         VInt_table[MAX_INTERRUPT_LEVEL+1];
     pVUserIrqCB_t       VUserIrqCB;
+    pPyIrqCB_t          PyIrqCB;
+    vecIrqState_t       irqState;
     pVUserCB_t          VUserCB;
 } SchedState_t, *pSchedState_t;
 
 // Reference to node state array
 extern pSchedState_t ns[VP_MAX_NODES];
-
 #endif

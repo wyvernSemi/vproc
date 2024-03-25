@@ -31,12 +31,25 @@
 
 #define DEFAULTSTRBUFSIZE      256
 
+// Pointer types for external API functions. Must match prototypes in VUser.h
+typedef int      (*wfunc_p)      (const unsigned, const unsigned, const int, const unsigned);
+typedef int      (*rfunc_p)      (const unsigned, unsigned *, const int, const unsigned);
+typedef int      (*wbfunc_p)     (const unsigned, void *, const unsigned, const unsigned);
+typedef int      (*rbfunc_p)     (const unsigned, void *, const unsigned, const unsigned);
+typedef int      (*tkfunc_p)     (const unsigned, const unsigned );
+typedef void     (*regirqfunc_p) (const pPyIrqCB_t, const unsigned);
+typedef int      (*pyirqcb_p)    (const int, const int);
+typedef uint32_t (*pyfetchirq_p) (void *, const uint32_t);
+
+// API functions called from python 
 int      RunPython      (const int      node);
-uint32_t PyWrite        (const uint32_t addr,  const uint32_t data, const int delta, const uint32_t node);
+uint32_t PyWrite        (const uint32_t addr,  const uint32_t data,  const int delta, const uint32_t node);
 uint32_t PyRead         (const uint32_t addr,  const int      delta, const uint32_t node);
 uint32_t PyTick         (const uint32_t ticks, const uint32_t node);
-uint32_t PyBurstWrite   (const uint32_t addr,  void *data, const uint32_t len,   const uint32_t node);
-uint32_t PyBurstRead    (const uint32_t addr,  void *data, const uint32_t len,   const uint32_t node);
-uint32_t PyRegIrq       (const pVUserIrqCB_t func, const uint32_t node);
+uint32_t PyBurstWrite   (const uint32_t addr,  void *data, const uint32_t len, const uint32_t node);
+uint32_t PyBurstRead    (const uint32_t addr,  void *data, const uint32_t len, const uint32_t node);
+
+uint32_t PyRegIrq       (const pPyIrqCB_t func, const uint32_t node);
+uint32_t PyFetchIrq     (void *irq, const uint32_t node);
 
 #endif
