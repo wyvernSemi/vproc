@@ -114,6 +114,7 @@ CFLAGS             = -fPIC                                 \
 
 # Common flags for vsim
 VSIMFLAGS          = -pli ${VPROC_PLI} ${VPROC_TOP}
+VCFILE             = test.vc
 
 #------------------------------------------------------
 # BUILD RULES
@@ -168,7 +169,8 @@ verilog: ${VPROC_PLI}
 	@if [ ! -d "./work" ]; then                            \
 	      vlib work;                                       \
 	fi
-	@vlog ${VLOGFLAGS} -f test.vc
+	@vlog ${VLOGFLAGS} -f ${VCFILE}
+    
 
 #------------------------------------------------------
 # EXECUTION RULES
