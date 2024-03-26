@@ -8,6 +8,7 @@ add wave -noupdate /test/DEBUG_STOP
 add wave -noupdate /test/Interrupt
 add wave -noupdate /test/nreset
 add wave -noupdate /test/nreset_h
+add wave -noupdate /test/irq1
 add wave -noupdate /test/reset_irq
 add wave -noupdate /test/Seed
 add wave -noupdate /test/Update
@@ -34,4 +35,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {83798 ps} {104683 ps}
+WaveRestoreZoom {148160 ps} {193584 ps}

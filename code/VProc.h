@@ -64,7 +64,11 @@
 // Range of valid interrupt states
 #define MIN_INTERRUPT_LEVEL     1
 #define MAX_INTERRUPT_LEVEL     7
-#define MAX_QUEUED_VEC_IRQ      1024
+
+#define NUM_IRQ_QUEUE_BITS      10
+#define MAX_QUEUED_VEC_IRQ      (1 << NUM_IRQ_QUEUE_BITS)
+#define IRQ_QUEUE_INDEX_MASK    (MAX_QUEUED_VEC_IRQ - 1)
+#define IRQ_QUEUE_COUNT_MASK    (MAX_QUEUED_VEC_IRQ*2 - 1)
 
 // User thread to simulation exchange structure
 typedef struct {

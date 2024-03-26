@@ -34,17 +34,18 @@
 #error "**ERROR: VP_MAX_NODES > 64 is unsupported"
 #endif
 
-static uint64_t active_node = 0;
+static uint32_t active_node = 0;
 
 static void VUserMain(int node)
 {
+    fprintf(stderr, "VUserMain%d()\n", node);
     if (active_node)
     {
         fprintf(stderr, "***ERROR: Under Python only a single instance of VProc is supported at this time.\n");
     }
     else
     {
-        active_node |= (uint64_t)1 << node;
+        active_node |= (uint32_t)1 << node;
 
         int status = RunPython(node);
 

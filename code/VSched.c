@@ -628,8 +628,8 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
 int PyIrqCB(int vec, int node)
 {
     // Implements a ring buffer
-    ns[node]->irqState.eventQueue[ns[node]->irqState.eventPtr] = vec;
-    ns[node]->irqState.eventPtr = (ns[node]->irqState.eventPtr + 1) % MAX_QUEUED_VEC_IRQ;
+    ns[node]->irqState.eventQueue[ns[node]->irqState.eventPtr & IRQ_QUEUE_INDEX_MASK] = vec;
+    ns[node]->irqState.eventPtr = (ns[node]->irqState.eventPtr + 1) & IRQ_QUEUE_COUNT_MASK;
 
     return 0;
 }
@@ -641,15 +641,15 @@ uint32_t PyFetchIrq (uint32_t *irq, const uint32_t node)
 {
     //fprintf (stderr, "PyFetchIrq(): irq = %p node = %d", irq, node);
 
-    uint32_t eventsInQueue = ns[node]->irqState.eventPtr - ns[node]->irqState.eventPopPtr;
+    uint32_t eventsInQueue = (ns[node]->irqState.eventPtr - ns[node]->irqState.eventPopPtr) & IRQ_QUEUE_COUNT_MASK;
 
     if (eventsInQueue)
     {
         // Get event from the beginning of the queue
-        *irq = ns[node]->irqState.eventQueue[ns[node]->irqState.eventPopPtr];
+        *irq = ns[node]->irqState.eventQueue[ns[node]->irqState.eventPopPtr & IRQ_QUEUE_INDEX_MASK];
 
         // Remove returned event from queue
-        ns[node]->irqState.eventPopPtr = (ns[node]->irqState.eventPopPtr + 1) % MAX_QUEUED_VEC_IRQ;;
+        ns[node]->irqState.eventPopPtr = (ns[node]->irqState.eventPopPtr + 1) & IRQ_QUEUE_COUNT_MASK;;
     }
 
     return eventsInQueue;
