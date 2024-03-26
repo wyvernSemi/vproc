@@ -48,7 +48,7 @@ def irqCb (irq) :
     # Get access to global variable
     global seenreset, irq1count, previrq, vpapi
 
-    vpapi.VPrint("Interrupt = " + hex(irq))
+    vpapi.VPrint("NODE0: Interrupt = " + hex(irq))
 
     # If irq[0] is 1, flag that seen a reset deassertion
     if (irq & 0x1) and not seenreset :
@@ -102,12 +102,12 @@ def VUserMain0() :
   wdata = [0x12345678, 0x87654321]
 
   # Write test
-  vpapi.VPrint("Writing " + hex(wdata[0]) + " to   addr " + hex(addr[0]))
+  vpapi.VPrint("NODE0: Writing " + hex(wdata[0]) + " to   addr " + hex(addr[0]))
   vpapi.write(addr[0], wdata[0])
 
   vpapi.tick(1)
 
-  vpapi.VPrint("Writing " + hex(wdata[1]) + " to   addr " + hex(addr[1]))
+  vpapi.VPrint("NODE0: Writing " + hex(wdata[1]) + " to   addr " + hex(addr[1]))
   vpapi.write(addr[1], wdata[1])
 
   vpapi.tick(5)
@@ -116,43 +116,43 @@ def VUserMain0() :
   rdata = vpapi.uread(addr[0])  # Unsigned value
   
   if rdata == wdata[0] :
-    vpapi.VPrint("Read    " + hex(rdata) + " from addr " + hex(addr[0]))
+    vpapi.VPrint("NODE0: Read    " + hex(rdata) + " from addr " + hex(addr[0]))
   else :
-    vpapi.VPrint("***ERROR: Read    " + hex(rdata) + " from addr " + hex(addr[0]) + ", expected " + hex(wdata[0]))
+    vpapi.VPrint("NODE0: ***ERROR: Read    " + hex(rdata) + " from addr " + hex(addr[0]) + ", expected " + hex(wdata[0]))
   
   vpapi.tick(3)
 
   rdata = vpapi.uread(addr[1])  # Unsigned value
   
   if rdata == wdata[1] :
-    vpapi.VPrint("Read    " + hex(rdata) + " from addr " + hex(addr[1]))
+    vpapi.VPrint("NODE0: Read    " + hex(rdata) + " from addr " + hex(addr[1]))
   else :
-    vpapi.VPrint("***ERROR: Read    " + hex(rdata) + " from addr " + hex(addr[1]) + ", expected " + hex(wdata[1]))
+    vpapi.VPrint("NODE0: ***ERROR: Read    " + hex(rdata) + " from addr " + hex(addr[1]) + ", expected " + hex(wdata[1]))
     
   vpapi.tick(1)
   
   # Burst write test
   burstWrData = [0xcafebabe, 0xdeadbeef, 0x900ddeed, 0x0badf00d]
   burstAddr   = 0xa0002000
-  vpapi.VPrint("Writing burst " + str(list(map(hex, burstWrData))) + " to   addr " + hex(burstAddr))
+  vpapi.VPrint("NODE0: Writing burst " + str(list(map(hex, burstWrData))) + " to   addr " + hex(burstAddr))
   vpapi.burstWrite(burstAddr, burstWrData, len(burstWrData))
   
   # Burst read test
   burstRdData = vpapi.burstRead(burstAddr, 4);
-  vpapi.VPrint("Read burst    " + str(list(map(hex, burstRdData))) + " from addr " + hex(burstAddr));
+  vpapi.VPrint("NODE0: Read burst    " + str(list(map(hex, burstRdData))) + " from addr " + hex(burstAddr));
   
   if burstRdData != burstWrData :
-    vpapi.VPrint("***ERROR: mismatch in burst read data");
+    vpapi.VPrint("NODE0: ***ERROR: mismatch in burst read data");
 
   vpapi.tick(10)
   
   # Check IRQ[1] count
   if irq1count != 2 :
-    vpapi.VPrint("***ERROR: Unexpected IRQ[1] count (" + str(int(irq1count)) + ")")
+    vpapi.VPrint("NODE0: ***ERROR: Unexpected IRQ[1] count (" + str(int(irq1count)) + ")")
     
   vpapi.tick(10)
   
-  vpapi.VPrint("\nTests complete, stopping simulation\n")
+  vpapi.VPrint("\nNODE0: Tests complete, stopping simulation\n")
   
   # Tell simulator to stop/finish
   vpapi.write(__SIMSTOPADDR, 1);
