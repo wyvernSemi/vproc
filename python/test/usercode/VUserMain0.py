@@ -31,7 +31,9 @@ __LONGTIME    = 0x7fffffff
 
 # Define global variable to flag when reset deassertion interrupt
 # event has occurred
-seenreset = 0
+seenreset     = False
+irq1count     = 0
+previrq       = 0
 
 # Define a global vproc API object handle so that the IRQ callback 
 # can use it.
@@ -44,14 +46,21 @@ vpapi     = None
 def irqCb (irq) :
 
     # Get access to global variable
-    global seenreset, vpapi
+    global seenreset, irq1count, previrq, vpapi
 
     vpapi.VPrint("Interrupt = " + hex(irq))
 
     # If irq[0] is 1, flag that seen a reset deassertion
-    if irq & 0x1 :
+    if (irq & 0x1) and not seenreset :
       vpapi.VPrint("  Seen reset deasserted!\n")
-      seenreset = 1
+      seenreset = True
+    
+    # Increment a count for IRQ[1] whenever it changes
+    if (irq ^ previrq) & 0x2 :
+      irq1count = irq1count + 1
+    
+    # Remember irq vector value
+    previrq = irq;
 
     return 0
 
@@ -71,7 +80,7 @@ def waitForResetDeassert (vpapi, polltime = 10) :
 def VUserMain0() :
 
   # Get access to global variable
-  global seenreset, vpapi
+  global seenreset, irq1count, vpapi
 
   # This is node 0
   node  = 0
@@ -135,9 +144,16 @@ def VUserMain0() :
   if burstRdData != burstWrData :
     vpapi.VPrint("***ERROR: mismatch in burst read data");
 
+  vpapi.tick(10)
+  
+  # Check IRQ[1] count
+  if irq1count != 2 :
+    vpapi.VPrint("***ERROR: Unexpected IRQ[1] count (" + str(int(irq1count)) + ")")
+    
+  vpapi.tick(10)
+  
   vpapi.VPrint("\nTests complete, stopping simulation\n")
-  vpapi.tick(20)
-
+  
   # Tell simulator to stop/finish
   vpapi.write(__SIMSTOPADDR, 1);
 

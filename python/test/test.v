@@ -49,6 +49,7 @@ reg           clk;
 integer       Count;
 integer       Seed;
 reg           nreset_h;
+reg           irq1;
 
 // ---------------------------------------------------------
 // Signals
@@ -73,7 +74,7 @@ wire          reset_irq = nreset & ~nreset_h;
 wire CS1 = (VPAddr[31:28] == 4'ha) ? 1'b1 : 1'b0;
 wire CS2 = (VPAddr[31:28] == 4'hb) ? 1'b1 : 1'b0;
 
-wire [31:0] Interrupt = {31'h0, nreset};
+wire [31:0] Interrupt = {30'h0, irq1, nreset};
 
  // ---------------------------------------------------------
  // Virtual Processor 0
@@ -129,6 +130,7 @@ begin
     // Initialise local state
     clk         = 1;
     Seed        = 32'h00250864;
+    irq1        = 0;
 
     #0         // Ensure first x->1 clock edge is complete before initialisation
     Count      = 0;
@@ -144,6 +146,18 @@ begin
 
     // Generate a clock
     forever #(`CLKPERIOD/2) clk = ~clk;
+end
+
+// ---------------------------------------------------------
+// ---------------------------------------------------------
+
+always @(posedge clk)
+begin
+    if (Count == 54)
+        irq1 <= 1'b1;
+    
+    if (Count == 60)
+        irq1 <= 1'b0;
 end
 
 // ---------------------------------------------------------
