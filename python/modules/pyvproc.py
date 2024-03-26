@@ -64,8 +64,9 @@ class PyVProcClass :
 
   # API method to tick for specified number of clocks
   def tick (self, ticks) :
-    self.__processIrq()
-    self.api.PyTick(ticks, self.node)
+    for i in range(ticks) :
+      self.__processIrq()
+      self.api.PyTick(1, self.node)
     
   # API method to do a burst write
   def burstWrite(self, addr, data, length) :
