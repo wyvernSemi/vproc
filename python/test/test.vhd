@@ -49,6 +49,7 @@ architecture sim of test is
 
   signal  notReset_H                   : std_logic                        := '0';
   signal  UpdateResponse               : std_logic                        := '1';
+  signal  irq1                         : std_logic                        := '0';
 
   signal  VPAddr , VPDataOut           : std_logic_vector(31 downto 0)    := 32x"0";
   signal  VPDataIn                     : std_logic_vector(31 downto 0)    := 32x"0";
@@ -66,6 +67,7 @@ begin
   ---------------------------------------------
   notReset                             <= '1' when (Count > 5) else '0';
   CS1                                  <= '1' when VPAddr(31 downto 28) = 4x"a" else '0';
+  irq1                                 <= '1' when (Count > 54) and (Count < 60) else '0';
 
   ---------------------------------------------
   -- VProc 0
@@ -81,7 +83,7 @@ begin
     DataIn                             => VPDataIn,
     WRAck                              => VPWE,
     RDAck                              => VPRD,
-    Interrupt                          => 2x"0" & notReset,
+    Interrupt                          => '0' & irq1 & notReset,
     Update                             => Update,
     UpdateResponse                     => UpdateResponse,
     Node                               => 4x"0"
