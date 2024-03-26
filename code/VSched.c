@@ -229,7 +229,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 
     // Get single argument value of $vinit call
     node = tf_getp(VPNODENUM_ARG);
-    io_printf("VInit(%d): initialising PLI TF interface\n", node);
+    io_printf("VInit(%d): initialising PLI TF interface\n  %s\n", node, VERSION_STRING);
 
 # else
     int                args[10];
@@ -243,7 +243,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
     // Get single argument value of $vinit call
     node = args[VPNODENUM_ARG];
 
-    vpi_printf("VInit(%d): initialising VPI interface\n", node);
+    vpi_printf("VInit(%d): initialising VPI interface\n  %s\n", node, VERSION_STRING);
 
 
 
@@ -258,9 +258,9 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
     // Get single argument value of $vinit call
     node = args[VPNODENUM_ARG];
 
-    VPrint("VInit(%d): initialising VHPI interface\n", node);
+    VPrint("VInit(%d): initialising VHPI interface\n  %s\n", node, VERSION_STRING);
 # else
-    VPrint("VInit(%d): initialising FLI interface\n", node);
+    VPrint("VInit(%d): initialising FLI interface\n  %s\n", node, VERSION_STRING);
 # endif
 #endif
 
