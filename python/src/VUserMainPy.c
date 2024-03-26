@@ -38,10 +38,9 @@ static uint32_t active_node = 0;
 
 static void VUserMain(int node)
 {
-    fprintf(stderr, "VUserMain%d()\n", node);
     if (active_node)
     {
-        fprintf(stderr, "***ERROR: Under Python only a single instance of VProc is supported at this time.\n");
+        fprintf(stderr, "NODE%d: ***ERROR: Under Python only a single instance of VProc is supported at this time.\n", node);
     }
     else
     {
