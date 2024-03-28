@@ -23,7 +23,7 @@
 # Define the maximum number of supported VProcs in the compile pli library
 MAX_NUM_VPROC      = 64
 
-SRCDIR             = code
+SRCDIR             = ../code
 USRCDIR            = usercode
 TESTDIR            = .
 VOBJDIR            = ${TESTDIR}/obj

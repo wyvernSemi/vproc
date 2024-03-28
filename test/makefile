@@ -1,5 +1,5 @@
 ###################################################################
-# Makefile for Virtual Processor VHDL testcode in Modelsim
+# Makefile for Virtual Processor testcode in Modelsim
 #
 # Copyright (c) 2005-2024 Simon Southwell.
 #
@@ -20,10 +20,11 @@
 #
 ###################################################################
 
+
 # Define the maximum number of supported VProcs in the compile pli library
 MAX_NUM_VPROC      = 64
 
-SRCDIR             = code
+SRCDIR             = ../code
 USRCDIR            = usercode
 TESTDIR            = .
 VOBJDIR            = ${TESTDIR}/obj
@@ -54,7 +55,7 @@ VPROC_C            = VSched.c \
 MEM_C              =
 
 # Test user code
-USER_C             = VUserMain0.c VUserMain1.c
+USER_C             = VUserMain0.c VUserMain1.cpp
 
 USER_CPP_BASE      = $(notdir $(filter %cpp, ${USER_C}))
 USER_C_BASE        = $(notdir $(filter %c, ${USER_C}))
@@ -65,6 +66,8 @@ VOBJS              = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_
                      ${VPROC_C:%.c=%.o} ${MEM_C_BASE:%.c=%.o} ${MEM_CPP_BASE:%.cpp=%.o}}
 
 USRFLAGS           =
+PLIFLAG            = -DVPROC_PLI_VPI
+VLOGFLAGS          = +define+VPROC_BURST_IF +incdir+../
 
 # Generated  PLI C library
 VPROC_PLI          = ${TESTDIR}/VProc.so
@@ -88,6 +91,7 @@ C++                = g++
 ARCHFLAG           = -m32
 CFLAGS             = -fPIC                                 \
                      ${ARCHFLAG}                           \
+                     ${PLIFLAG}                            \
                      -g                                    \
                      -D_GNU_SOURCE                         \
                      ${USRFLAGS}                           \
@@ -96,7 +100,6 @@ CFLAGS             = -fPIC                                 \
                      -I${MODEL_TECH}/../include            \
                      -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
                      -DMODELSIM                            \
-                     -DVPROC_VHDL                          \
                      -D_REENTRANT
 
 # Common flags for vsim
@@ -106,7 +109,7 @@ VSIMFLAGS          = -pli ${VPROC_PLI} ${VPROC_TOP}
 # BUILD RULES
 #------------------------------------------------------
 
-all: ${VPROC_PLI} vhdl
+all: ${VPROC_PLI} verilog
 
 ${VOBJDIR}/%.o: ${SRCDIR}/%.c ${SRCDIR}/*.h
 	@${CC} -c ${CFLAGS} $< -o $@
@@ -147,26 +150,26 @@ ${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o
            -Wl,-no-whole-archive                           \
            -o $@
 
-# Let modelsim decide what's changed in the VHDL
-.PHONY: vhdl
+# Let modelsim decide what's changed in the verilog
+.PHONY: verilog
 
-vhdl: ${VPROC_PLI}
+verilog: ${VPROC_PLI}
 	@if [ ! -d "./work" ]; then                            \
 	      vlib work;                                       \
 	fi
-	@vcom -quiet -2008 -f files.tcl -work work
+	@vlog ${VLOGFLAGS} -f test.vc
 
 #------------------------------------------------------
 # EXECUTION RULES
 #------------------------------------------------------
 
-sim: vhdl
+sim: verilog
 	@vsim -c ${VSIMFLAGS}
 
-run: vhdl
+run: verilog
 	@vsim -c ${VSIMFLAGS} -do "run -all" -do "quit"
 
-rungui: vhdl
+rungui: verilog
 	@if [ -e wave.do ]; then                               \
 	    vsim -gui -do wave.do ${VSIMFLAGS} -do "run -all"; \
 	else                                                   \
@@ -182,6 +185,6 @@ gui: rungui
 clean:
 	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJDIR} *.wlf transcript
 	@if [ -d "./work" ]; then                              \
-	    vdel -all;                                         \
+	    rm -rf work;                                       \
 	fi
 

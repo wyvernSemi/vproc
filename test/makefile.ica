@@ -1,5 +1,5 @@
 ###################################################################
-# Makefile for Virtual Processor testcode in Modelsim
+# Makefile for Virtual Processor testcode in Icarus Verilog
 #
 # Copyright (c) 2005-2024 Simon Southwell.
 #
@@ -19,33 +19,26 @@
 # along with VProc. If not, see <http://www.gnu.org/licenses/>.
 #
 ###################################################################
+#
+# Assumes Ubuntu Linux (22.04 LTS 64-bit) installation and mingw64
+# on Windows. ARCHFLAG and ICADIR need updating for other
+# configurations.
+#
 
+# Requirements: iverilog
+#     on RHEL 7 "yum install iverilog" to install Icarus
+# To run: vvp -m ./VProc.so sim
 
 # Define the maximum number of supported VProcs in the compile pli library
 MAX_NUM_VPROC      = 64
 
-SRCDIR             = code
+SRCDIR             = ../code
 USRCDIR            = usercode
 TESTDIR            = .
 VOBJDIR            = ${TESTDIR}/obj
-MEMMODELDIR        = .
 
 # Get OS type
 OSTYPE:=$(shell uname)
-
-# If run from a place where MODEL_TECH is not defined, construct from path to PLI library
-ifeq ("${MODEL_TECH}", "")
-  ifeq (${OSTYPE}, Linux)
-    PLILIB         = libmtipli.so
-  else
-    PLILIB         = mtipli.dll
-  endif
-  
-  VSIMPATH         = $(shell which vsim)
-  SIMROOT          = $(shell dirname ${VSIMPATH})/..
-  PLILIBPATH       = $(shell find ${SIMROOT} -name "${PLILIB}")
-  MODEL_TECH       = $(shell dirname ${PLILIBPATH})
-endif
 
 # VPROC C source code
 VPROC_C            = VSched.c \
@@ -67,28 +60,27 @@ VOBJS              = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_
 
 USRFLAGS           =
 PLIFLAG            = -DVPROC_PLI_VPI
-VLOGFLAGS          = +define+VPROC_BURST_IF
+VLOGFLAGS          = -DVPROC_BURST_IF -I../ -Ptest.VCD_DUMP=1
+VLOGDEBUGFLAGS     = -Ptest.DEBUG_STOP=1
+VLOGFILES          = test.v ../f_VProc.v
 
 # Generated  PLI C library
 VPROC_PLI          = ${TESTDIR}/VProc.so
 VLIB               = ${TESTDIR}/libvproc.a
 
-VPROC_TOP          = test
-
 # Set OS specific variables between Linux and Windows (MinGW)
 ifeq (${OSTYPE}, Linux)
   CFLAGS_SO        = -shared -lpthread -lrt -rdynamic
-  CPPSTD           = -std=c++11
-  MODELSIMBINDIR   = linuxaloem
+  ICADIR           = /usr/include/iverilog
 else
   CFLAGS_SO        = -shared -Wl,-export-all-symbols
-  CPPSTD           =
-  MODELSIMBINDIR   = win32aloem
+  ICADIR           = /mingw64/include/iverilog
 endif
 
 CC                 = gcc
 C++                = g++
-ARCHFLAG           = -m32
+CPPSTD             = -std=c++11
+ARCHFLAG           = -m64
 CFLAGS             = -fPIC                                 \
                      ${ARCHFLAG}                           \
                      ${PLIFLAG}                            \
@@ -97,13 +89,10 @@ CFLAGS             = -fPIC                                 \
                      ${USRFLAGS}                           \
                      -I${SRCDIR}                           \
                      -I${USRCDIR}                          \
-                     -I${MODEL_TECH}/../include            \
+                     -I${ICADIR}                           \
                      -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
-                     -DMODELSIM                            \
+                     -DICARUS                              \
                      -D_REENTRANT
-
-# Common flags for vsim
-VSIMFLAGS          = -pli ${VPROC_PLI} ${VPROC_TOP}
 
 #------------------------------------------------------
 # BUILD RULES
@@ -112,7 +101,7 @@ VSIMFLAGS          = -pli ${VPROC_PLI} ${VPROC_TOP}
 all: ${VPROC_PLI} verilog
 
 ${VOBJDIR}/%.o: ${SRCDIR}/%.c ${SRCDIR}/*.h
-	@${CC} -c ${CFLAGS} $< -o $@
+	@${CC} -c ${CFLAGS} -Wno-incompatible-pointer-types $< -o $@
 
 ${VOBJDIR}/%.o: ${SRCDIR}/%.cpp ${SRCDIR}/*.h
 	@${C++}-c ${CFLAGS} $< -o $@
@@ -144,47 +133,43 @@ ${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o
            ${CFLAGS}                                       \
            ${VOBJDIR}/veriuser.o                           \
            -lpthread                                       \
-           -L${MODEL_TECH}                                 \
-           -lmtipli                                        \
+           -lveriuser -lvpi                                \
            -L${TESTDIR} -lvproc                            \
            -Wl,-no-whole-archive                           \
            -o $@
 
-# Let modelsim decide what's changed in the verilog
-.PHONY: verilog
+verilog: ${VLOGFILES}
+	@iverilog ${VLOGFLAGS} ${PLIFLAG} -o sim ${VLOGFILES}
 
-verilog: ${VPROC_PLI}
-	@if [ ! -d "./work" ]; then                            \
-	      vlib work;                                       \
-	fi
-	@vlog ${VLOGFLAGS} -f test.vc
+verilog_debug: ${VLOGFILES}
+	@iverilog ${VLOGDEBUGFLAGS} ${VLOGFLAGS} ${PLIFLAG} -o sim ${VLOGFILES}
 
 #------------------------------------------------------
 # EXECUTION RULES
 #------------------------------------------------------
 
-sim: verilog
-	@vsim -c ${VSIMFLAGS}
+sim: all
+	@vvp -s -m ${VPROC_PLI} sim
 
-run: verilog
-	@vsim -c ${VSIMFLAGS} -do "run -all" -do "quit"
+debug: clean ${VPROC_PLI} verilog_debug
+	@vvp -m ${VPROC_PLI} sim
 
-rungui: verilog
-	@if [ -e wave.do ]; then                               \
-	    vsim -gui -do wave.do ${VSIMFLAGS} -do "run -all"; \
+run: all
+	@vvp -n -m ${VPROC_PLI} sim
+
+rungui: all
+	@vvp -n -m ${VPROC_PLI} sim
+	@if [ -e waves.gtkw ]; then                            \
+	    gtkwave -A waves.vcd;                              \
 	else                                                   \
-	    vsim -gui ${VSIMFLAGS};                            \
+	    gtkwave waves.vcd;                                 \
 	fi
 
-gui: rungui
+gui : rungui
 
 #------------------------------------------------------
-# CLEANING RULES
+# CLEAN RULES
 #------------------------------------------------------
 
 clean:
-	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJDIR} *.wlf transcript
-	@if [ -d "./work" ]; then                              \
-	    rm -rf work;                                       \
-	fi
-
+	@rm -rf ${VPROC_PLI} ${VLIB} obj sim *.vcd
