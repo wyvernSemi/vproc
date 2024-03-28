@@ -26,8 +26,11 @@
 //=====================================================================
 
 #include <string.h>
+
+#ifndef NVC
 #include "veriuser.h"
 #include "vpi_user.h"
+#endif
 
 #ifdef INCL_VLOG_MEM_MODEL
 #include "mem_model.h"
@@ -105,7 +108,7 @@
 #  endif
 
 #define VPROC_TF_TBL \
-    {usertask, 0, NULL, 0, VInit,     VHalt, "$vinit",     1}, \
+    {usertask, 0, NULL, 0, VInit,     NULL,  "$vinit",     1}, \
     {usertask, 0, NULL, 0, VSched,    NULL,  "$vsched",    1}, \
     {usertask, 0, NULL, 0, VAccess,   NULL,  "$vaccess",   1}, \
     {usertask, 0, NULL, 0, VProcUser, NULL,  "$vprocuser", 1}, \

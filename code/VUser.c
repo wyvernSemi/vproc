@@ -117,7 +117,7 @@ static void VUserInit (const unsigned node)
 
         if ((VUserMain_func = (pVUserMain_t) dlsym(hdl, funcname)) == NULL)
         {
-            io_printf("***Error: failed to find user code symbol %s (VUserInit)\n", funcname);
+            VPrint("***Error: failed to find user code symbol %s (VUserInit)\n", funcname);
             exit(1);
         }
     }
@@ -129,7 +129,7 @@ static void VUserInit (const unsigned node)
 
     if ((status = sem_wait(&(ns[node]->rcv))) == -1)
     {
-        io_printf("***Error: bad sem_post status (%d) on node %d (VUserInit)\n", status, node);
+        VPrint("***Error: bad sem_post status (%d) on node %d (VUserInit)\n", status, node);
         exit(1);
     }
 
@@ -157,7 +157,7 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
 
     if ((status = sem_post(&(ns[node]->snd))) == -1)
     {
-        io_printf("***Error: bad sem_post status (%d) on node %d (VExch)\n", status, node);
+        VPrint("***Error: bad sem_post status (%d) on node %d (VExch)\n", status, node);
         exit(1);
     }
 
@@ -176,7 +176,7 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
 
             if (prbuf->interrupt > MAX_INTERRUPT_LEVEL)
             {
-                io_printf("***Error: invalid interrupt level %d (VExch)\n", prbuf->interrupt);
+                VPrint("***Error: invalid interrupt level %d (VExch)\n", prbuf->interrupt);
                 exit(1);
             }
 
@@ -194,7 +194,7 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
 
             if ((status = sem_post(&(ns[node]->snd))) == -1)
             {
-                io_printf("***Error: bad sem_post status (%d) on node %d (VExch)\n", status, node);
+                VPrint("***Error: bad sem_post status (%d) on node %d (VExch)\n", status, node);
                 exit(1);
             }
         }
@@ -310,7 +310,7 @@ void VRegInterrupt (const int level, const pVUserInt_t func, const unsigned node
 
     if (level < MIN_INTERRUPT_LEVEL || level >= MAX_INTERRUPT_LEVEL)
     {
-        io_printf("***Error: attempt to register an out of range interrupt level (VRegInterrupt)\n");
+        VPrint("***Error: attempt to register an out of range interrupt level (VRegInterrupt)\n");
         exit(1);
     }
 

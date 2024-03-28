@@ -185,6 +185,6 @@ gui: rungui
 clean:
 	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJDIR} *.wlf transcript
 	@if [ -d "./work" ]; then                              \
-	    vdel -all;                                         \
+	    rm -rf work;                                       \
 	fi
 

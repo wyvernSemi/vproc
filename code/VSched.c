@@ -260,7 +260,11 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 
     VPrint("VInit(%d): initialising VHPI interface\n  %s\n", node, VERSION_STRING);
 # else
-    VPrint("VInit(%d): initialising FLI interface\n  %s\n", node, VERSION_STRING);
+#   ifndef NVC
+      VPrint("VInit(%d): initialising FLI interface\n  %s\n", node, VERSION_STRING);
+    #else
+      VPrint("VInit(%d): initialising VHPIDIRECT interface\n  %s\n", node, VERSION_STRING);
+    #endif
 # endif
 #endif
 
@@ -269,7 +273,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
     // Range check node number
     if (node < 0 || node >= VP_MAX_NODES)
     {
-        io_printf("***Error: VInit() got out of range node number (%d)\n", node);
+        VPrint("***Error: VInit() got out of range node number (%d)\n", node);
         exit(VP_USER_ERR);
     }
 
@@ -283,12 +287,12 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 
     if (sem_init(&(ns[node]->snd), 0, 0) == -1)
     {
-        io_printf("***Error: VInit() failed to initialise semaphore\n");
+        VPrint("***Error: VInit() failed to initialise semaphore\n");
         exit(1);
     }
     if (sem_init(&(ns[node]->rcv), 0, 0) == -1)
     {
-        io_printf("***Error: VInit() failed to initialise semaphore\n");
+        VPrint("***Error: VInit() failed to initialise semaphore\n");
         exit(1);
     }
 
@@ -300,29 +304,6 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 #ifndef VPROC_VHDL
     return 0;
 #endif
-}
-
-/////////////////////////////////////////////////////////////
-// Called for a 'reason'. Holding procedure to catch 'finish'
-// in case of any tidying up required.
-//
-
-int VHalt (int data, int reason)
-{
-    debug_io_printf("VHalt(): data = %d reason = %d\n", data, reason);
-
-    if (reason == reason_endofcompile) {
-    } else if (reason == reason_finish) {
-#ifndef ICARUS
-    } else if (reason == reason_startofsave) {
-    } else if (reason == reason_save) {
-    } else if (reason == reason_restart) {
-        debug_io_printf("VHalt(): restart\n");
-#endif
-    } else if (reason != reason_finish) {
-        debug_io_printf("VHalt(): not called for a halt reason (%d)\n", reason);
-        return 0;
-    }
 }
 
 /////////////////////////////////////////////////////////////
