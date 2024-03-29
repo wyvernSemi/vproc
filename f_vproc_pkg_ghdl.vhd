@@ -2,7 +2,7 @@
 --  
 --  Copyright (c) 2024 Simon Southwell. All rights reserved.
 -- 
---  Date: 28th May 2024
+--  Date: 29th May 2024
 -- 
 --  This file is part of the VProc package.
 -- 
@@ -27,7 +27,7 @@ package vproc_pkg is
   procedure VInit (
     node : in integer
   );
-  attribute foreign of VInit : procedure is "VHPIDIRECT VInit";
+  attribute foreign of VInit : procedure is "VHPIDIRECT ./VProc.so VInit";
 
   procedure VSched (
     node      : in  integer;
@@ -38,19 +38,19 @@ package vproc_pkg is
     VPRw      : out integer;
     VPTicks   : out integer
   );
-attribute foreign of VSched : procedure is "VHPIDIRECT VSched";
+attribute foreign of VSched : procedure is "VHPIDIRECT ./VProc.so VSched";
 
   procedure VProcUser (
     node      : in  integer;
     value     : in  integer
   );
-  attribute foreign of VProcUser : procedure is "VHPIDIRECT VProcUser";
+  attribute foreign of VProcUser : procedure is "VHPIDIRECT ./VProc.so VProcUser";
 
   procedure VIrq (
     node      : in  integer;
     irq       : in  integer
   );
-  attribute foreign of VIrq : procedure is "VHPIDIRECT VIrq";
+  attribute foreign of VIrq : procedure is "VHPIDIRECT ./VProc.so VIrq";
 
   procedure VAccess (
     node      : in  integer;
@@ -58,7 +58,7 @@ attribute foreign of VSched : procedure is "VHPIDIRECT VSched";
     VPDataIn  : in  integer;
     VPDataOut : out integer
   );
-  attribute foreign of VAccess : procedure is "VHPIDIRECT VAccess";
+  attribute foreign of VAccess : procedure is "VHPIDIRECT ./VProc.so VAccess";
 
 end;
 

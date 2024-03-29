@@ -1,5 +1,5 @@
 ###################################################################
-# Makefile for Virtual Processor VHDL testcode in Modelsim
+# Makefile for Virtual Processor VHDL testcode in NVC
 #
 # Copyright (c) 2005-2024 Simon Southwell.
 #
@@ -62,7 +62,6 @@ VPROC_TOP          = test
 ifeq (${OSTYPE}, Linux)
   CFLAGS_SO        = -shared -lpthread -lrt -rdynamic
   CPPSTD           = -std=c++11
-  MODELSIMBINDIR   = linuxaloem
 else
   CFLAGS_SO        = -shared -Wl,-export-all-symbols
   CPPSTD           =
@@ -83,14 +82,14 @@ CFLAGS             = -fPIC                                 \
                      -DNVC                                 \
                      -D_REENTRANT
 
-# Rutime flags for nvc
+WAVEFILE          = waves.fst
+WAVESAVEFILE      = ${WAVEFILE:%.fst=%.gtkw}
+
+# Runtime flags for nvc
 SIMFLAGS          = --ieee-warnings=off                    \
                     --format=fst --wave=${WAVEFILE}        \
                     --load=${VPROC_PLI}                    \
                     ${VPROC_TOP}
-                    
-WAVEFILE          = waves.fst
-WAVESAVEFILE      = ${WAVEFILE:%.fst=%.gtkw}
 
 #------------------------------------------------------
 # BUILD RULES
@@ -134,9 +133,8 @@ ${VPROC_PLI}: ${VLIB}
            -Wl,-no-whole-archive                           \
            -o $@
 
-# Let modelsim decide what's changed in the VHDL
+# Analyse VHDL files
 .PHONY: vhdl
-
 vhdl: ${VPROC_PLI}
 	@nvc --std=08 -a -f files_nvc.tcl -e ${VPROC_TOP}
 

@@ -1,5 +1,5 @@
 ###################################################################
-# Makefile for Virtual Processor VHDL testcode in NVC
+# Makefile for Virtual Processor VHDL testcode in GHDL
 #
 # Copyright (c) 2005-2024 Simon Southwell.
 #
@@ -98,17 +98,18 @@ CFLAGS             = -fPIC                                 \
                      -I${PYTHONHOME}/include/${PYVER}      \
                      -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
                      -DVPROC_VHDL                          \
-                     -DNVC                                 \
+                     -DGHDL                                \
                      -D_REENTRANT
 
-# Rutime flags for nvc
-SIMFLAGS          = --ieee-warnings=off                    \
-                    --format=fst --wave=${WAVEFILE}        \
-                    --load=${VPROC_PLI}                    \
-                    ${VPROC_TOP}
-                    
-WAVEFILE          = waves.fst
-WAVESAVEFILE      = ${WAVEFILE:%.fst=%.gtkw}
+WAVEFILE          = waves.ghw
+WAVESAVEFILE      = ${WAVEFILE:%.ghw=%.gtkw}
+WORKDIR           = work
+
+# Runtime flags for GHDL
+SIMFLAGS          = --std=08 --workdir=${WORKDIR}
+
+VHDLFILELIST      = files_ghdl.tcl
+VHDLFILES         =$(foreach vhdlfile, $(file < ${VHDLFILELIST}), ${vhdlfile})
 
 #------------------------------------------------------
 # BUILD RULES
@@ -162,20 +163,23 @@ ${PYVRPOC_PLI}: ${PYSRCDIR}/${PYTHON_C}
            -ldl                                            \
            -o $@
 
+${WORKDIR}:
+	@mkdir ${WORKDIR}
+
 # Analyse the VHDL files
 .PHONY: vhdl
-vhdl: ${VPROC_PLI}
-	@nvc --std=08 -a -f files_nvc.tcl -e ${VPROC_TOP}
+vhdl: ${VPROC_PLI} ${WORKDIR}
+	@ghdl -a --std=08 --workdir=${WORKDIR} ${VHDLFILES}
 
 #------------------------------------------------------
 # EXECUTION RULES
 #------------------------------------------------------
 
 run: vhdl
-	@nvc -r ${SIMFLAGS}
+	@ghdl --elab-run ${SIMFLAGS} ${VPROC_TOP}
 
 rungui: vhdl
-	@nvc -r  ${SIMFLAGS}
+	@ghdl -r ${SIMFLAGS} ${VPROC_TOP} --wave=${WAVEFILE}
 	@if [ -e ${WAVESAVEFILE} ]; then                       \
 	    gtkwave -A ${WAVEFILE};                            \
 	else                                                   \

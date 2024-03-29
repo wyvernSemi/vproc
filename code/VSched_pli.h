@@ -27,7 +27,7 @@
 
 #include <string.h>
 
-#ifndef NVC
+#if !defined(NVC) && !defined(GHDL)
 #include "veriuser.h"
 #include "vpi_user.h"
 #endif
