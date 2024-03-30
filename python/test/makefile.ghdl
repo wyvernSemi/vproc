@@ -179,7 +179,7 @@ run: vhdl
 	@ghdl --elab-run ${SIMFLAGS} ${VPROC_TOP}
 
 rungui: vhdl
-	@ghdl -r ${SIMFLAGS} ${VPROC_TOP} --wave=${WAVEFILE}
+	@ghdl --elab-run ${SIMFLAGS} ${VPROC_TOP} --wave=${WAVEFILE}
 	@if [ -e ${WAVESAVEFILE} ]; then                       \
 	    gtkwave -A ${WAVEFILE};                            \
 	else                                                   \
