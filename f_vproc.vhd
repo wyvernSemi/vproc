@@ -230,7 +230,7 @@ begin
 
             -- Update current tick value with returned number (if not zero)
             if VPTicks > 0 then
-              TickVal           := VPTicks;
+              TickVal           := VPTicks - 1;
             end if;
 
             -- Flag to update externally and wait for response

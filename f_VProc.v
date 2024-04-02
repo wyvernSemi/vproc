@@ -256,9 +256,9 @@ begin
                 end
 
                 // Update current tick value with returned number (if not negative)
-                if (VPTicks >= 0)
+                if (VPTicks > 0)
                 begin
-                    TickCount           = VPTicks;
+                    TickCount           = VPTicks - 1;
                 end
 
                 // Flag to update externally and wait for response.
