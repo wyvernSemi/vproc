@@ -35,7 +35,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define VERSION_STRING         "VProc version 1.3.1. Copyright (c) 2004-2024 Simon Southwell."
+#define VERSION_STRING         "VProc version 1.3.2. Copyright (c) 2004-2024 Simon Southwell."
 
 #ifndef VP_MAX_NODES
 #define VP_MAX_NODES            64
