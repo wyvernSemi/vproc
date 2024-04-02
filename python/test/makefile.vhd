@@ -188,6 +188,15 @@ rungui: vhdl
 
 gui: rungui
 
+.SILENT:
+help:
+	@$(info make help          Display this message)
+	@$(info make               Build C/C++ and HDL code without running simulation)
+	@$(info make sim           Build and run command line interactive (sim not started))
+	@$(info make run           Build and run batch simulation)
+	@$(info make rungui/gui    Build and run GUI simulation)
+	@$(info make clean         clean previous build artefacts)
+
 #------------------------------------------------------
 # CLEANING RULES
 #------------------------------------------------------

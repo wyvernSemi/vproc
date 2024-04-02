@@ -183,6 +183,16 @@ rungui: all
 
 gui : rungui
 
+.SILENT:
+help:
+	@$(info make help          Display this message)
+	@$(info make               Build C/C++ and HDL code without running simulation)
+	@$(info make sim           Build and run command line interactive (sim not started))
+	@$(info make debug         Build and run and stop at time 0 for debug attachment)
+	@$(info make run           Build and run batch simulation)
+	@$(info make rungui/gui    Build and run GUI simulation)
+	@$(info make clean         clean previous build artefacts)
+
 #------------------------------------------------------
 # CLEAN RULES
 #------------------------------------------------------

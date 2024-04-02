@@ -49,5 +49,8 @@ rungui:
 
 gui: rungui
 
+help:
+	@$(COMMONCMD) help
+
 clean:
 	@$(COMMONCMD) clean
