@@ -212,14 +212,16 @@ begin
     // Random data input for VProc node 0
     #`RegDel
     VPDataIn0  = Seed;
+    
+    Interrupt1[1] = (Count >24 && Count < 34) ? 1 : 0;
 
     // Random interrupt for node 0
     Seed       = {$dist_uniform(Seed, 32'hffffffff, 32'h7fffffff)};
-    Interrupt0 = ((Seed % 16) == 0) ? 1 : 0;
+    Interrupt0[0] = ((Seed % 16) == 0) ? 1 : 0;
 
     // Random interrupt for node 1
     Seed       = {$dist_uniform(Seed, 32'hffffffff, 32'h7fffffff)};
-    Interrupt1 <= #`RegDel ((Seed % 16) == 0) ? 1 : 0;
+    Interrupt1[0] <= #`RegDel ((Seed % 16) == 0) ? 1 : 0;
 end
 
 `ifdef VCS

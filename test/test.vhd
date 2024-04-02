@@ -176,20 +176,26 @@ begin
 
       uniform(Seed1, Seed2, RandNumR);
       RandNumI0                        := natural(16.0 * RandNumR);
+      
+      if count >= 32 and count < 42 then
+        Interrupt1(1)                  <= '1';
+      else
+        Interrupt1(1)                  <= '0';
+      end if;
 
       if RandNumI0 = 0 then
-        Interrupt0                     <= "001";
+        Interrupt0(0)                  <= '1';
       else
-        Interrupt0                     <= "000";
+        Interrupt0(0)                  <= '0';
       end if;
 
       uniform(Seed1, Seed2, RandNumR);
       RandNumI0                        := natural(16.0 * RandNumR);
 
       if RandNumI0 = 0 then
-        Interrupt1                     <= "001";
+        Interrupt1(0)                  <= '1';
       else
-        Interrupt1                     <= "000";
+        Interrupt1(0)                  <= '0';
       end if;
 
     end if;
