@@ -27,7 +27,7 @@
 
 #include <string.h>
 
-#if !defined(NVC) && !defined(GHDL)
+#if !defined(NVC) && !defined(GHDL) && !defined(VPROC_SV)
 #include "veriuser.h"
 #include "vpi_user.h"
 #endif
@@ -49,7 +49,7 @@
 
 #endif
 
-# ifdef VPROC_VHDL
+# if defined(VPROC_VHDL) || defined (VPROC_SV)
 
 #define VPROC_TF_TBL_SIZE  0
 #define VPROC_TF_TBL       {0}
@@ -82,16 +82,20 @@
 #  else
 
 #   ifdef DEBUG
-#   define debug_io_printf mti_PrintFormatted
+#    ifdef VPROC_SV
+#    define debug_io_printf printf
+#    else
+#    define debug_io_printf mti_PrintFormatted
+#    endif
 #   else
 #   define debug_io_printf //
 #   endif
     
 #define VINIT_PARAMS       int  node
-#define VSCHED_PARAMS      int  node, int Interrupt, int VPDataIn, int* VPDataOut, int* VPAddr, int* VPRw,int* VPTicks
+#define VSCHED_PARAMS      int  node, int Interrupt, int VPDataIn, int* VPDataOut, int* VPAddr, int* VPRw, int* VPTicks
 #define VPROCUSER_PARAMS   int  node, int value
 #define VIRQ_PARAMS        int  node, int value
-#define VACCESS_PARAMS     int  node, int  idx, int VPDataIn, int* VPDataOut
+#define VACCESS_PARAMS     int  node, int idx, int VPDataIn, int* VPDataOut
 #define VHALT_PARAMS       int, int
 
 #define VPROC_RTN_TYPE     void

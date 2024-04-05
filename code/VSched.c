@@ -222,7 +222,7 @@ static int updateArgs (vpiHandle taskHdl, int value[])
 VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 {
 
-#ifndef VPROC_VHDL
+#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
     int node;
 
 # ifndef VPROC_PLI_VPI
@@ -260,10 +260,14 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 
     VPrint("VInit(%d): initialising VHPI interface\n  %s\n", node, VERSION_STRING);
 # else
-#   if !defined(NVC) && !defined(GHDL)
+#   if !defined(NVC) && !defined(GHDL) && !defined(VPROC_SV)
       VPrint("VInit(%d): initialising FLI interface\n  %s\n", node, VERSION_STRING);
-    #else
-      VPrint("VInit(%d): initialising VHPIDIRECT interface\n  %s\n", node, VERSION_STRING);
+#   else
+#     if defined (VPROC_SV)
+       VPrint("VInit(%d): initialising SystemVerilog DPI interface\n  %s\n", node, VERSION_STRING);
+#     else      
+       VPrint("VInit(%d): initialising VHPIDIRECT interface\n  %s\n", node, VERSION_STRING);
+#     endif
     #endif
 # endif
 #endif
@@ -301,7 +305,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
     // Issue a new thread to run the user code
     VUser(node);
 
-#ifndef VPROC_VHDL
+#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
     return 0;
 #endif
 }
@@ -316,7 +320,7 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     int VPDataOut_int, VPAddr_int, VPRw_int, VPTicks_int;
     int args[10];
 
-#ifndef VPROC_VHDL
+#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
 
     int node;
     int Interrupt, VPDataIn;
@@ -364,7 +368,7 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     // don't process here with the level interrupt code and just return.
     if (Interrupt && (ns[node]->VUserIrqCB != NULL || ns[node]->PyIrqCB != NULL))
     {
-#ifndef VPROC_VHDL
+#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
         return 0;
 #else
         return;
@@ -391,10 +395,10 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 
     debug_io_printf("VSched(): returning to simulation from node %d\n\n", node);
 
-#ifdef VPROC_VHDL
+#if defined(VPROC_VHDL) || defined(VPROC_SV)
 #  ifndef VPROC_VHDL_VHPI
 
-    // Export outputs over FLI
+    // Export outputs
     *VPDataOut = VPDataOut_int;
     *VPAddr    = VPAddr_int;
     *VPRw      = VPRw_int;
@@ -435,7 +439,7 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 //
 VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 {
-#ifndef VPROC_VHDL
+#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
 
     int node, value;
 
@@ -478,7 +482,7 @@ VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
         (*(ns[node]->VUserCB))(value);
     }
 
-#ifndef VPROC_VHDL
+#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
     return 0;
 #endif
 }
@@ -489,7 +493,7 @@ VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 //
 VPROC_RTN_TYPE VIrq(VIRQ_PARAMS)
 {
-#ifndef VPROC_VHDL
+#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
 
     int node, value;
 
@@ -535,7 +539,7 @@ VPROC_RTN_TYPE VIrq(VIRQ_PARAMS)
         (*(ns[node]->PyIrqCB))(value, node);
     }
 
-#ifndef VPROC_VHDL
+#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
     return 0;
 #endif
 }
@@ -548,7 +552,7 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
 {
     int       args[10];
 
-#ifdef VPROC_VHDL
+#if defined(VPROC_VHDL) || defined(VPROC_SV)
 # ifndef VPROC_VHDL_VHPI
     *VPDataOut                               = ((int *) ns[node]->send_buf.data_p)[idx];
     ((int *) ns[node]->send_buf.data_p)[idx] = VPDataIn;

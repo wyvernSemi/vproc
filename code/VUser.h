@@ -54,8 +54,7 @@ extern void VRegUser      (const pVUserCB_t    func,  const unsigned node);
 // VUser function prototype for VInit in VSched.c
 extern int  VUser         (const unsigned   node);
 
-#if defined(VPROC_VHDL) || defined (ICARUS)
-
+#if defined(VPROC_VHDL) || defined (ICARUS) || defined (VPROC_SV)
 # define VPrint(...) printf (__VA_ARGS__)
 #else
 #define VPrint(...) vpi_printf (__VA_ARGS__)
