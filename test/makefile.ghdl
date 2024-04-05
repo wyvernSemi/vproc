@@ -172,6 +172,6 @@ help:
 #------------------------------------------------------
 
 clean:
-	@rm -rf ${VPROC_PLI} ${PYVRPOC_PLI} ${VLIB} ${VOBJDIR} *.o *.exe ${VPROC_TOP} ${WAVEFILE} work
+	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJDIR} *.o *.exe ${VPROC_TOP} ${WAVEFILE} work
 
 
