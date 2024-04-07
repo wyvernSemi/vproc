@@ -1,0 +1,2 @@
+sv      work ../../f_vproc.sv
+verilog work ./test.v

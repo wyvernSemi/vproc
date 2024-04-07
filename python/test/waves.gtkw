@@ -1,49 +1,42 @@
 [*]
 [*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Fri Jan 26 14:43:47 2024
+[*] Sat Apr 06 14:46:39 2024
 [*]
-[dumpfile] "C:\git\vproc\python\test\waves.vcd"
-[dumpfile_mtime] "Fri Jan 26 14:41:39 2024"
-[dumpfile_size] 7052
+[dumpfile] "C:\git\vproc\python\test\waves.fst"
+[dumpfile_mtime] "Sat Apr 06 14:46:17 2024"
+[dumpfile_size] 1005
 [savefile] "C:\git\vproc\python\test\waves.gtkw"
 [timestart] 0
-[size] 1000 600
-[pos] -1 -1
+[size] 1920 1017
+[pos] -139 -139
 *0.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 174
 [signals_width] 150
 [sst_expanded] 1
-[sst_vpaned_height] 157
+[sst_vpaned_height] 304
 @800200
 -test
 @28
 test.clk
-@420
-test.Count
-@28
-test.nreset
-@22
-test.VPAddr[31:0]
-@28
-test.VPWE
-@22
-test.VPDataOut[31:0]
-@28
-test.VPRD
-@23
-test.VPDataIn[31:0]
-@28
-test.CS1
-test.CS2
-@22
-test.Interrupt[31:0]
-@420
-test.Seed
-@28
-test.Update
-test.nreset_h
-test.reset_irq
 @1000200
 -test
+@29
+test.clk
+@23
+test.count
+@29
+test.cs1
+test.irq1
+test.notreset
+test.notreset_h
+test.update
+test.updateresponse
+@23
+test.vpaddr[31:0]
+test.vpdatain[31:0]
+test.vpdataout[31:0]
+@29
+test.vprd
+test.vpwe
 [pattern_trace] 1
 [pattern_trace] 0

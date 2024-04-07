@@ -144,7 +144,7 @@ def VUserMain0() :
   if burstRdData != burstWrData :
     vpapi.VPrint("NODE0: ***ERROR: mismatch in burst read data");
 
-  vpapi.tick(10)
+  vpapi.tick(30)
   
   # Check IRQ[1] count
   if irq1count != 2 :

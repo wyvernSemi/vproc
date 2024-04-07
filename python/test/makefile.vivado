@@ -1,0 +1,183 @@
+###################################################################
+# Makefile for Virtual Processor SystemVerilog testcode in Xsim
+#
+# Copyright (c) 2005-2024 Simon Southwell.
+#
+# This file is part of VProc.
+#
+# VProc is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VProc is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with VProc. If not, see <http://www.gnu.org/licenses/>.
+#
+###################################################################
+
+# Define the maximum number of supported VProcs in the compile pli library
+MAX_NUM_VPROC      = 64
+
+SRCDIR             = ../../code
+PYSRCDIR           = ../src
+TESTDIR            = .
+VOBJDIR            = ${TESTDIR}/obj
+
+# Name of the Python executable
+PYEXENAME          = python3
+
+# If PYTHONHOME environment variable not set give an error
+ifeq ("${PYTHONHOME}", "")
+  $(error "PYTHONHOME environment variable not set.")
+endif
+
+# Extract the python version number in the format python.<major>.<minor#1>
+# which is the name of the python libray to link.
+SHELLCMD           = ${PYEXENAME} -V | awk -F"[. ]" '{print "python" $$2 "." $$3}'
+PYVER              = $(shell ${SHELLCMD})
+
+# Get OS type
+OSTYPE:=$(shell uname)
+
+# VPROC C source code
+VPROC_C            = VSched.c \
+                     VUser.c
+
+# Python interface C code compiled into PyVProc.so
+PYTHON_C           = PythonVProc.c
+
+# Test user code
+USER_C             = VUserMainPy.c
+
+USER_CPP_BASE      = $(notdir $(filter %cpp, ${USER_C}))
+USER_C_BASE        = $(notdir $(filter %c, ${USER_C}))
+
+VOBJS              = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} \
+                     ${VPROC_C:%.c=%.o}}
+
+USRFLAGS           =
+
+# Generated  PLI C library
+VPROC_PLI          = ${TESTDIR}/VProc.so
+VLIB               = ${TESTDIR}/libvproc.a
+
+# Python interface foreign module shared object
+PYVRPOC_PLI        = ${TESTDIR}/PyVProc.so
+
+VPROC_TOP          = test
+
+# Set OS specific variables between Linux and Windows (MinGW)
+ifeq (${OSTYPE}, Linux)
+  CFLAGS_SO        = -shared -lpthread -lrt -rdynamic
+  CPPSTD           = -std=c++11
+else
+  CFLAGS_SO        = -shared -Wl,-export-all-symbols
+  CPPSTD           =
+endif
+
+CC                 = gcc
+C++                = g++
+ARCHFLAG           = -m64
+CFLAGS             = -fPIC                                 \
+                     ${ARCHFLAG}                           \
+                     -g                                    \
+                     -D_GNU_SOURCE                         \
+                     ${USRFLAGS}                           \
+                     -I${SRCDIR}                           \
+                     -I${PYSRCDIR}                         \
+                     -I${PYTHONHOME}/include/${PYVER}      \
+                     -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
+                     -DVPROC_SV                            \
+                     -D_REENTRANT
+
+# Flags for xsim
+ANALYSEFLAGS      = -i ../.. --define VPROC_BURST_IF --prj files.prj
+ELABFLAGS         = -sv_lib ${VPROC_PLI} --debug typical ${VPROC_TOP}
+SIMFLAGS          = ${VPROC_TOP}
+
+#------------------------------------------------------
+# BUILD RULES
+#------------------------------------------------------
+
+all: ${VPROC_PLI} verilog
+
+${VOBJDIR}/%.o: ${SRCDIR}/%.c ${SRCDIR}/*.h
+	@${CC} -c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${SRCDIR}/%.cpp ${SRCDIR}/*.h
+	@${C++}-c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${PYSRCDIR}/%.c
+	@${CC} -Wno-write-strings -c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${PYSRCDIR}/%.cpp
+	@${C++} ${CPPSTD} -Wno-write-strings -c ${CFLAGS} $< -o $@
+
+${VLIB} : ${VOBJS} ${VOBJDIR}
+	@ar cr ${VLIB} ${VOBJS}
+
+${VOBJS}: | ${VOBJDIR}
+
+${VOBJDIR}:
+	@mkdir ${VOBJDIR}
+
+${VPROC_PLI}: ${PYVRPOC_PLI} ${VLIB}
+	@${C++} ${CPPSTD}                                      \
+           ${CFLAGS_SO}                                    \
+           -Wl,-whole-archive                              \
+           ${CFLAGS}                                       \
+           -lpthread                                       \
+           -L${TESTDIR} -lvproc -l:PyVProc.so              \
+           -Wl,-no-whole-archive                           \
+           -o $@
+
+${PYVRPOC_PLI}: ${PYSRCDIR}/${PYTHON_C}
+	@${CC} -fPIC -shared -DNO_PLI_INCLUDE                  \
+           $^                                              \
+           -I../../code -L../../                           \
+           ${ARCHFLAG}                                     \
+           -I${PYTHONHOME}/include/${PYVER}                \
+           -L${PYTHONHOME}/libs -l${PYVER}                 \
+           -ldl                                            \
+           -o $@
+
+# Analyse HDL files
+.PHONY: verilog
+verilog: ${VPROC_PLI}
+	@xvlog ${ANALYSEFLAGS}
+	@xelab ${ELABFLAGS}
+    
+#------------------------------------------------------
+# EXECUTION RULES
+#------------------------------------------------------
+sim:
+	@xsim ${SIMFLAGS}
+
+run: verilog
+	@xsim -R ${SIMFLAGS}
+
+rungui: verilog
+	@xsim -g --autoloadwcfg ${SIMFLAGS}
+
+gui: rungui
+
+.SILENT:
+help:
+	@$(info make help          Display this message)
+	@$(info make               Build C/C++ and HDL code without running simulation)
+	@$(info make sim           Build and run command line interactive (sim not started))
+	@$(info make run           Build and run batch simulation)
+	@$(info make rungui/gui    Build and run GUI simulation (sim not started))
+	@$(info make clean         clean previous build artefacts)
+
+#------------------------------------------------------
+# CLEANING RULES
+#------------------------------------------------------
+
+clean:
+	@rm -rf ${VPROC_PLI} ${PYVRPOC_PLI} ${VLIB} ${VOBJDIR} xsim* vivado* *.wdb xelab.* xvlog.* .Xil 

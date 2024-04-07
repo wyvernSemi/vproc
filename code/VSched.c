@@ -265,7 +265,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 #   else
 #     if defined (VPROC_SV)
        VPrint("VInit(%d): initialising SystemVerilog DPI interface\n  %s\n", node, VERSION_STRING);
-#     else      
+#     else
        VPrint("VInit(%d): initialising VHPIDIRECT interface\n  %s\n", node, VERSION_STRING);
 #     endif
     #endif
@@ -364,13 +364,15 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     ns[node]->rcv_buf.data_in   = VPDataIn;
     ns[node]->rcv_buf.interrupt = Interrupt;
 
-    // If call to VSched is for interrupt and vector IRQ enabled (with callback registered)
+    // If call to VSched is for interrupt and vector IRQ enabled (with C or Python callback registered)
     // don't process here with the level interrupt code and just return.
     if (Interrupt && (ns[node]->VUserIrqCB != NULL || ns[node]->PyIrqCB != NULL))
     {
 #if !defined(VPROC_VHDL) && !defined(VPROC_SV)
         return 0;
 #else
+        // Since not processing make a delta cycle on return
+        *VPTicks   = DELTA_CYCLE;
         return;
 #endif
     }

@@ -1,9 +1,9 @@
 // ====================================================================
 //
-// Verilog side Virtual Processor, for running host
+// SystemVerilog side Virtual Processor, for running host
 // programs as control in simulation.
 //
-// Copyright (c) 2004-2024 Simon Southwell.
+// Copyright (c) 2024 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -23,21 +23,7 @@
 // ====================================================================
 
 `include "vprocdefs.vh"
-
-import "DPI-C" function void VInit     (input  int node);
-import "DPI-C" function void VSched    (input  int node, 
-                                        input  int Interrupt,
-                                        input  int VPDataIn, 
-                                        output int VPDataOut,
-                                        output int VPAddr, 
-                                        output int VPRw,
-                                        output int VPTicks);
-import "DPI-C" function void VAccess   (input  int node,
-                                        input  int idx,
-                                        input  int VPDataIn,
-                                        output int VPDataOut);
-import "DPI-C" function void VProcUser (input  int  node, input int value);
-import "DPI-C" function void VIrq      (input  int  node, input int irq);
+`include "vprocdpi.vh"
 
 // ============================================================
 // VProc module
@@ -230,7 +216,7 @@ begin
                     begin
                         // Flag burst as first in block
                         BurstFirst      <= 1'b1;
-                        
+
                         // Initialise the burst block counter with count bits
                         BlkCount        = VPRW[`BLKBITS];
 
@@ -264,7 +250,7 @@ begin
 
                     // When bursting, reassert non-delta VPTicks value to break out of loop.
                     VPTicks             = 0;
-                    
+
                     // Update address and data outputs
                     DataOut             <= VPDataOut;
                     Addr                <= Addr + BURST_ADDR_INCR;
