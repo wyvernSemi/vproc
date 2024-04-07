@@ -201,6 +201,6 @@ help:
 #------------------------------------------------------
 
 clean:
-	@rm -rf ${VPROC_PLI} ${PYVRPOC_PLI} ${VLIB} ${VOBJDIR} waves.fst work
+	@rm -rf ${VPROC_PLI} ${PYVRPOC_PLI} ${VLIB} ${VOBJDIR} ${VPROC_TOP} *.exe *.o waves.fst work
 
 
