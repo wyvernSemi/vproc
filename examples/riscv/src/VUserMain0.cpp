@@ -37,7 +37,7 @@ extern "C" {
 // I'm node 0
 int node = 0;
 
-static bool      vproc_interrupt_seen = false;
+static bool      irq = false;
 static uint32_t  irq_state            = 0;
 
 static const int strbufsize = 256;
@@ -232,19 +232,19 @@ int parseArgs(int argcIn, char** argvIn, rv32i_cfg_s &cfg, const int node)
 // in the main program flow.
 int vproc_irq_callback(int val)
 {
-    vproc_interrupt_seen = val ? true : false;
+    irq = val ? true : false;
 
     return 0;
 }
 
-// The ISS interrupt callback will return an interrupt when vproc_interrupt_seen
+// The ISS interrupt callback will return an interrupt when irq
 // is true, else it returns 0. The wakeup time in this model is always the next
 // cycle.
 uint32_t iss_int_callback(const rv32i_time_t time, rv32i_time_t *wakeup_time)
 {
     *wakeup_time = time + 1;
 
-    return vproc_interrupt_seen ? 1 : 0;
+    return irq ? 1 : 0;
 }
 
 // ---------------------------------------------
