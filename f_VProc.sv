@@ -130,7 +130,7 @@ begin
 
     // Don't remove delay! Needed to allow Node to be assigned
     // before the call to VInit
-    #0
+    `MINDELAY
     VInit(Node);
     Initialised                         = 1;
 end
@@ -263,9 +263,9 @@ begin
                 end
 
                 // Flag to update externally and wait for response.
-                // The #0 ensures it's not updated until other outputs
+                // The `MINDELAY ensures it's not updated until other outputs
                 // are updated.
-                Update                  <= #0 ~Update;
+                Update                  <= `MINDELAY ~Update;
                 @(UpdateResponse);
             end
         end

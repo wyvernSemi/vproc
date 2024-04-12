@@ -48,12 +48,10 @@ typedef long      nodecast_t;
 typedef long      nodecast_t;
 #endif
 
-// For Icarus
-#ifdef ICARUS
+// For Icarus and Verilator
 # ifndef RTLD_DEFAULT
 # define RTLD_DEFAULT ((void *) 0)
 # endif
-#endif
 
 static void VUserInit (const unsigned node);
 
@@ -110,19 +108,21 @@ static void VUserInit (const unsigned node)
     sprintf(funcname, "%s%d",    "VUserMain", node);
     if ((VUserMain_func = (pVUserMain_t) dlsym(RTLD_DEFAULT, funcname)) == NULL)
     {
+#ifndef VERILATOR
         // If the lookup failed, try loading the shared object immediately
         // and trying again. This addresses an issue seen with ModelSim on
         // Windows where the symbols are *sometimes* not loaded by this point.
         void* hdl = dlopen("VProc.so", RTLD_NOW);
 
         if ((VUserMain_func = (pVUserMain_t) dlsym(hdl, funcname)) == NULL)
+#endif
         {
             VPrint("***Error: failed to find user code symbol %s (VUserInit)\n", funcname);
             exit(1);
         }
     }
 
-    debug_io_printf("VUserInit(): got user function (%s) for node %d (%x)\n", funcname, node, VUserMain_func);
+    debug_io_printf("VUserInit(): got user function (%s) for node %d (%p)\n", funcname, node, VUserMain_func);
 
     // Wait for first message from simulator
     debug_io_printf("VUserInit(): waiting for first message semaphore rcv[%d]\n", node);

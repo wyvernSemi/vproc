@@ -27,26 +27,36 @@
 
 #include <string.h>
 
-#if !defined(NVC) && !defined(GHDL) && !defined(VPROC_SV)
-#include "veriuser.h"
-#include "vpi_user.h"
-#endif
-
-#ifdef INCL_VLOG_MEM_MODEL
-#include "mem_model.h"
-#endif
-
 #ifndef _VSCHED_PLI_H_
 #define _VSCHED_PLI_H_
 #endif
 
 // VHPI implies VHDL
 #ifdef VPROC_VHDL_VHPI
-
 # ifndef VPROC_VHDL
 #define VPROC_VHDL
 # endif
+#endif
 
+// VERILATOR implies SystemVerilog
+#ifdef VERILATOR
+# ifndef VPROC_SV
+# define VPROC_SV
+# endif
+#endif
+
+// NVC, GHDL or SystemVerilog imples no PLI/VPI
+#if defined(NVC) || defined (GHDL) || defined (VPROC_SV)
+#define VPROC_NO_PLI
+#endif
+
+#if !defined(VPROC_NO_PLI)
+#include "veriuser.h"
+#include "vpi_user.h"
+#endif
+
+#ifdef INCL_VLOG_MEM_MODEL
+#include "mem_model.h"
 #endif
 
 # if defined(VPROC_VHDL) || defined (VPROC_SV)

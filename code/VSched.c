@@ -260,7 +260,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 
     VPrint("VInit(%d): initialising VHPI interface\n  %s\n", node, VERSION_STRING);
 # else
-#   if !defined(NVC) && !defined(GHDL) && !defined(VPROC_SV)
+#   if !defined(VPROC_NO_PLI)
       VPrint("VInit(%d): initialising FLI interface\n  %s\n", node, VERSION_STRING);
 #   else
 #     if defined (VPROC_SV)

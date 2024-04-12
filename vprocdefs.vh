@@ -32,3 +32,9 @@
 
 `define DELTACYCLE              -1
 `define DONTCARE                 0
+
+`ifndef VERILATOR
+`define MINDELAY                 #0
+`else
+`define MINDELAY                 /**/
+`endif
