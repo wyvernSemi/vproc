@@ -1,0 +1,165 @@
+###################################################################
+# Makefile for Virtual Processor SystemVerilog for Verilator
+#
+# Copyright (c) 2024 Simon Southwell.
+#
+# This file is part of VProc.
+#
+# VProc is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VProc is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with VProc. If not, see <http://www.gnu.org/licenses/>.
+#
+###################################################################
+#
+# User overridable flags :
+#
+#   USER_C         : List of user C/C++ source files (no path)      
+#   USRCDIR        : User program code location
+#   USRFLAGS       : User definable additional C/C++ flags
+#   ARCHFLAG       : Compilation architecture flag (-m32 or -m64)
+#   SRCDIR         : VProc PLI/API code location
+#   TESTDIR        : Test directory location
+#   VOBJDIR        : Temporary object file directory
+#   MAX_NUM_VPROC  : Maximum number of VProc node instantiations
+#
+###################################################################
+
+# User overridable flags
+USER_C             = VUserMain0.cpp
+USRCDIR            = usercodeDelta
+USRFLAGS           =
+ARCHFLAG           = -m64
+SRCDIR             = ../code
+TESTDIR            = .
+VOBJDIR            = ${TESTDIR}/obj
+MAX_NUM_VPROC      = 64
+
+# Get OS type
+OSTYPE             :=$(shell uname)
+
+# VPROC C source code
+VPROC_C            = VSched.c                              \
+                     VUser.c
+
+# Split user list to separate C and C++ file lists
+USER_CPP_BASE      = $(notdir $(filter %cpp, ${USER_C}))
+USER_C_BASE        = $(notdir $(filter %c, ${USER_C}))
+
+VOBJS              = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} \
+                     ${VPROC_C:%.c=%.o}}
+
+# Generated PLI library
+VLIB               = ${TESTDIR}/libvproc.a
+
+# Set OS specific variables between Linux and Windows (MinGW)
+ifeq (${OSTYPE}, Linux)
+  LDFLAGS          = -Wl,-E -lrt -rdynamic
+  CPPSTD           = -std=c++20
+else
+  LDFLAGS          = -Wl,--export-all-symbols
+  CPPSTD           =
+endif
+
+CC                 = gcc
+C++                = g++
+CFLAGS             = ${ARCHFLAG}                           \
+                     -g                                    \
+                     ${USRFLAGS}                           \
+                     -I${SRCDIR}                           \
+                     -I${USRCDIR}                          \
+                     -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
+                     -DVERILATOR
+
+VPROC_TOP          = test
+
+# Compilation flags for Verilator
+SIMFLAGS           = --binary -sv --timing --trace          \
+                     -Mdir work -I../ -Wno-WIDTH            \
+                     --top ${VPROC_TOP}                     \
+                     -MAKEFLAGS "--quiet"                   \
+                     -CFLAGS "${CPPSTD} -Wno-attributes"    \
+                     -LDFLAGS "${LDFLAGS} -Wl,-whole-archive -L../ -lvproc -Wl,-no-whole-archive -ldl"
+
+SIMEXE             = work/V${VPROC_TOP}
+
+WAVEFILE           = trace.vcd
+WAVESAVEFILE       = wave.gtkw
+
+#------------------------------------------------------
+# BUILD RULES
+#------------------------------------------------------
+
+all: ${VLIB} sysverilog
+
+${VOBJDIR}/%.o: ${SRCDIR}/%.c ${SRCDIR}/*.h
+	@${CC} -c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${SRCDIR}/%.cpp ${SRCDIR}/*.h
+	@${C++}-c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${USRCDIR}/%.c
+	@${CC} -Wno-write-strings -c ${CFLAGS} $< -o $@
+
+${VOBJDIR}/%.o: ${USRCDIR}/%.cpp
+	@${C++} ${CPPSTD} -Wno-write-strings -c ${CFLAGS} $< -o $@
+
+${VLIB} : ${VOBJS}
+	@ar cr ${VLIB} ${VOBJS}
+	# Remove top level executable to force re-linking with updated library
+	@rm -f ${SIMEXE}
+
+${VOBJS}: | ${VOBJDIR}
+
+${VOBJDIR}:
+	@mkdir ${VOBJDIR}
+
+# Analyse VHDL files
+.PHONY: sysverilog
+sysverilog: ${VLIB}
+	@verilator -F files.verilator ${SIMFLAGS}
+    
+   
+#${HDLFILES}
+
+#------------------------------------------------------
+# EXECUTION RULES
+#------------------------------------------------------
+
+run: sysverilog
+	@${SIMEXE}
+
+rungui: sysverilog
+	@${SIMEXE}
+	@if [ -e ${WAVESAVEFILE} ]; then                       \
+	    gtkwave -a ${WAVESAVEFILE} ${WAVEFILE};            \
+	else                                                   \
+	    gtkwave ${WAVEFILE};                               \
+	fi
+
+gui: rungui
+
+.SILENT:
+help:
+	@$(info make help          Display this message)
+	@$(info make               Build C/C++ and HDL code without running simulation)
+	@$(info make run           Build and run batch simulation)
+	@$(info make rungui/gui    Build and run GUI simulation)
+	@$(info make clean         clean previous build artefacts)
+
+#------------------------------------------------------
+# CLEANING RULES
+#------------------------------------------------------
+
+clean:
+	@rm -rf ${VLIB} ${VOBJDIR} waves.fst work ${WAVEFILE}
+
+
