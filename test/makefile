@@ -20,139 +20,72 @@
 #
 ###################################################################
 
+#------------------------------------------------------
+# User overridable definitions
 
-# Define the maximum number of supported VProcs in the compile pli library
 MAX_NUM_VPROC      = 64
-
+USRFLAGS           =
 SRCDIR             = ../code
 USRCDIR            = usercode
 TESTDIR            = .
 VOBJDIR            = ${TESTDIR}/obj
+
+# User test source code file list
+USER_C             = VUserMain0.c VUserMain1.cpp
+
+#------------------------------------------------------
+# Settings specific to target simulator 
+
+# Simulator/Language specific C/C++ compile and link flags
+ARCHFLAG           = -m32
+HDLLANGUAGE        =
+SIMULATOR          = -DMODELSIM
+PLIVERSION         = -DVPROC_PLI_VPI
+ADDITIONAL         =
+VERIUSEROBJ        = $(VOBJDIR)/veriuser.o
+SIMINCLUDEFLAG     = -I$(MODEL_TECH)/../include
+SIMFLAGSSO         = -L$(MODEL_TECH) -lmtipli
+
+# Optional Memory model definitions
+MEM_C              =
 MEMMODELDIR        = .
+
+# Common logic simulator flags
+VLOGFLAGS          = +define+VPROC_BURST_IF +incdir+../
+VPROC_TOP          = test
+VSIMFLAGS          = -pli $(VPROC_PLI) $(VPROC_TOP)
+
+#------------------------------------------------------
+# MODEL_TECH path
 
 # Get OS type
 OSTYPE:=$(shell uname)
 
 # If run from a place where MODEL_TECH is not defined, construct from path to PLI library
-ifeq ("${MODEL_TECH}", "")
-  ifeq (${OSTYPE}, Linux)
+ifeq ("$(MODEL_TECH)", "")
+  ifeq ($(OSTYPE), Linux)
     PLILIB         = libmtipli.so
   else
     PLILIB         = mtipli.dll
   endif
-  
+
   VSIMPATH         = $(shell which vsim)
-  SIMROOT          = $(shell dirname ${VSIMPATH})/..
-  PLILIBPATH       = $(shell find ${SIMROOT} -name "${PLILIB}")
-  MODEL_TECH       = $(shell dirname ${PLILIBPATH})
+  SIMROOT          = $(shell dirname $(VSIMPATH))/..
+  PLILIBPATH       = $(shell find $(SIMROOT) -name "$(PLILIB)")
+  MODEL_TECH       = $(shell dirname $(PLILIBPATH))
 endif
-
-# VPROC C source code
-VPROC_C            = VSched.c \
-                     VUser.c
-
-# Memory model C code
-MEM_C              =
-
-# Test user code
-USER_C             = VUserMain0.c VUserMain1.cpp
-
-USER_CPP_BASE      = $(notdir $(filter %cpp, ${USER_C}))
-USER_C_BASE        = $(notdir $(filter %c, ${USER_C}))
-MEM_CPP_BASE       = $(notdir $(filter %cpp, ${MEM_C}))
-MEM_C_BASE         = $(notdir $(filter %c, ${MEM_C}))
-
-VOBJS              = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} \
-                     ${VPROC_C:%.c=%.o} ${MEM_C_BASE:%.c=%.o} ${MEM_CPP_BASE:%.cpp=%.o}}
-
-USRFLAGS           =
-PLIFLAG            = -DVPROC_PLI_VPI
-VLOGFLAGS          = +define+VPROC_BURST_IF +incdir+../
-
-# Generated  PLI C library
-VPROC_PLI          = ${TESTDIR}/VProc.so
-VLIB               = ${TESTDIR}/libvproc.a
-
-VPROC_TOP          = test
-
-# Set OS specific variables between Linux and Windows (MinGW)
-ifeq (${OSTYPE}, Linux)
-  CFLAGS_SO        = -shared -lpthread -lrt -rdynamic
-  CPPSTD           = -std=c++11
-  MODELSIMBINDIR   = linuxaloem
-else
-  CFLAGS_SO        = -shared -Wl,-export-all-symbols
-  CPPSTD           =
-  MODELSIMBINDIR   = win32aloem
-endif
-
-CC                 = gcc
-C++                = g++
-ARCHFLAG           = -m32
-CFLAGS             = -fPIC                                 \
-                     ${ARCHFLAG}                           \
-                     ${PLIFLAG}                            \
-                     -g                                    \
-                     -D_GNU_SOURCE                         \
-                     ${USRFLAGS}                           \
-                     -I${SRCDIR}                           \
-                     -I${USRCDIR}                          \
-                     -I${MODEL_TECH}/../include            \
-                     -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
-                     -DMODELSIM                            \
-                     -D_REENTRANT
-
-# Common flags for vsim
-VSIMFLAGS          = -pli ${VPROC_PLI} ${VPROC_TOP}
 
 #------------------------------------------------------
 # BUILD RULES
 #------------------------------------------------------
 
-all: ${VPROC_PLI} verilog
+all: verilog
 
-${VOBJDIR}/%.o: ${SRCDIR}/%.c ${SRCDIR}/*.h
-	@${CC} -c ${CFLAGS} $< -o $@
-
-${VOBJDIR}/%.o: ${SRCDIR}/%.cpp ${SRCDIR}/*.h
-	@${C++}-c ${CFLAGS} $< -o $@
-
-${VOBJDIR}/%.o: ${USRCDIR}/%.c
-	@${CC} -Wno-write-strings -c ${CFLAGS} $< -o $@
-
-${VOBJDIR}/%.o: ${USRCDIR}/%.cpp
-	@${C++} ${CPPSTD} -Wno-write-strings -c ${CFLAGS} $< -o $@
-
-${VOBJDIR}/%.o: ${MEMMODELDIR}/%.c ${MEMMODELDIR}/*.h
-	@${CC} -c ${CFLAGS} $< -o $@
-
-${VOBJDIR}/%.o: ${MEMMODELDIR}/%.cpp ${MEMMODELDIR}/*.h
-	@${C++} -c ${CFLAGS} $< -o $@
-
-${VLIB} : ${VOBJS} ${VOBJDIR}
-	@ar cr ${VLIB} ${VOBJS}
-
-${VOBJS}: | ${VOBJDIR}
-
-${VOBJDIR}:
-	@mkdir ${VOBJDIR}
-
-${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o
-	@${C++} ${CPPSTD}                                      \
-           ${CFLAGS_SO}                                    \
-           -Wl,-whole-archive                              \
-           ${CFLAGS}                                       \
-           ${VOBJDIR}/veriuser.o                           \
-           -lpthread                                       \
-           -L${MODEL_TECH}                                 \
-           -lmtipli                                        \
-           -L${TESTDIR} -lvproc                            \
-           -Wl,-no-whole-archive                           \
-           -o $@
+# Include common build rules
+include makefile.common
 
 # Let modelsim decide what's changed in the verilog
 .PHONY: verilog
-
 verilog: ${VPROC_PLI}
 	@if [ ! -d "./work" ]; then                            \
 	      vlib work;                                       \
@@ -164,16 +97,16 @@ verilog: ${VPROC_PLI}
 #------------------------------------------------------
 
 sim: verilog
-	@vsim -c ${VSIMFLAGS}
+	@vsim -c $(VSIMFLAGS)
 
 run: verilog
-	@vsim -c ${VSIMFLAGS} -do "run -all" -do "quit"
+	@vsim -c $(VSIMFLAGS) -do "run -all" -do "quit"
 
 rungui: verilog
 	@if [ -e wave.do ]; then                               \
-	    vsim -gui -do wave.do ${VSIMFLAGS} -do "run -all"; \
+	    vsim -gui -do wave.do $(VSIMFLAGS) -do "run -all"; \
 	else                                                   \
-	    vsim -gui ${VSIMFLAGS};                            \
+	    vsim -gui $(VSIMFLAGS);                            \
 	fi
 
 gui: rungui
@@ -192,7 +125,7 @@ help:
 #------------------------------------------------------
 
 clean:
-	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJDIR} *.wlf transcript
+	@rm -rf $(VPROC_PLI) $(VLIB) $(VOBJDIR) *.wlf transcript
 	@if [ -d "./work" ]; then                              \
 	    rm -rf work;                                       \
 	fi

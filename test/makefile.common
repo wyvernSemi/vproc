@@ -1,0 +1,133 @@
+###################################################################
+# Makefile for Virtual Processor testcode common rules
+#
+# Copyright (c) 2024 Simon Southwell.
+#
+# This file is part of VProc.
+#
+# VProc is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VProc is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with VProc. If not, see <http://www.gnu.org/licenses/>.
+#
+###################################################################
+
+# External variables. All paths can be absolute or relative to this file's location
+#
+#    TESTDIR            : Path to top level test directory
+#    SRCDIR             : Location of VProc source files
+#    USRCDIR            : Location of user C/C++ source files
+#    MEMMODELDIR        : Location of optional memory model source files (set to . if unused)
+#    USER_C             : List of user C/C++ source files (no path)
+#    MEM_C              : Optional list of memory model C/C++ source files
+#    VOBJDIR            : Location of temporary directory for object files (no path)
+#    OSTYPE             : OS type. "Linux" for Linux else defaults to MSYS2/mingw64 on windows
+#    SIMINCLUDEFLAG     : Include flag (-I) for logic simulator's include path
+#    ARCHFLAG           : Compile architecture flag (-m32 for ModelSIM, else set to -m64)
+#    USRFLAGS           : Optional user compile flags
+#    MAX_NUM_VPROC      : Maximum number of VProc instantiations (must be between 1 and 64)
+#    PLIVERSION         : Flag for PLI type when Verilog compilation. Blank for PLI 1.0 or -DVPROC_PLI_VPI for VPI.
+#    HDLLANGUAGE        : Target HDL language. Blank for Verilog, -DVPROC_VHDL for VHDL or -DVPROC_SV for SystemVerilog
+#    SIMULATOR          : Target logic simulator. One of MODELSIM (same for Questa), NVC, GHDL, VERILATOR or blank for Vivado XSIM
+#    ADDITIONAL         : Optional additional required flags
+#    VERIUSEROBJ        : Name of veriuser object file (with path) for ModelSIM and Questa, else blank
+#    SIMFLAGSSO         : Simulator specific flags for shared object compliation/linking (e.g. for library inclusion)
+
+# Generated  PLI C library
+VPROC_PLI           = ${TESTDIR}/VProc.so
+VLIB                = ${TESTDIR}/libvproc.a
+
+# VPROC C source code
+VPROC_C             = VSched.c VUser.c
+       
+# Separate C and C++ source files
+USER_CPP_BASE       = $(notdir $(filter %cpp, ${USER_C}))
+USER_C_BASE         = $(notdir $(filter %c,   ${USER_C}))
+MEM_CPP_BASE        = $(notdir $(filter %cpp, ${MEM_C}))
+MEM_C_BASE          = $(notdir $(filter %c,   ${MEM_C}))
+
+# Create list of object files (excluding any veriuser object)
+VOBJS               = ${addprefix ${VOBJDIR}/,            \
+                          ${USER_C_BASE:%.c=%.o}          \
+                          ${USER_CPP_BASE:%.cpp=%.o}      \
+                          ${VPROC_C:%.c=%.o}              \
+                          ${MEM_C_BASE:%.c=%.o}           \
+                          ${MEM_CPP_BASE:%.cpp=%.o}}
+                      
+# Set OS specific variables between Linux and Windows (MinGW)
+ifeq (${OSTYPE}, Linux)
+  FLAGSOS           = -shared -lpthread -lrt -rdynamic
+else
+  FLAGSOS           = -shared -Wl,-export-all-symbols
+endif
+
+# Amalgamate all the include paths
+INCLUDEDIRS = -I$(SRCDIR) -I$(USRCDIR) $(SIMINCLUDEFLAG)
+
+# Flags for compiling C/C++ source code to object files
+CFLAGS              = -c -fPIC -g $(ARCHFLAG)             \
+                      $(USRFLAGS)                         \
+                      -DVP_MAX_NODES=$(MAX_NUM_VPROC)     \
+                      $(PLIVERSION) $(HDLLANGUAGE)        \
+                      $(SIMULATOR) $(ADDITIONAL)          \
+                      $(INCLUDEDIRS)
+
+# Flags for compiling/linking shared object
+CFLAGS_SO           = $(FLAGSOS) $(VERIUSEROBJ) -lpthread \
+                      -Wl,-whole-archive                  \
+                      $(SIMFLAGSSO)                       \
+                      -L$(TESTDIR) -lvproc                \
+                      -Wl,-no-whole-archive               \
+                      -o $(VPROC_PLI)
+
+# Compiler executables and standard flags
+CC                  = gcc
+C++                 = g++
+CPPSTD              = -std=c++11
+
+#------------------------------------------------------
+# Build rules
+#------------------------------------------------------
+
+# Rule to build VProc C sources
+$(VOBJDIR)/%.o: $(SRCDIR)/%.c $(SRCDIR)/*.h
+	@$(CC) $(CFLAGS) $< -o $@
+
+# Rule to build user C sources
+$(VOBJDIR)/%.o: $(USRCDIR)/%.c
+	@$(CC) -Wno-write-strings $(CFLAGS) $< -o $@
+
+# Rule to build user C++ sources
+$(VOBJDIR)/%.o: $(USRCDIR)/%.cpp
+	@$(C++) $(CPPSTD) -Wno-write-strings $(CFLAGS) $< -o $@
+
+# Rule to build (any) memory model C sources
+$(VOBJDIR)/%.o: $(MEMMODELDIR)/%.c $(MEMMODELDIR)/*.h
+	@$(CC) $(CFLAGS) $< -o $@
+
+# Rule to build (any) memory model C++ sources
+$(VOBJDIR)/%.o: $(MEMMODELDIR)/%.cpp $(MEMMODELDIR)/*.h
+	@$(C++) $(CFLAGS) $< -o $@
+
+# Rule to build VProc library
+$(VLIB) : $(VOBJS) $(VOBJDIR)
+	@ar cr $(VLIB) $(VOBJS)
+
+# Rule make object temporary directory a dependency of object files
+$(VOBJS): | $(VOBJDIR)
+
+# Rule to build object file temporary directory
+$(VOBJDIR):
+	@mkdir $(VOBJDIR)
+
+# Rule to build VProc shared object          
+$(VPROC_PLI): $(VLIB) $(VERIUSEROBJ)
+	@$(C++) $(CFLAGS_SO) -o $@
