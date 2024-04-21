@@ -27,17 +27,17 @@
 #    USRCDIR            : Location of user C/C++ source files
 #    MEMMODELDIR        : Location of optional memory model source files (set to . if unused)
 #    USER_C             : List of user C/C++ source files (no path)
-#    MEM_C              : Optional list of memory model C/C++ source files
-#    VOBJDIR            : Location of temporary directory for object files (no path)
+#    MEM_C              : Optional list of memory model C/C++ source files (no path)
+#    VOBJDIR            : Location of temporary directory for object files
 #    OSTYPE             : OS type. "Linux" for Linux else defaults to MSYS2/mingw64 on windows
 #    SIMINCLUDEFLAG     : Include flag (-I) for logic simulator's include path
 #    ARCHFLAG           : Compile architecture flag (-m32 for ModelSIM, else set to -m64)
+#    OPTFLAG            : Optimisation/debug flag (-g for debugging and -O<n> for optimisations)
 #    USRFLAGS           : Optional user compile flags
 #    MAX_NUM_VPROC      : Maximum number of VProc instantiations (must be between 1 and 64)
 #    PLIVERSION         : Flag for PLI type when Verilog compilation. Blank for PLI 1.0 or -DVPROC_PLI_VPI for VPI.
 #    HDLLANGUAGE        : Target HDL language. Blank for Verilog, -DVPROC_VHDL for VHDL or -DVPROC_SV for SystemVerilog
 #    SIMULATOR          : Target logic simulator. One of MODELSIM (same for Questa), NVC, GHDL, VERILATOR or blank for Vivado XSIM
-#    ADDITIONAL         : Optional additional required flags
 #    VERIUSEROBJ        : Name of veriuser object file (with path) for ModelSIM and Questa, else blank
 #    SIMFLAGSSO         : Simulator specific flags for shared object compliation/linking (e.g. for library inclusion)
 
@@ -73,15 +73,16 @@ endif
 INCLUDEDIRS = -I$(SRCDIR) -I$(USRCDIR) $(SIMINCLUDEFLAG)
 
 # Flags for compiling C/C++ source code to object files
-CFLAGS              = -c -fPIC -g $(ARCHFLAG)             \
+CFLAGS              = -c -fPIC $(OPTFLAG) $(ARCHFLAG)     \
                       $(USRFLAGS)                         \
                       -DVP_MAX_NODES=$(MAX_NUM_VPROC)     \
                       $(PLIVERSION) $(HDLLANGUAGE)        \
-                      $(SIMULATOR) $(ADDITIONAL)          \
+                      $(SIMULATOR)                        \
                       $(INCLUDEDIRS)
 
 # Flags for compiling/linking shared object
-CFLAGS_SO           = $(FLAGSOS) $(VERIUSEROBJ) -lpthread \
+CFLAGS_SO           = $(ARCHFLAG)                         \
+                      $(FLAGSOS) $(VERIUSEROBJ) -lpthread \
                       -Wl,-whole-archive                  \
                       $(SIMFLAGSSO)                       \
                       -L$(TESTDIR) -lvproc                \
@@ -91,7 +92,6 @@ CFLAGS_SO           = $(FLAGSOS) $(VERIUSEROBJ) -lpthread \
 # Compiler executables and standard flags
 CC                  = gcc
 C++                 = g++
-CPPSTD              = -std=c++11
 
 #------------------------------------------------------
 # Build rules

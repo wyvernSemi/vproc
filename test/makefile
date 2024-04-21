@@ -38,10 +38,10 @@ USER_C             = VUserMain0.c VUserMain1.cpp
 
 # Simulator/Language specific C/C++ compile and link flags
 ARCHFLAG           = -m32
+OPTFLAG            = -g
 HDLLANGUAGE        =
 SIMULATOR          = -DMODELSIM
 PLIVERSION         = -DVPROC_PLI_VPI
-ADDITIONAL         =
 VERIUSEROBJ        = $(VOBJDIR)/veriuser.o
 SIMINCLUDEFLAG     = -I$(MODEL_TECH)/../include
 SIMFLAGSSO         = -L$(MODEL_TECH) -lmtipli
@@ -86,7 +86,7 @@ include makefile.common
 
 # Let modelsim decide what's changed in the verilog
 .PHONY: verilog
-verilog: ${VPROC_PLI}
+verilog: $(VPROC_PLI)
 	@if [ ! -d "./work" ]; then                            \
 	      vlib work;                                       \
 	fi

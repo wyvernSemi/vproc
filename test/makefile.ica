@@ -29,136 +29,81 @@
 #     on RHEL 7 "yum install iverilog" to install Icarus
 # To run: vvp -m ./VProc.so sim
 
-# Define the maximum number of supported VProcs in the compile pli library
-MAX_NUM_VPROC      = 64
 
+#------------------------------------------------------
+# User overridable definitions
+
+MAX_NUM_VPROC      = 64
+USRFLAGS           =
 SRCDIR             = ../code
 USRCDIR            = usercode
 TESTDIR            = .
 VOBJDIR            = ${TESTDIR}/obj
 
+# User test source code file list
+USER_C             = VUserMain0.c VUserMain1.cpp
+
+#------------------------------------------------------
+# Settings specific to target simulator
+
+# Simulator/Language specific C/C++ compile and link flags
+ARCHFLAG           = -m64
+OPTFLAG            = -g
+HDLLANGUAGE        =
+SIMULATOR          = -DICARUS
+PLIVERSION         = -DVPROC_PLI_VPI
+VERIUSEROBJ        = $(VOBJDIR)/veriuser.o
+SIMFLAGSSO         = -lveriuser -lvpi
+
 # Get OS type
 OSTYPE:=$(shell uname)
 
-# VPROC C source code
-VPROC_C            = VSched.c \
-                     VUser.c
+# Set OS specific variables between Linux and Windows (MinGW)
+ifeq (${OSTYPE}, Linux)
+  SIMINCLUDEFLAG   = -I/usr/include/iverilog
+else
+  SIMINCLUDEFLAG   = -I/mingw64/include/iverilog
+endif
 
-# Memory model C code
+# Optional Memory model definitions
 MEM_C              =
+MEMMODELDIR        = .
 
-# Test user code
-USER_C             = VUserMain0.c VUserMain1.cpp
-
-USER_CPP_BASE      = $(notdir $(filter %cpp, ${USER_C}))
-USER_C_BASE        = $(notdir $(filter %c, ${USER_C}))
-MEM_CPP_BASE       = $(notdir $(filter %cpp, ${MEM_C}))
-MEM_C_BASE         = $(notdir $(filter %c, ${MEM_C}))
-
-VOBJS              = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} \
-                     ${VPROC_C:%.c=%.o} ${MEM_C_BASE:%.c=%.o} ${MEM_CPP_BASE:%.cpp=%.o}}
-
-USRFLAGS           =
-PLIFLAG            = -DVPROC_PLI_VPI
+# Common logic simulator flags
 VLOGFLAGS          = -DVPROC_BURST_IF -I../ -Ptest.VCD_DUMP=1
 VLOGDEBUGFLAGS     = -Ptest.DEBUG_STOP=1
 VLOGFILES          = test.v ../f_VProc.v
-
-# Generated  PLI C library
-VPROC_PLI          = ${TESTDIR}/VProc.so
-VLIB               = ${TESTDIR}/libvproc.a
-
-# Set OS specific variables between Linux and Windows (MinGW)
-ifeq (${OSTYPE}, Linux)
-  CFLAGS_SO        = -shared -lpthread -lrt -rdynamic
-  ICADIR           = /usr/include/iverilog
-else
-  CFLAGS_SO        = -shared -Wl,-export-all-symbols
-  ICADIR           = /mingw64/include/iverilog
-endif
-
-CC                 = gcc
-C++                = g++
-CPPSTD             = -std=c++11
-ARCHFLAG           = -m64
-CFLAGS             = -fPIC                                 \
-                     ${ARCHFLAG}                           \
-                     ${PLIFLAG}                            \
-                     -g                                    \
-                     -D_GNU_SOURCE                         \
-                     ${USRFLAGS}                           \
-                     -I${SRCDIR}                           \
-                     -I${USRCDIR}                          \
-                     -I${ICADIR}                           \
-                     -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
-                     -DICARUS                              \
-                     -D_REENTRANT
 
 #------------------------------------------------------
 # BUILD RULES
 #------------------------------------------------------
 
-all: ${VPROC_PLI} verilog
+all: verilog
 
-${VOBJDIR}/%.o: ${SRCDIR}/%.c ${SRCDIR}/*.h
-	@${CC} -c ${CFLAGS} -Wno-incompatible-pointer-types $< -o $@
+# Include common build rules
+include makefile.common
 
-${VOBJDIR}/%.o: ${SRCDIR}/%.cpp ${SRCDIR}/*.h
-	@${C++}-c ${CFLAGS} $< -o $@
+verilog: $(VPROC_PLI) $(VLOGFILES)
+	@iverilog $(VLOGFLAGS) $(PLIFLAG) -o sim $(VLOGFILES)
 
-${VOBJDIR}/%.o: ${USRCDIR}/%.c
-	@${CC} -Wno-write-strings -c ${CFLAGS} $< -o $@
-
-${VOBJDIR}/%.o: ${USRCDIR}/%.cpp
-	@${C++} ${CPPSTD} -Wno-write-strings -c ${CFLAGS} $< -o $@
-
-${VOBJDIR}/%.o: ${MEMMODELDIR}/%.c ${MEMMODELDIR}/*.h
-	@${CC} -c ${CFLAGS} $< -o $@
-
-${VOBJDIR}/%.o: ${MEMMODELDIR}/%.cpp ${MEMMODELDIR}/*.h
-	@${C++} -c ${CFLAGS} $< -o $@
-
-${VLIB} : ${VOBJS} ${VOBJDIR}
-	@ar cr ${VLIB} ${VOBJS}
-
-${VOBJS}: | ${VOBJDIR}
-
-${VOBJDIR}:
-	@mkdir ${VOBJDIR}
-
-${VPROC_PLI}: ${VLIB} ${VOBJDIR}/veriuser.o
-	@${C++} ${CPPSTD}                                      \
-           ${CFLAGS_SO}                                    \
-           -Wl,-whole-archive                              \
-           ${CFLAGS}                                       \
-           ${VOBJDIR}/veriuser.o                           \
-           -lpthread                                       \
-           -lveriuser -lvpi                                \
-           -L${TESTDIR} -lvproc                            \
-           -Wl,-no-whole-archive                           \
-           -o $@
-
-verilog: ${VLOGFILES}
-	@iverilog ${VLOGFLAGS} ${PLIFLAG} -o sim ${VLOGFILES}
-
-verilog_debug: ${VLOGFILES}
-	@iverilog ${VLOGDEBUGFLAGS} ${VLOGFLAGS} ${PLIFLAG} -o sim ${VLOGFILES}
+verilog_debug: $(VPROC_PLI) $(VLOGFILES)
+	@iverilog $(VLOGDEBUGFLAGS) $(VLOGFLAGS) $(PLIFLAG) -o sim $(VLOGFILES)
 
 #------------------------------------------------------
 # EXECUTION RULES
 #------------------------------------------------------
 
 sim: all
-	@vvp -s -m ${VPROC_PLI} sim
+	@vvp -s -m $(VPROC_PLI) sim
 
-debug: clean ${VPROC_PLI} verilog_debug
-	@vvp -m ${VPROC_PLI} sim
+debug: clean $(VPROC_PLI) verilog_debug
+	@vvp -m $(VPROC_PLI) sim
 
 run: all
-	@vvp -n -m ${VPROC_PLI} sim
+	@vvp -n -m $(VPROC_PLI) sim
 
 rungui: all
-	@vvp -n -m ${VPROC_PLI} sim
+	@vvp -n -m $(VPROC_PLI) sim
 	@if [ -e waves.gtkw ]; then                            \
 	    gtkwave -A waves.vcd;                              \
 	else                                                   \
@@ -182,4 +127,4 @@ help:
 #------------------------------------------------------
 
 clean:
-	@rm -rf ${VPROC_PLI} ${VLIB} obj sim *.vcd
+	@rm -rf $(VPROC_PLI) $(VLIB) obj sim *.vcd

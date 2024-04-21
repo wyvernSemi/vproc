@@ -20,141 +20,79 @@
 #
 ###################################################################
 
-# Define the maximum number of supported VProcs in the compile pli library
-MAX_NUM_VPROC      = 64
+#------------------------------------------------------
+# User overridable definitions
 
+MAX_NUM_VPROC      = 64
+USRFLAGS           =
 SRCDIR             = ../code
 USRCDIR            = usercode
 TESTDIR            = .
-VOBJDIR            = ${TESTDIR}/obj
+VOBJDIR            = $(TESTDIR)/obj
+
+# User test source code file list
+USER_C             = VUserMain0.c VUserMain1.cpp
+
+#------------------------------------------------------
+# Settings specific to target simulator
+
+# Simulator/Language specific C/C++ compile and link flags
+ARCHFLAG           = -m64
+OPTFLAG            = -g
+HDLLANGUAGE        = -DVPROC_VHDL
+SIMULATOR          = -DGHDL
+PLIVERSION         =
+VERIUSEROBJ        =
+SIMINCLUDEFLAG     =
+SIMFLAGSSO         =
+
+# Optional Memory model definitions
+MEM_C              =
 MEMMODELDIR        = .
 
-# Get OS type
-OSTYPE:=$(shell uname)
-
-# VPROC C source code
-VPROC_C            = VSched.c \
-                     VUser.c
-
-# Memory model C code
-MEM_C              =
-
-# Test user code
-USER_C             = VUserMain0.c VUserMain1.c
-
-USER_CPP_BASE      = $(notdir $(filter %cpp, ${USER_C}))
-USER_C_BASE        = $(notdir $(filter %c, ${USER_C}))
-MEM_CPP_BASE       = $(notdir $(filter %cpp, ${MEM_C}))
-MEM_C_BASE         = $(notdir $(filter %c, ${MEM_C}))
-
-VOBJS              = ${addprefix ${VOBJDIR}/, ${USER_C_BASE:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} \
-                     ${VPROC_C:%.c=%.o} ${MEM_C_BASE:%.c=%.o} ${MEM_CPP_BASE:%.cpp=%.o}}
-
-USRFLAGS           =
-
-# Generated  PLI C library
-VPROC_PLI          = ${TESTDIR}/VProc.so
-VLIB               = ${TESTDIR}/libvproc.a
-
+# Common logic simulator flags
 VPROC_TOP          = test
 
-# Set OS specific variables between Linux and Windows (MinGW)
-ifeq (${OSTYPE}, Linux)
-  CFLAGS_SO        = -shared -lpthread -lrt -rdynamic
-  CPPSTD           = -std=c++11
-else
-  CFLAGS_SO        = -shared -Wl,-export-all-symbols
-  CPPSTD           =
-endif
-
-CC                 = gcc
-C++                = g++
-ARCHFLAG           = -m64
-CFLAGS             = -fPIC                                 \
-                     ${ARCHFLAG}                           \
-                     -g                                    \
-                     -D_GNU_SOURCE                         \
-                     ${USRFLAGS}                           \
-                     -I${SRCDIR}                           \
-                     -I${USRCDIR}                          \
-                     -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
-                     -DVPROC_VHDL                          \
-                     -DGHDL                                \
-                     -D_REENTRANT
-
 WAVEFILE          = waves.ghw
-WAVESAVEFILE      = ${WAVEFILE:%.ghw=%.gtkw}
+WAVESAVEFILE      = $(WAVEFILE:%.ghw=%.gtkw)
 WORKDIR           = work
 
 # Runtime flags for GHDL
-SIMFLAGS          = --std=08 --workdir=${WORKDIR}
-                    
+SIMFLAGS          = --std=08 --workdir=$(WORKDIR)
+
 VHDLFILELIST      = files_ghdl.tcl
-VHDLFILES         =$(foreach vhdlfile, $(file < ${VHDLFILELIST}), ${vhdlfile})
+VHDLFILES         =$(foreach vhdlfile, $(file < $(VHDLFILELIST)), $(vhdlfile))
 
 #------------------------------------------------------
 # BUILD RULES
 #------------------------------------------------------
 
-all: ${VPROC_PLI} vhdl
+all: vhdl
 
-${VOBJDIR}/%.o: ${SRCDIR}/%.c ${SRCDIR}/*.h
-	@${CC} -c ${CFLAGS} $< -o $@
-
-${VOBJDIR}/%.o: ${SRCDIR}/%.cpp ${SRCDIR}/*.h
-	@${C++}-c ${CFLAGS} $< -o $@
-
-${VOBJDIR}/%.o: ${USRCDIR}/%.c
-	@${CC} -Wno-write-strings -c ${CFLAGS} $< -o $@
-
-${VOBJDIR}/%.o: ${USRCDIR}/%.cpp
-	@${C++} ${CPPSTD} -Wno-write-strings -c ${CFLAGS} $< -o $@
-
-${VOBJDIR}/%.o: ${MEMMODELDIR}/%.c ${MEMMODELDIR}/*.h
-	@${CC} -c ${CFLAGS} $< -o $@
-
-${VOBJDIR}/%.o: ${MEMMODELDIR}/%.cpp ${MEMMODELDIR}/*.h
-	@${C++} -c ${CFLAGS} $< -o $@
-
-${VLIB} : ${VOBJS} ${VOBJDIR}
-	@ar cr ${VLIB} ${VOBJS}
-
-${VOBJS}: | ${VOBJDIR}
-
-${VOBJDIR}:
-	@mkdir ${VOBJDIR}
-
-${VPROC_PLI}: ${VLIB}
-	@${C++} ${CPPSTD}                                      \
-           ${CFLAGS_SO}                                    \
-           -Wl,-whole-archive                              \
-           ${CFLAGS}                                       \
-           -lpthread                                       \
-           -L${TESTDIR} -lvproc                            \
-           -Wl,-no-whole-archive                           \
-           -o $@
+# Include common build rules
+include makefile.common
 
 ${WORKDIR}:
-	@mkdir ${WORKDIR}
+	@mkdir $(WORKDIR)
 
 # Analyse the VHDL files
 .PHONY: vhdl
-vhdl: ${VPROC_PLI} ${WORKDIR}
-	@ghdl -a --std=08 --workdir=${WORKDIR} ${VHDLFILES}
+vhdl: $(VPROC_PLI) $(WORKDIR)
+	@ghdl -a --std=08 --workdir=$(WORKDIR) $(VHDLFILES)
 
 #------------------------------------------------------
 # EXECUTION RULES
 #------------------------------------------------------
 
 run: vhdl
-	@ghdl --elab-run ${SIMFLAGS} ${VPROC_TOP}
+	@ghdl --elab-run $(SIMFLAGS) $(VPROC_TOP)
 
 rungui: vhdl
-	@ghdl --elab-run ${SIMFLAGS} ${VPROC_TOP} --wave=${WAVEFILE} 
-	@if [ -e ${WAVESAVEFILE} ]; then                       \
-	    gtkwave -A ${WAVEFILE};                            \
+	@ghdl --elab-run $(SIMFLAGS) $(VPROC_TOP) --wave=$(WAVEFILE)
+	@if [ -e $(WAVESAVEFILE) ]; then                       \
+	    gtkwave -A $(WAVEFILE);                            \
 	else                                                   \
-	    gtkwave ${WAVEFILE};                               \
+	    gtkwave $(WAVEFILE);                               \
 	fi
 
 gui: rungui
@@ -172,6 +110,6 @@ help:
 #------------------------------------------------------
 
 clean:
-	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJDIR} *.o *.exe ${VPROC_TOP} ${WAVEFILE} work
+	@rm -rf $(VPROC_PLI) $(VLIB) $(VOBJDIR) *.o *.exe $(VPROC_TOP) $(WAVEFILE) work
 
 
