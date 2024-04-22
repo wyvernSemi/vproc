@@ -38,6 +38,7 @@
 
 module test
 #(parameter   DEBUG_STOP    = 0,
+              FINISH        = 0,
               VCD_DUMP      = 0
 );
 
@@ -165,7 +166,7 @@ begin
     Interrupt1  = 0;
     Seed        = 32'h00250864;
 
-    #0         // Ensure first x->1 clock edge is complete before initialisation
+    `MINDELAY        // Ensure first x->1 clock edge is complete before initialisation
     Count      = 0;
 
     // Stop the simulation when debugging to allow a debugger to connect
@@ -202,8 +203,15 @@ begin
         begin
           $display("\n--- Simulation completed ---\n");
         end
-        
-        $stop;
+
+        if (FINISH != 0)
+        begin
+          $finish;
+        end
+        else
+        begin
+          $stop;
+        end
     end
 
     // Generate a new seed each clock cycle
