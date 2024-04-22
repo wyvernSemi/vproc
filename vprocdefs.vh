@@ -33,8 +33,32 @@
 `define DELTACYCLE              -1
 `define DONTCARE                 0
 
-`ifndef VERILATOR
-`define MINDELAY                 #0
-`else
+`ifdef VERILATOR
+
 `define MINDELAY                 /**/
+
+`else
+
+`define MINDELAY                 #0
+
+`endif
+
+// If SystemVerilog map PLI definitions to DPI-C tasks
+`ifdef VPROC_SV
+
+`define VAccess                  VAccess
+`define VInit                    VInit
+`define VSched                   VSched
+`define VIrq                     VIrq
+`define VProcUser                VProcUser
+
+// If Verilog map PLI deinitions to VPI system tasks
+`else
+
+`define VAccess                  $vaccess
+`define VInit                    $vinit
+`define VSched                   $vsched
+`define VIrq                     $virq
+`define VProcUser                $vprocuser
+
 `endif

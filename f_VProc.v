@@ -1,9 +1,9 @@
 // ====================================================================
 //
-// Verilog side Virtual Processor, for running host
+// SystemVerilog side Virtual Processor, for running host
 // programs as control in simulation.
 //
-// Copyright (c) 2004-2024 Simon Southwell.
+// Copyright (c) 2024 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -23,6 +23,10 @@
 // ====================================================================
 
 `include "vprocdefs.vh"
+
+`ifdef VPROC_SV
+`include "vprocdpi.vh"
+`endif
 
 // ============================================================
 // VProc module
@@ -68,7 +72,7 @@ module VProc
 // Register definitions
 // ------------------------------------------------------------
 
-// $vsched/$vaccess outputs
+// VSched/VAccess outputs
 integer               VPDataOut;
 integer               VPAddr;
 integer               VPRW;
@@ -82,7 +86,7 @@ integer               NodeI;
 reg                   RdAckSamp;
 reg                   WRAckSamp;
 
-// Internal initialised flag (set after $vinit called)
+// Internal initialised flag (set after VInit called)
 reg                   Initialised;
 
 // Internal state
@@ -103,13 +107,13 @@ begin
 end
 endtask
 
-// $vaccess is not defined when no burst interface
+// vaccess is not defined when no burst interface
 `define vaccess vdummy
 
 `else
 
-// When a burst interface defined, use $vaccess
-`define vaccess $vaccess
+// When a burst interface defined, use $vaccess/VAccess (for VPI or DPI-C)
+`define vaccess `VAccess
 
 `endif
 
@@ -128,9 +132,9 @@ begin
     IntSampLast                         = 0;
 
     // Don't remove delay! Needed to allow Node to be assigned
-    // before the call to $vinit
-    #0
-    $vinit(Node);
+    // before the call to VInit
+    `MINDELAY
+    `VInit(Node);
     Initialised                         = 1;
 end
 
@@ -148,14 +152,14 @@ begin
     NodeI                               = Node;
     VPTicks                             = `DELTACYCLE;
 
-    // Wait until the VProc software is initialised for this node ($vinit called)
+    // Wait until the VProc software is initialised for this node (VInit called)
     // before starting accesses
     if (Initialised == 1'b1)
     begin
-        // If an interrupt active, call $vsched with interrupt value
+        // If an interrupt active, call VSched with interrupt value
         if (IntSamp > 0)
         begin
-            $vsched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
+            `VSched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
 
             // If interrupt routine returns non-zero tick, then override
             // current tick value. Otherwise, leave at present value.
@@ -165,11 +169,11 @@ begin
             end
         end
 
-        // If vector IRQ enabled, call $virq when interrupt value changes, passing in
+        // If vector IRQ enabled, call VIirq when interrupt value changes, passing in
         // new value
         if (IntSamp != IntSampLast)
         begin
-          $virq(NodeI, IntSamp);
+          `VIrq(NodeI, IntSamp);
           IntSampLast                   <= IntSamp;
         end
 
@@ -192,7 +196,7 @@ begin
 
                 if (BlkCount <= 1)
                 begin
-                    // If this is the last transfer in a burst, call $vaccess with
+                    // If this is the last transfer in a burst, call VAccess with
                     // the last data input sample.
                     if (BlkCount == 1)
                     begin
@@ -202,7 +206,7 @@ begin
                     end
 
                     // Get new access command
-                    $vsched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
+                    `VSched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
 
                     // Update the outputs
                     Burst               <= VPRW[`BLKBITS];
@@ -215,11 +219,11 @@ begin
                     begin
                         // Flag burst as first in block
                         BurstFirst      <= 1'b1;
-                        
+
                         // Initialise the burst block counter with count bits
                         BlkCount        = VPRW[`BLKBITS];
 
-                        // On writes, override VPDataOut to get from burst access task $vaccess at index 0
+                        // On writes, override VPDataOut to get from burst access task VAccess at index 0
                         if (VPRW[`WEBIT])
                         begin
                             AccIdx      = 0;
@@ -227,7 +231,7 @@ begin
                         end
                         else
                         begin
-                            // For reads, intialise index to -1, as it's pre-incremented at next $vaccess call
+                            // For reads, intialise index to -1, as it's pre-incremented at next VAccess call
                             AccIdx      = -1;
                         end
                     end
@@ -249,7 +253,7 @@ begin
 
                     // When bursting, reassert non-delta VPTicks value to break out of loop.
                     VPTicks             = 0;
-                    
+
                     // Update address and data outputs
                     DataOut             <= VPDataOut;
                     Addr                <= Addr + BURST_ADDR_INCR;
@@ -262,9 +266,9 @@ begin
                 end
 
                 // Flag to update externally and wait for response.
-                // The #0 ensures it's not updated until other outputs
+                // The `MINDELAY ensures it's not updated until other outputs
                 // are updated.
-                Update                  <= #0 ~Update;
+                Update                  <= `MINDELAY ~Update;
                 @(UpdateResponse);
             end
         end
