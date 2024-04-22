@@ -43,7 +43,10 @@
 // Top level test module
 // =======================================================
 
-module test ();
+module test 
+#(parameter
+            VCD_DUMP      = 0
+);
 
 reg         clk;
 integer     count;
@@ -69,8 +72,13 @@ wire  [3:0] node = 0;
 
 initial
 begin
-    $dumpfile("trace.vcd");
-    $dumpvars;
+    // If enabled, dump all the signals to a VCD file
+    if (VCD_DUMP != 0)
+    begin
+      $dumpfile("waves.vcd");
+      $dumpvars(0, test);
+    end
+    
     clk         = 1'b1;
     count       = 0;
     irq         = 3'h0;
@@ -124,8 +132,8 @@ begin
 
   if (count == `TIMEOUT-1)
   begin
-     $display("***ERROR: simulation timed out");
-    $finish;
+    $display("***ERROR: simulation timed out");
+    $stop;
   end
 
   readvalid <= read & ~readvalid;
