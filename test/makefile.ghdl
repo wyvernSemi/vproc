@@ -63,6 +63,9 @@ SIMFLAGS          = --std=08 --workdir=$(WORKDIR)
 VHDLFILELIST      = files_ghdl.tcl
 VHDLFILES         =$(foreach vhdlfile, $(file < $(VHDLFILELIST)), $(vhdlfile))
 
+# Get OS type
+OSTYPE             := $(shell uname)
+
 #------------------------------------------------------
 # BUILD RULES
 #------------------------------------------------------

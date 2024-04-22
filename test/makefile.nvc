@@ -62,6 +62,9 @@ SIMFLAGS           = --ieee-warnings=off                    \
                      --load=$(VPROC_PLI)                    \
                      $(VPROC_TOP)
 
+# Get OS type
+OSTYPE             := $(shell uname)
+
 #------------------------------------------------------
 # BUILD RULES
 #------------------------------------------------------
