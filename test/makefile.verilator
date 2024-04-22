@@ -64,13 +64,15 @@ VPROC_TOP          = test
 
 BURSTDEF           = +define+VPROC_BURST_IF
 VCDFLAG            = -GVCD_DUMP=1
+FINISHFLAG         = -GFINISH=1
+
 
 # C++ version 20 required for Verilator
 CPPSTD             = -std=c++20
 
 # Compilation flags for Verilator
 SIMFLAGS           = --binary -sv --timing --trace          \
-                     -GFINISH=1                             \
+                     $(FINISHFLAG)                          \
                      $(VCDFLAG) $(BURSTDEF)                 \
                      $(USRSIMFLAGS)                         \
                      -Mdir work -I../ -Wno-WIDTH            \
