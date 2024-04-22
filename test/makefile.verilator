@@ -46,18 +46,18 @@ VERIUSEROBJ        =
 SIMINCLUDEFLAG     =
 USRSIMFLAGS        =
 
+# Get OS type
+OSTYPE             := $(shell uname)
+
 ifeq (${OSTYPE}, Linux)
-  SIMFLAGSSO         = -Wl,-E -lrt -rdynamic
+  SIMFLAGSSO       = -Wl,-E -lrt -rdynamic
 else
-  SIMFLAGSSO         = -Wl,-export-all-symbols
+  SIMFLAGSSO       = -Wl,-export-all-symbols
 endif
 
 # Optional Memory model definitions
 MEM_C              =
 MEMMODELDIR        = .
-
-# Get OS type
-OSTYPE             :=$(shell uname)
 
 # Common logic simulator flags
 VPROC_TOP          = test
