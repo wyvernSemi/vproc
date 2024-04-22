@@ -26,12 +26,12 @@
 MAX_NUM_VPROC      = 64
 USRFLAGS           =
 SRCDIR             = ../code
-USRCDIR            = usercodeDelta
+USRCDIR            = usercode
 TESTDIR            = .
 VOBJDIR            = $(TESTDIR)/obj
 
 # User test source code file list
-USER_C             = VUserMain0.cpp
+USER_C             = VUserMain0.c VUserMain1.cpp
 
 #------------------------------------------------------
 # Settings specific to target simulator
@@ -39,11 +39,12 @@ USER_C             = VUserMain0.cpp
 # Simulator/Language specific C/C++ compile and link flags
 ARCHFLAG           = -m64
 OPTFLAG            = -g
-HDLLANGUAGE        =
+HDLLANGUAGE        = -DVPROC_SV
 SIMULATOR          = -DVERILATOR
 PLIVERSION         =
 VERIUSEROBJ        =
 SIMINCLUDEFLAG     =
+USRSIMFLAGS        =
 
 ifeq (${OSTYPE}, Linux)
   SIMFLAGSSO         = -Wl,-E -lrt -rdynamic
@@ -61,19 +62,28 @@ OSTYPE             :=$(shell uname)
 # Common logic simulator flags
 VPROC_TOP          = test
 
+BURSTDEF           = +define+VPROC_BURST_IF
+VCDFLAG            = -GVCD_DUMP=1
+
+# C++ version 20 required for Verilator
 CPPSTD             = -std=c++20
 
 # Compilation flags for Verilator
 SIMFLAGS           = --binary -sv --timing --trace          \
+                     -GFINISH=1                             \
+                     $(VCDFLAG) $(BURSTDEF)                 \
+                     $(USRSIMFLAGS)                         \
                      -Mdir work -I../ -Wno-WIDTH            \
                      --top $(VPROC_TOP)                     \
                      -MAKEFLAGS "--quiet"                   \
                      -CFLAGS "$(CPPSTD) -Wno-attributes"    \
-                     -LDFLAGS "$(SIMFLAGSSO) -Wl,-whole-archive -L../ -lvproc -Wl,-no-whole-archive -ldl"
+                     -LDFLAGS "$(SIMFLAGSSO)                \
+                     -Wl,-whole-archive -L../ -lvproc -Wl,-no-whole-archive -ldl"
 
-SIMEXE             = work/V${VPROC_TOP}
+SIMEXE             = work/V$(VPROC_TOP)
+FILELIST           = files.verilator
 
-WAVEFILE           = trace.vcd
+WAVEFILE           = waves.vcd
 WAVESAVEFILE       = wave.gtkw
 
 #------------------------------------------------------
@@ -88,8 +98,7 @@ include makefile.common
 # Analyse SystemVerilog files
 .PHONY: sysverilog
 sysverilog: $(VLIB)
-	@verilator -F files.verilator $(SIMFLAGS)
-
+	@verilator -F $(FILELIST) $(SIMFLAGS)
 
 #------------------------------------------------------
 # EXECUTION RULES
@@ -122,5 +131,3 @@ help:
 
 clean:
 	@rm -rf $(VLIB) $(VOBJDIR) waves.fst work $(WAVEFILE)
-
-
