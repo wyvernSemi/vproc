@@ -38,6 +38,7 @@ entity VProc is
     Clk             : in  std_logic;
 
     Addr            : out std_logic_vector(31 downto 0) := 32x"0";
+    BE              : out std_logic_vector( 3 downto 0) := 4x"F";
     WE              : out std_logic := '0';
     RD              : out std_logic := '0';
     DataOut         : out std_logic_vector(31 downto 0);
@@ -64,6 +65,8 @@ constant      WEbit       : integer := 0;
 constant      RDbit       : integer := 1;
 constant      BLKHIBIT    : integer := 13;
 constant      BLKLOBIT    : integer := 2;
+constant      BEHIBIT     : integer := 17;
+constant      BELOBIT     : integer := 14;
 constant      DeltaCycle  : integer := -1;
 
 signal        Initialised : integer := 0;
@@ -180,19 +183,20 @@ begin
                      VPRW,
                      VPTicks);
 
-              Burst             <= std_logic_vector(to_unsigned(VPRW, 14)(BLKHIBIT downto BLKLOBIT));
-              WE                <= to_unsigned(VPRW, 14)(WEbit);
-              RD                <= to_unsigned(VPRW, 14)(RDbit);
+              Burst             <= std_logic_vector(to_unsigned(VPRW, 32)(BLKHIBIT downto BLKLOBIT));
+              BE                <= std_logic_vector(to_unsigned(VPRW, 32)(BEHIBIT downto BELOBIT));
+              WE                <= to_unsigned(VPRW, 32)(WEbit);
+              RD                <= to_unsigned(VPRW, 32)(RDbit);
               Addr              <= std_logic_vector(to_signed(VPAddr, 32));
 
-              BlkCount          := to_integer(to_unsigned(VPRW, 14)(BLKHIBIT downto BLKLOBIT));
+              BlkCount          := to_integer(to_unsigned(VPRW, 32)(BLKHIBIT downto BLKLOBIT));
 
               -- If new BlkCount is non-zero, setup burst transfer
               if BlkCount /= 0 then
                 BurstFirst      <= '1';
 
                 -- On writes, override VPDataOut to get from burst access task $VAccess at index 0
-                if to_unsigned(VPRW, 14)(WEbit)  = '1' then
+                if to_unsigned(VPRW, 32)(WEbit)  = '1' then
                   AccIdx        := 0;
 
                   VAccess(to_integer(unsigned(Node)),
