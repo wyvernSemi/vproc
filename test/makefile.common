@@ -40,6 +40,7 @@
 #    SIMULATOR          : Target logic simulator. One of MODELSIM (same for Questa), NVC, GHDL, VERILATOR or blank for Vivado XSIM
 #    VERIUSEROBJ        : Name of veriuser object file (with path) for ModelSIM and Questa, else blank
 #    SIMFLAGSSO         : Simulator specific flags for shared object compliation/linking (e.g. for library inclusion)
+#    POSTVPROCSOFLAGS   : Simulator specific flags for shared object compliation/linking post vproc library flag
 
 # Generated  PLI C library
 VPROC_PLI           = ${TESTDIR}/VProc.so
@@ -87,6 +88,7 @@ CFLAGS_SO           = $(ARCHFLAG)                         \
                       $(SIMFLAGSSO)                       \
                       -L$(TESTDIR) -lvproc                \
                       -Wl,-no-whole-archive               \
+                      $(POSTVPROCSOFLAGS)                 \
                       -o $(VPROC_PLI)
 
 # Compiler executables and standard flags
