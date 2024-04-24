@@ -35,14 +35,34 @@ public:
          VProc        (const unsigned   nodeIn) : node(nodeIn) {};
 
     // API methods
-    int  write        (const unsigned   addr,   const unsigned    data, const int      delta=0) {return VWrite        (addr,  data, delta,  node);};
-    int  read         (const unsigned   addr,         unsigned   *data, const int      delta=0) {return VRead         (addr,  data, delta,  node);};
-    int  burstWrite   (const unsigned   addr,         void       *data, const unsigned length)  {return VBurstWrite   (addr,  data, length, node);};
-    int  burstRead    (const unsigned   addr,         void       *data, const unsigned length)  {return VBurstRead    (addr,  data, length, node);};
-    int  tick         (const unsigned   ticks)                                                  {return VTick         (ticks,               node);};
-    void regIrq       (const pVUserIrqCB_t func)                                                {       VRegIrq       (func,                node);};
-    void regInterrupt (const int        level,  const pVUserInt_t func)                         {       VRegInterrupt (level, func,         node);};
-    void regUser      (const pVUserCB_t func)                                                   {       VRegUser      (func,                node);};
+    int  write        (const unsigned   addr,     const unsigned    data, const int      delta=0)    {return VWrite        (addr,  data, delta,  node);};
+    int  read         (const unsigned   addr,           unsigned   *data, const int      delta=0)    {return VRead         (addr,  data, delta,  node);};
+
+    int  writeByte    (const unsigned   byteaddr, const unsigned    data, const int      delta=0)    {return VWriteBE      (byteaddr & ~(0x3), data << (8*(byteaddr&0x3)), 0x1 << (byteaddr&0x3), delta, node);};
+    int  writeHword   (const unsigned   byteaddr, const unsigned    data, const int      delta=0)    {return VWriteBE      (byteaddr & ~(0x3), data << (8*(byteaddr&0x2)), 0x3 << (byteaddr&0x2), delta, node);};
+    int  writeWord    (const unsigned   byteaddr, const unsigned    data, const int      delta=0)    {return VWriteBE      (byteaddr & ~(0x3), data, 0xf, delta, node);};
+
+    int  readByte     (const unsigned   byteaddr,       unsigned   *data, const int      delta=0)    { int status; unsigned word;
+                                                                                                       status = VRead(byteaddr & ~(0x3), &word, delta, node);
+                                                                                                       *data  = (word >> (8*(byteaddr&0x3))) & 0xff;
+                                                                                                       return status;};
+
+    int  readHword    (const unsigned   byteaddr,       unsigned   *data, const int      delta=0)    { int status; unsigned word;
+                                                                                                       status = VRead(byteaddr & ~(0x3), &word, delta, node);
+                                                                                                       *data  = (word >> (8*(byteaddr&0x2))) & 0xffff;
+                                                                                                       return status;};
+
+    int  readWord     (const unsigned   byteaddr,       unsigned   *data, const int      delta=0)    { int status; unsigned word;
+                                                                                                       status = VRead(byteaddr & ~(0x3), &word, delta, node);
+                                                                                                       *data  = word;
+                                                                                                       return status;};
+
+    int  burstWrite   (const unsigned   addr,           void       *data, const unsigned length)     {return VBurstWrite   (addr,  data, length, node);};
+    int  burstRead    (const unsigned   addr,           void       *data, const unsigned length)     {return VBurstRead    (addr,  data, length, node);};
+    int  tick         (const unsigned   ticks)                                                       {return VTick         (ticks,               node);};
+    void regIrq       (const pVUserIrqCB_t func)                                                     {       VRegIrq       (func,                node);};
+    void regInterrupt (const int        level,  const pVUserInt_t func)                              {       VRegInterrupt (level, func,         node);};
+    void regUser      (const pVUserCB_t func)                                                        {       VRegUser      (func,                node);};
 
 private:
 
