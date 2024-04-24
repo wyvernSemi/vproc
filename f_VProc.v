@@ -44,7 +44,10 @@ module VProc
 
     // Bus interface
     output reg [31:0]      Addr,
+    
+`ifdef VPROC_BYTE_ENABLE
     output reg  [3:0]      BE,
+`endif
     output reg             WE,
     output reg             RD,
     output reg [31:0]      DataOut,
@@ -95,6 +98,12 @@ reg                   Initialised;
 integer               TickCount;
 integer               BlkCount;
 integer               AccIdx;
+
+`ifndef VPROC_BYTE_ENABLE
+// When no byte enable define a local dummy register to
+// replace the missing port
+reg [3:0]             BE;
+`endif
 
 `ifndef VPROC_BURST_IF
 
