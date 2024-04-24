@@ -322,7 +322,7 @@ void VRegInterrupt (const int level, const pVUserInt_t func, const unsigned node
 //
 void VRegIrq (const pVUserIrqCB_t func, const unsigned node)
 {
-    printf("VRegIrq(): at node %d, registering irq callback\n", node);
+    debug_io_printf("VRegIrq(): at node %d, registering irq callback\n", node);
 
     ns[node]->VUserIrqCB = func;
 }
