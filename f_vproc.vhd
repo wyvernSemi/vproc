@@ -31,7 +31,8 @@ use work.vproc_pkg.all;
 entity VProc is
   generic (INT_WIDTH       : integer := 3;
            NODE_WIDTH      : integer := 4;
-           BURST_ADDR_INCR : integer := 1
+           BURST_ADDR_INCR : integer := 1;
+           DISABLE_DELTA   : integer := 0
   );
   port (
     Clk             : in  std_logic;
@@ -235,7 +236,9 @@ begin
 
             -- Flag to update externally and wait for response
             Update              <= not Update;
-            wait on UpdateResponse;
+            if DISABLE_DELTA = 0 then
+              wait on UpdateResponse;
+            end if;
 
           end loop;
 

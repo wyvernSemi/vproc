@@ -35,7 +35,8 @@
 module VProc
 #(parameter               INT_WIDTH       = 3,
                           NODE_WIDTH      = 4,
-                          BURST_ADDR_INCR = 1
+                          BURST_ADDR_INCR = 1,
+                          DISABLE_DELTA   = 0
 )
 (
     // Clock
@@ -43,6 +44,7 @@ module VProc
 
     // Bus interface
     output reg [31:0]      Addr,
+    output reg  [3:0]      BE,
     output reg             WE,
     output reg             RD,
     output reg [31:0]      DataOut,
@@ -212,6 +214,7 @@ begin
                     Burst               <= VPRW[`BLKBITS];
                     WE                  <= VPRW[`WEBIT];
                     RD                  <= VPRW[`RDBIT];
+                    BE                  <= VPRW[`BEBITS];
                     Addr                <= VPAddr;
 
                     // If new BlkCount is non-zero, setup burst transfer
@@ -268,8 +271,11 @@ begin
                 // Flag to update externally and wait for response.
                 // The `MINDELAY ensures it's not updated until other outputs
                 // are updated.
-                Update                  <= `MINDELAY ~Update;
-                @(UpdateResponse);
+                Update              <= `MINDELAY ~Update;
+                if (DISABLE_DELTA == 0)
+                begin
+                    @(UpdateResponse);
+                end
             end
         end
         else
