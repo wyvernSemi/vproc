@@ -32,9 +32,10 @@
 `timescale 1ns / 1ps
 
 module riscVsim
- #(parameter          BE_ADDR     = 32'hAFFFFFF0,
-   parameter          NODE        = 0,
-   parameter          USE_HARVARD = 1)
+ #(parameter          BE_ADDR       = 32'hAFFFFFF0,
+                      NODE          = 0,
+                      USE_HARVARD   = 1,
+                      DISABLE_DELTA = 0)
  (
     input             clk,
 
@@ -46,13 +47,13 @@ module riscVsim
     output            dread,
     input      [31:0] dreaddata,
     input             dwaitrequest,
-    
+
     // Interface active if USE_HARVARD is 1 and instr_access set by software
     output     [31:0] iaddress,
     output            iread,
     input      [31:0] ireaddata,
     input             iwaitrequest,
-    
+
     input             irq
 );
 
@@ -73,14 +74,15 @@ assign      RDAck    = ((dread & ~dwaitrequest) == 1'b1 || (iread & ~iwaitreques
 
 initial
 begin
-  instr_access    <= 1'b0;
+  instr_access     = 1'b0;
 
-  UpdateResponse  <= 1'b1;
-  dbyteenable     <= 4'hf;
+  UpdateResponse   = 1'b1;
+  dbyteenable      = 4'hf;
 end
 
-
-  VProc vp (
+  VProc   #(.DISABLE_DELTA           (DISABLE_DELTA)
+           ) vp 
+           (
             .Clk                     (clk),
             .Addr                    (daddress),
             .WE                      (WE),
@@ -108,7 +110,7 @@ begin
   begin
     dwrite             <= WE;
   end
-  
+
   UpdateResponse = ~UpdateResponse;
 end
 
