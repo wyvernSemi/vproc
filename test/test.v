@@ -39,7 +39,8 @@
 module test
 #(parameter   DEBUG_STOP    = 0,
               FINISH        = 0,
-              VCD_DUMP      = 0
+              VCD_DUMP      = 0,
+              DISABLE_DELTA = 0
 );
 
 // ---------------------------------------------------------
@@ -87,7 +88,8 @@ wire CS2 = (VPAddr1[31:28] == 4'hb) ? 1'b1 : 1'b0;
  // ---------------------------------------------------------
 
  VProc    #(.INT_WIDTH          (`INTWIDTH),
-            .NODE_WIDTH         (`NODEWIDTH)
+            .NODE_WIDTH         (`NODEWIDTH),
+            .DISABLE_DELTA      (DISABLE_DELTA)
            ) vp0
            (.Clk                (clk),
             .Addr               (VPAddr0),
@@ -114,7 +116,8 @@ wire CS2 = (VPAddr1[31:28] == 4'hb) ? 1'b1 : 1'b0;
  // ---------------------------------------------------------
 
  VProc    #(.INT_WIDTH          (`INTWIDTH),
-            .NODE_WIDTH         (`NODEWIDTH)
+            .NODE_WIDTH         (`NODEWIDTH),
+            .DISABLE_DELTA      (DISABLE_DELTA)
            ) vp1
            (.Clk                (clk),
             .Addr               (VPAddr1),
