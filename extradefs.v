@@ -19,20 +19,22 @@
  * along with VProc. If not, see <http://www.gnu.org/licenses/>.
  */
 
-`ifdef resol_10ps
-`define VProcTimeScale  `timescale 1 ps / 10 ps
-`else
-`define VProcTimeScale  `timescale 1 ps / 1 ps
-`endif
+`ifndef external_timescale
+
+ `ifdef resol_10ps
+ `define VProcTimeScale  `timescale 1 ps / 10 ps
+ `else
+ `define VProcTimeScale  `timescale 1 ps / 1 ps
+ `endif
 
 `define PSEC   1
 `define NSEC   1000
 `define USEC   1000000
 `define MSEC   1000000000
 
-`ifndef RegDel
-`define RegDel 200
 `endif
+
+
 
 
 
