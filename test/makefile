@@ -28,7 +28,7 @@ USRFLAGS           =
 SRCDIR             = ../code
 USRCDIR            = usercode
 TESTDIR            = .
-VOBJDIR            = ${TESTDIR}/obj
+VOBJDIR            = $(TESTDIR)/obj
 
 # User test source code file list
 USER_C             = VUserMain0.c VUserMain1.cpp
