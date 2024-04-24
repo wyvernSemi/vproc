@@ -59,20 +59,33 @@ endif
 MEM_C              =
 MEMMODELDIR        = .
 
+#......................................................
 # Common logic simulator flags
+#.....................................................
+
+# Top level module name
 VPROC_TOP          = test
 
+# Set to +define+VPROC_BURST_IF for burst interface, or blank for none
 BURSTDEF           = +define+VPROC_BURST_IF
+
+# set to -GVCD_DUMP=1 to generate VCD ouput, or blank for none
 VCDFLAG            = -GVCD_DUMP=1
+
+# Set to -GFINISH=1 for $finish at execution end, or blank for $stop
+# (Verilator generates an error on $stop)
 FINISHFLAG         = -GFINISH=1
 
+# Set to --timing for delta cycle support, or -GDISABLE_DELTA for no delta-cycle
+TIMINGFLAG         = --timing
 
 # C++ version 20 required for Verilator
 CPPSTD             = -std=c++20
 
 # Compilation flags for Verilator
-SIMFLAGS           = --binary -sv --timing --trace          \
+SIMFLAGS           = --binary -sv --trace                   \
                      $(FINISHFLAG)                          \
+                     $(TIMINGFLAG)                          \
                      $(VCDFLAG) $(BURSTDEF)                 \
                      $(USRSIMFLAGS)                         \
                      -Mdir work -I../ -Wno-WIDTH            \
