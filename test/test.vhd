@@ -57,6 +57,7 @@ architecture sim of test is
   signal  VPAddr0, VPDataOut0          : std_logic_vector(31 downto 0)    := 32x"0";
   signal  VPAddr1, VPDataOut1          : std_logic_vector(31 downto 0)    := 32x"0";
   signal  VPDataIn0, VPDataIn1         : std_logic_vector(31 downto 0)    := 32x"0";
+  signal  VPBE0, VPBE1                 : std_logic_vector(3 downto 0)     :=  4x"F";
   signal  VPWE0, VPWE1                 : std_logic;
   signal  VPRD0, VPRD1                 : std_logic;
   signal  Update                       : std_logic_vector(1 downto 0);
@@ -81,6 +82,7 @@ begin
   port map (
     Clk                                => Clk,
     Addr                               => VPAddr0,
+    BE                                 => VPBE0,
     WE                                 => VPWE0,
     RD                                 => VPRD0,
     DataOut                            => VPDataOut0,
@@ -98,9 +100,13 @@ begin
   ---------------------------------------------
 
   vp1 : entity work.VProc
+  generic map (
+    BURST_ADDR_INCR                    => 4
+  )
   port map (
     Clk                                => Clk,
     Addr                               => VPAddr1,
+    BE                                 => VPBE1,
     WE                                 => VPWE1,
     RD                                 => VPRD1,
     DataOut                            => VPDataOut1,
@@ -176,7 +182,7 @@ begin
 
       uniform(Seed1, Seed2, RandNumR);
       RandNumI0                        := natural(16.0 * RandNumR);
-      
+
       if count >= 32 and count < 42 then
         Interrupt1(1)                  <= '1';
       else
@@ -206,15 +212,20 @@ begin
   ---------------------------------------------
 
   P_MEM : process (Clk, VPAddr1)
+  variable midx : integer;
   begin
 
     -- Read memory
-    VPDataIn1                          <= Mem(to_integer(unsigned(VPAddr1(9 downto 0))));
+    VPDataIn1                          <= Mem(to_integer(unsigned(VPAddr1(11 downto 2))));
 
     -- Write memory
     if Clk'event and Clk = '1' then
       if VPWE1 = '1' and CS1 = '1' then
-        Mem(to_integer(unsigned(VPAddr1(9 downto 0)))) <= VPDataOut1;
+        midx := to_integer(unsigned(VPAddr1(11 downto 2)));
+        Mem(midx)(31 downto 24) <= VPDataOut1(31 downto 24) when VPBE1(3) else Mem(midx)(31 downto 24);
+        Mem(midx)(23 downto 16) <= VPDataOut1(23 downto 16) when VPBE1(2) else Mem(midx)(23 downto 16);
+        Mem(midx)(15 downto  8) <= VPDataOut1(15 downto  8) when VPBE1(1) else Mem(midx)(15 downto  8);
+        Mem(midx)( 7 downto  0) <= VPDataOut1( 7 downto  0) when VPBE1(0) else Mem(midx)( 7 downto  0);
       end if;
     end if;
 

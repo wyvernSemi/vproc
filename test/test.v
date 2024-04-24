@@ -26,13 +26,15 @@
 // Local definitions
 // ---------------------------------------------------------
 
-`define       CLKPERIOD      (2 * `NSEC)
-`define       TIMEOUTCOUNT   1000
-                             
-`define       INTWIDTH       3
-`define       NODEWIDTH      32
+`define       CLKPERIOD          (2 * `NSEC)
+`define       TIMEOUTCOUNT       1000
 
-`define       RegDel         1
+`define       INTWIDTH           3
+`define       NODEWIDTH          32
+
+`define       RegDel             1
+
+`define       VPROC_BYTE_ENABLE
 
 // =========================================================
 // Top level test module
@@ -63,8 +65,10 @@ integer       restart;
 // ---------------------------------------------------------
 
 wire [31:0]   VPAddr0;
+wire [3:0]    VPBE0;
 wire [31:0]   VPDataOut0;
 wire [31:0]   VPAddr1;
+wire [3:0]    VPBE1;
 wire [31:0]   VPDataOut1;
 wire [31:0]   VPDataIn1;
 wire          VPWE0;
@@ -97,6 +101,10 @@ wire CS2 = (VPAddr1[31:28] == 4'hb) ? 1'b1 : 1'b0;
             .Addr               (VPAddr0),
             .WE                 (VPWE0),
             .RD                 (VPRD0),
+            
+`ifdef VPROC_BYTE_ENABLE
+            .BE                 (VPBE0),
+`endif
 
 `ifdef VPROC_BURST_IF
             .Burst              (),
@@ -119,12 +127,17 @@ wire CS2 = (VPAddr1[31:28] == 4'hb) ? 1'b1 : 1'b0;
 
  VProc    #(.INT_WIDTH          (`INTWIDTH),
             .NODE_WIDTH         (`NODEWIDTH),
+            .BURST_ADDR_INCR    (4),
             .DISABLE_DELTA      (DISABLE_DELTA)
            ) vp1
            (.Clk                (clk),
             .Addr               (VPAddr1),
             .WE                 (VPWE1),
             .RD                 (VPRD1),
+            
+`ifdef VPROC_BYTE_ENABLE
+            .BE                 (VPBE1),
+`endif
 
 `ifdef VPROC_BURST_IF
             .Burst              (),
@@ -149,7 +162,8 @@ wire CS2 = (VPAddr1[31:28] == 4'hb) ? 1'b1 : 1'b0;
             .DI                 (VPDataOut1),
             .DO                 (VPDataIn1),
             .WE                 (VPWE1),
-            .A                  (VPAddr1[9:0]),
+            .BE                 (VPBE1),
+            .A                  (VPAddr1[11:2]),
             .CS                 (CS1)
            );
 
@@ -225,7 +239,7 @@ begin
     // Random data input for VProc node 0
     #`RegDel
     VPDataIn0  = Seed;
-    
+
     Interrupt1[1] = (Count >24 && Count < 34) ? 1 : 0;
 
     // Random interrupt for node 0
@@ -259,6 +273,7 @@ module Mem (
     input         CS,
     input  [31:0] DI,
     input   [9:0] A,
+    input   [3:0] BE,
     output [31:0] DO
 );
 
@@ -270,7 +285,10 @@ always @(posedge clk)
 begin
     if (WE && CS)
     begin
-      Mem[A] <= DI;
+      Mem[A] <= {BE[3] ? DI[31:24] : Mem[A][31:24],
+                 BE[2] ? DI[23:16] : Mem[A][23:16],
+                 BE[1] ? DI[15:8]  : Mem[A][15:8],
+                 BE[0] ? DI[7:0]   : Mem[A][7:0]};
     end
 end
 
