@@ -347,7 +347,7 @@ extern "C" void VUserMain0()
     VTick(20, node);
 
     // Halt simulation
-    write_word(HALT_ADDR, 0);
+    write_byte(HALT_ADDR, 1);
 
     SLEEP_FOREVER;
 }

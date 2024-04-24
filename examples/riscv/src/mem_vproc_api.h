@@ -1,7 +1,7 @@
 /**************************************************************/
-/* mem_vproc_api.h                           Date: 2021/08/02 */
+/* mem_vproc_api.h                           Date: 2024/04/23 */
 /*                                                            */
-/* Copyright (c) 2021 Simon Southwell. All rights reserved.   */
+/* Copyright (c) 2024 Simon Southwell. All rights reserved.   */
 /*                                                            */
 /**************************************************************/
 
@@ -25,10 +25,7 @@ extern "C" {
 //#define ACCESS_LEN                              10
 #define ACCESS_LEN                              2
 
-#define BYTE_EN_ADDR                            0xAFFFFFF0
 #define HALT_ADDR                               0xAFFFFFF8
-
-#define INSTR_ACCESS                            0x8000000F
 
 extern int      node;
 

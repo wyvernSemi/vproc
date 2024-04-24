@@ -33,11 +33,11 @@
 `timescale 1ns/1ps
 
 `define RESET_PERIOD    10
-`define TIMEOUT_COUNT   400000
+`define TIMEOUT_COUNT   4000
 
-`define MEM_SEGMENT     4'h0
+`define DMEM_SEGMENT    4'h0
+`define IMEM_SEGMENT    4'h8
 
-`define BE_ADDR         32'hAFFFFFF0
 `define HALT_ADDR       32'hAFFFFFF8
 `define INT_ADDR        32'hAFFFFFFC
 
@@ -95,10 +95,9 @@ always #(500/CLK_FREQ_MHZ) clk         = ~clk;
 // Generate a reset signal using count
 assign reset_n                         = (count >= `RESET_PERIOD) ? 1'b1 : 1'b0;
 
-// Generate a memory chip select
-
-wire cs0 = address[31:28] == `MEM_SEGMENT ? 1'b1 : 1'b0;
-wire cs1 = address[31:28] == `MEM_SEGMENT ? 1'b1 : 1'b0;
+// Generate  memory chip selects
+wire cs0 = iaddress[31:28] == `IMEM_SEGMENT ? 1'b1 : 1'b0;
+wire cs1 =  address[31:28] == `DMEM_SEGMENT ? 1'b1 : 1'b0;
 
 // -----------------------------------------------
 // Simulation control process
@@ -108,7 +107,7 @@ begin
   count                                <= count + 1;
 
   // Stop/finish the simulations of timeout or a write to the halt address
-  if (count == `TIMEOUT_COUNT || (write == 1'b1 && address == `HALT_ADDR))
+  if (count == `TIMEOUT_COUNT || (write == 1'b1 && address == `HALT_ADDR && writedata[0]))
   begin
     if (count >= `TIMEOUT_COUNT)
     begin
@@ -150,8 +149,7 @@ end
 // Virtual CPU
 // -----------------------------------------------
 
- riscVsim  #(.BE_ADDR(`BE_ADDR), 
-             .USE_HARVARD(USE_HARVARD),
+ riscVsim  #(.USE_HARVARD(USE_HARVARD),
              .DISABLE_DELTA(DISABLE_DELTA)) cpu
  (
    .clk                     (clk),
@@ -196,7 +194,7 @@ end
 endmodule
 
 // =========================================================
-// Simple dual-port 64K byte memory model
+// Simple dual-port 64K byte memory model with byte enables
 // =========================================================
 
 module Mem (

@@ -54,7 +54,7 @@ MEMMODELDIR        = .
 
 # Common flags for vsim
 VPROC_TOP          = test
-VLOGFLAGS          = +incdir+../
+VLOGFLAGS          = +incdir+../ +define+VPROC_BYTE_ENABLE
 VSIMFLAGS          = -pli $(VPROC_PLI) $(VPROC_TOP)
 
 # Set OS specific variables between Linux and Windows (MinGW)

@@ -32,8 +32,7 @@
 `timescale 1ns / 1ps
 
 module riscVsim
- #(parameter          BE_ADDR       = 32'hAFFFFFF0,
-                      NODE          = 0,
+ #(parameter          NODE          = 0,
                       USE_HARVARD   = 1,
                       DISABLE_DELTA = 0)
  (
@@ -41,9 +40,9 @@ module riscVsim
 
     // Memory mapped master interface
     output     [31:0] daddress,
-    output reg        dwrite,
+    output            dwrite,
     output     [31:0] dwritedata,
-    output reg  [3:0] dbyteenable,
+    output      [3:0] dbyteenable,
     output            dread,
     input      [31:0] dreaddata,
     input             dwaitrequest,
@@ -57,61 +56,36 @@ module riscVsim
     input             irq
 );
 
-reg         instr_access;
-reg         UpdateResponse;
+wire        instr_access;
 wire        Update;
-wire        WE;
 wire        RDAck;
 wire        read_int;
 wire [31:0] nodenum = NODE;
 wire [31:0] rd_data;
 
-assign      iaddress = daddress;
-assign      iread    = read_int &&  instr_access && USE_HARVARD;
-assign      dread    = read_int && (instr_access == 1'b0 || USE_HARVARD == 0);
-assign      rd_data  = dread ? dreaddata : ireaddata;
-assign      RDAck    = ((dread & ~dwaitrequest) == 1'b1 || (iread & ~iwaitrequest) == 1'b1) ? 1'b1 : 1'b0;
-
-initial
-begin
-  instr_access     = 1'b0;
-
-  UpdateResponse   = 1'b1;
-  dbyteenable      = 4'hf;
-end
+assign      instr_access = daddress[31];
+assign      iaddress     = {1'b0, daddress[30:0]};
+assign      iread        = read_int &&  instr_access && USE_HARVARD;
+assign      dread        = read_int && (instr_access == 1'b0 || USE_HARVARD == 0);
+assign      rd_data      = dread ? dreaddata : ireaddata;
+assign      RDAck        = ((dread & ~dwaitrequest) == 1'b1 || (iread & ~iwaitrequest) == 1'b1) ? 1'b1 : 1'b0;
 
   VProc   #(.DISABLE_DELTA           (DISABLE_DELTA)
-           ) vp 
+           ) vp
            (
             .Clk                     (clk),
             .Addr                    (daddress),
-            .WE                      (WE),
+            .BE                      (dbyteenable),
+            .WE                      (dwrite),
             .RD                      (read_int),
             .DataOut                 (dwritedata),
             .DataIn                  (rd_data),
-            .WRAck                   (WE),
+            .WRAck                   (dwrite),
             .RDAck                   (RDAck),
             .Interrupt               ({2'b00, irq}),
             .Update                  (Update),
-            .UpdateResponse          (UpdateResponse),
+            .UpdateResponse          (Update),
             .Node                    (nodenum[3:0])
            );
-
-
-always @(Update)
-begin
-  if (WE == 1'b1 && daddress == BE_ADDR)
-  begin
-    dbyteenable        <= dwritedata[3:0];
-    instr_access       <= dwritedata[31];
-    dwrite             <= 1'b0;
-  end
-  else
-  begin
-    dwrite             <= WE;
-  end
-
-  UpdateResponse = ~UpdateResponse;
-end
 
 endmodule

@@ -1,0 +1,178 @@
+###################################################################
+# Makefile for Virtual Processor SystemVerilog for Verilator
+#
+# Copyright (c) 2024 Simon Southwell.
+#
+# This file is part of VProc.
+#
+# VProc is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VProc is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with VProc. If not, see <http://www.gnu.org/licenses/>.
+#
+###################################################################
+
+#------------------------------------------------------
+# User overridable definitions
+
+MAX_NUM_VPROC      = 64
+USRFLAGS           =
+SRCDIR             = ../../code
+USRCDIR            = src
+TESTDIR            = .
+VOBJDIR            = $(TESTDIR)/obj
+
+# User test source code file list
+USER_C             = VUserMain0.cpp mem_vproc_api.cpp getopt.c
+
+#------------------------------------------------------
+# Settings specific to target simulator
+
+# Simulator/Language specific C/C++ compile and link flags
+ARCHFLAG           = -m64
+OPTFLAG            = -g
+HDLLANGUAGE        = -DVPROC_SV
+SIMULATOR          = -DVERILATOR
+PLIVERSION         =
+VERIUSEROBJ        =
+SIMINCLUDEFLAG     = -I./include
+SIMFLAGSSO         =
+USRSIMFLAGS        =
+
+# VProc source library flags. Note path is relative to work directory (one down)
+VPROCFLAGS         = -L../ -lvproc
+
+# RV32 RISC-V ISS specific flags. Note path is relative to work directory (one down)
+RV32FLAGS          = -L../lib -lrv32$(LIBOS)$(LIBARCH)
+
+# Get OS type
+OSTYPE             := $(shell uname)
+
+ifeq (${OSTYPE}, Linux)
+  SIMFLAGSSO       = -Wl,-E -lrt -rdynamic
+else
+  SIMFLAGSSO       = -Wl,-export-all-symbols
+endif
+
+
+# Optional Memory model definitions
+MEM_C              =
+MEMMODELDIR        = .
+
+# Set OS specific variables between Linux and Windows (MinGW)
+ifeq (${OSTYPE}, Linux)
+  WLIB             =
+else
+  WLIB             = -lWs2_32
+  LIBOS            = win
+endif
+
+ifeq ($(ARCHFLAG), "-m32")
+  LIBARCH          = 32
+else
+  LIBARCH          = 64
+endif
+
+#......................................................
+# Common logic simulator flags
+#.....................................................
+
+# Top level module name
+VPROC_TOP          = test
+
+# Set to +define+VPROC_BURST_IF for burst interface, or blank for none
+BURSTDEF           = 
+
+# Set to --GGUI_RUN=1 for $stop at execution end, or blank for $finish
+# (Verilator generates an error on $stop)
+FINISHFLAG         =
+
+# Set to --timing for delta cycle support, or -GDISABLE_DELTA=1 for no delta-cycle
+TIMINGFLAG         = -GDISABLE_DELTA=1
+
+# HDL Include path for VProc Verilog source and headers
+INCLFLAG           = +incdir+../../ +define+VPROC_BYTE_ENABLE
+
+WARNCONTROL        = -Wno-PINMISSING
+
+# C++ version 20 required for Verilator
+CPPSTD             = -std=c++20
+
+# Compilation flags for Verilator
+SIMFLAGS           = --binary -sv --trace                   \
+                     $(FINISHFLAG)                          \
+                     $(TIMINGFLAG)                          \
+                     $(VCDFLAG) $(BURSTDEF)                 \
+                     $(INCLFLAG)                            \
+                     $(USRSIMFLAGS)                         \
+                     $(WARNCONTROL)                         \
+                     -Mdir work -I../ -Wno-WIDTH            \
+                     --top $(VPROC_TOP)                     \
+                     -MAKEFLAGS "--quiet"                   \
+                     -CFLAGS "$(CPPSTD) -Wno-attributes"    \
+                     -LDFLAGS "$(SIMFLAGSSO)                \
+                     -Wl,-whole-archive                     \
+                     $(VPROCFLAGS)                          \
+                     -Wl,-no-whole-archive -ldl             \
+                     $(RV32FLAGS)                           \
+                     $(WLIB)"
+
+SIMEXE             = work/V$(VPROC_TOP)
+FILELIST           = files.verilator
+
+WAVEFILE           = waves.vcd
+WAVESAVEFILE       = wave.gtkw
+
+#------------------------------------------------------
+# BUILD RULES
+#------------------------------------------------------
+
+all: sysverilog
+
+# Include common build rules
+include ../../test/makefile.common
+
+# Analyse SystemVerilog files
+.PHONY: sysverilog
+sysverilog: $(VLIB)
+	@verilator -F $(FILELIST) $(SIMFLAGS)
+
+#------------------------------------------------------
+# EXECUTION RULES
+#------------------------------------------------------
+
+run: sysverilog
+	@$(SIMEXE)
+
+rungui: sysverilog
+	@$(SIMEXE)
+	@if [ -e $(WAVESAVEFILE) ]; then                       \
+	    gtkwave -a $(WAVESAVEFILE) $(WAVEFILE);            \
+	else                                                   \
+	    gtkwave $(WAVEFILE);                               \
+	fi
+
+gui: rungui
+
+.SILENT:
+help:
+	@$(info make help          Display this message)
+	@$(info make               Build C/C++ and HDL code without running simulation)
+	@$(info make run           Build and run batch simulation)
+	@$(info make rungui/gui    Build and run GUI simulation)
+	@$(info make clean         clean previous build artefacts)
+
+#------------------------------------------------------
+# CLEANING RULES
+#------------------------------------------------------
+
+clean:
+	@rm -rf $(VLIB) $(VOBJDIR) waves.fst work $(WAVEFILE)
