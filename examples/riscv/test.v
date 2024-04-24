@@ -43,10 +43,10 @@
 
 module test
 #(parameter GUI_RUN          = 0,
-  parameter CLK_FREQ_MHZ     = 100,
-  parameter USE_HARVARD      = 1)
-();
-
+            CLK_FREQ_MHZ     = 100,
+            USE_HARVARD      = 1,
+            VCD_DUMP         = 0,
+            DISABLE_DELTA    = 0);
 
 // Clock, reset and simulation control state
 reg            clk;
@@ -75,6 +75,13 @@ reg            irq;
 
 initial
 begin
+    // If enabled, dump all the signals to a VCD file
+    if (VCD_DUMP != 0)
+    begin
+      $dumpfile("waves.vcd");
+      $dumpvars(0, test);
+    end
+    
    count                               = -1;
    clk                                 = 1'b1;
    irq                                 = 1'b0;
@@ -103,6 +110,11 @@ begin
   // Stop/finish the simulations of timeout or a write to the halt address
   if (count == `TIMEOUT_COUNT || (write == 1'b1 && address == `HALT_ADDR))
   begin
+    if (count >= `TIMEOUT_COUNT)
+    begin
+      $display("***ERROR: simulation timed out!");  
+    end
+    
     if (GUI_RUN == 0)
     begin
       $finish;
@@ -138,7 +150,9 @@ end
 // Virtual CPU
 // -----------------------------------------------
 
- riscVsim  #(.BE_ADDR(`BE_ADDR), .USE_HARVARD(USE_HARVARD)) cpu
+ riscVsim  #(.BE_ADDR(`BE_ADDR), 
+             .USE_HARVARD(USE_HARVARD),
+             .DISABLE_DELTA(DISABLE_DELTA)) cpu
  (
    .clk                     (clk),
 
