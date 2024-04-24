@@ -23,12 +23,9 @@
 // C++ API interrupt handling class wrapper for VProc C API
 //=====================================================================
 
-extern "C"
-{
-#include "VUser.h"
-}
+#include "VProcClass.h"
 
-class VProcIrqClass
+class VProcIrqClass : public VProc
 {
 public:
     static const int MAXINTERRUPTS = 32;
@@ -36,8 +33,8 @@ public:
     typedef void (*pIntFunc_t) (int);
 
     // Constructor
-    VProcIrqClass(const int nodeIn = 0) :
-        node(nodeIn),
+    VProcIrqClass(const unsigned node = 0) :
+        VProc{node},
         interrupt_enable(0),
         isr_enable(0),
         int_active(0),
@@ -61,7 +58,7 @@ public:
         for (int count = 0; count < ticks; count++)
         {
             processIrq();
-            status |= VTick(1, node);
+            status |= VProc::tick(1);
         }
 
         return status;
@@ -69,36 +66,56 @@ public:
 
     int write (const uint32_t addr, const uint32_t data, const int delta = 0)
     {
-         processIrq();
-         return VWrite(addr, data, delta, node);
+        processIrq();
+        return VProc::write(addr, data, delta);
     }
 
-    int read (const uint32_t addr, uint32_t *data, const int delta = 0)
+    int writeByte (const uint32_t byteaddr, const uint32_t data, const int delta = 0)
     {
         processIrq();
-        return VRead(addr, data, delta, node);
+        return VProc::writeByte(byteaddr, data, delta);
+    }
+
+    int writeHword (const uint32_t byteaddr, const uint32_t data, const int delta = 0)
+    {
+        processIrq();
+        return VProc::writeHword(byteaddr, data, delta);
+    }
+
+    int writeWord (const uint32_t byteaddr, const uint32_t data, const int delta = 0)
+    {
+        processIrq();
+        return VProc::writeWord(byteaddr, data, delta);
     }
 
     int burstWrite(const unsigned addr, void *data, const unsigned len)
     {
         processIrq();
-        return VBurstWrite(addr, data, len, node);
+        return VProc::burstWrite(addr, data, len);
+    }
+
+    int readByte (const uint32_t byteaddr, uint32_t *data, const int delta = 0)
+    {
+        processIrq();
+        return VProc::readByte(byteaddr, data, delta);
+    }
+
+    int readHword (const uint32_t byteaddr, uint32_t *data, const int delta = 0)
+    {
+        processIrq();
+        return VProc::readHword(byteaddr, data, delta);
+    }
+
+    int readWord (const uint32_t byteaddr, uint32_t *data, const int delta = 0)
+    {
+        processIrq();
+        return VProc::readWord(byteaddr, data, delta);
     }
 
     int burstRead(const unsigned addr, void *data, const unsigned len)
     {
         processIrq();
-        return VBurstRead(addr, data, len, node);
-    }
-
-    void regIrq (const pVUserIrqCB_t func)
-    {
-        VRegIrq(func, node);
-    }
-
-    void regUser(const pVUserCB_t func)
-    {
-        VRegUser(func, node);
+        return VProc::burstRead(addr, data, len);
     }
 
     // Interrupt API methods
@@ -168,7 +185,6 @@ protected:
 
 private:
     // Internal state
-    int        node;
     bool       interrupt_enable;   // master interrupt enables
     uint32_t   isr_enable;         // vector isr enables
     uint32_t   irq;                // vector irq state
