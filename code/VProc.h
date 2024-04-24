@@ -41,10 +41,13 @@
 #define VP_MAX_NODES            64
 #endif
 
-// Definitions for accessess
+// Definitions for accesses
 #define V_IDLE                  0
 #define V_WRITE                 1
 #define V_READ                  2
+
+#define BURSTLENLOBIT           2
+#define BELOBIT                 14
 
 // Error types
 #define VP_USER_ERR             1

@@ -212,12 +212,20 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
 //
 int VWrite (const unsigned addr, const unsigned data, const int delta, const unsigned node)
 {
+    return VWriteBE(addr, data, 0xf, delta, node);
+}
+
+/////////////////////////////////////////////////////////////
+// Invokes a write message exchange with byte enables
+//
+int VWriteBE (const unsigned addr, const unsigned data, const unsigned be, const int delta, const unsigned node)
+{
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
 
     sbuf.addr     = addr;
     sbuf.data_out = data;
-    sbuf.rw       = V_WRITE;
+    sbuf.rw       = V_WRITE | ((be & 0xf) << BELOBIT);
     sbuf.ticks    = delta ? DELTA_CYCLE : 0;
 
     VExch(&sbuf, &rbuf, node);
@@ -256,7 +264,7 @@ int VBurstWrite (const unsigned addr, void *data, const unsigned len, const unsi
     sbuf.addr     = addr;
     sbuf.data_out = 0;
     sbuf.data_p   = data;
-    sbuf.rw       = V_WRITE | ((len & 0xfff) << 2);
+    sbuf.rw       = V_WRITE | ((len & 0xfff) << BURSTLENLOBIT) | (0xf << BELOBIT);;
     sbuf.ticks    = 0;
 
     VExch(&sbuf, &rbuf, node);

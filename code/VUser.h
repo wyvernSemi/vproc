@@ -41,7 +41,8 @@ typedef void *(*pThreadFunc_t)(void *);
 
 // VUser function prototypes for API
 
-extern int  VWrite        (const unsigned      addr,  const unsigned     data, const int      delta, const unsigned node);
+extern int  VWrite        (const unsigned      addr,  const unsigned data, const int      delta, const unsigned node);
+extern int  VWriteBE      (const unsigned      addr,  const unsigned data, const unsigned be,    const int      delta, const unsigned node);
 extern int  VRead         (const unsigned      addr,  unsigned          *data, const int      delta, const unsigned node);
 extern int  VBurstWrite   (const unsigned      addr,  void              *data, const unsigned len,   const unsigned node);
 extern int  VBurstRead    (const unsigned      addr,  void              *data, const unsigned len,   const unsigned node);
