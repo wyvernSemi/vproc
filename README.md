@@ -19,7 +19,7 @@ More information can be found in the documentation located in <code>doc/VProc.pd
 
 ### VProc HDL component
 <p align="center">
-<img src="https://github.com/wyvernSemi/vproc/assets/21970031/9a1d49bd-7111-42df-adb2-76b19e099e35" width=600>
+<img src="https://github.com/wyvernSemi/vproc/assets/21970031/71f770ac-5c5f-401c-bab2-4e3f376dba65" width=600>
 </p>
 <hr>
 
