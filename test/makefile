@@ -51,7 +51,7 @@ MEM_C              =
 MEMMODELDIR        = .
 
 # Common logic simulator flags
-VLOGFLAGS          = +define+VPROC_BURST_IF +incdir+../
+VLOGFLAGS          = +define+VPROC_BURST_IF +define+VPROC_BYTE_INTERFACE +incdir+../
 VPROC_TOP          = test
 VSIMFLAGS          = -pli $(VPROC_PLI) $(VPROC_TOP)
 

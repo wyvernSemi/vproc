@@ -67,7 +67,7 @@ MEMMODELDIR        = .
 VPROC_TOP          = test
 
 # Set to +define+VPROC_BURST_IF for burst interface, or blank for none
-BURSTDEF           = +define+VPROC_BURST_IF
+BURSTDEF           = +define+VPROC_BURST_IF +define+VPROC_BYTE_ENABLE
 
 # set to -GVCD_DUMP=1 to generate VCD ouput, or blank for none
 VCDFLAG            = -GVCD_DUMP=1

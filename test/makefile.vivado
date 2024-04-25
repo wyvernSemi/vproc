@@ -57,7 +57,7 @@ OSTYPE:=$(shell uname)
 VPROC_TOP          = test
 
 # Flags for xsim
-ANALYSEFLAGS       = -i ../ --define VPROC_BURST_IF --prj files.prj
+ANALYSEFLAGS       = -i ../ --define VPROC_BURST_IF --define VPROC_BYTE_ENABLE --prj files.prj
 ELABFLAGS          = -sv_lib $(VPROC_PLI) --debug typical $(VPROC_TOP)
 SIMFLAGS           = $(VPROC_TOP)
 

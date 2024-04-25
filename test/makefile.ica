@@ -70,7 +70,7 @@ MEM_C              =
 MEMMODELDIR        = .
 
 # Common logic simulator flags
-VLOGFLAGS          = -DVPROC_BURST_IF -I../ -Ptest.VCD_DUMP=1
+VLOGFLAGS          = -DVPROC_BURST_IF -DVPROC_BYTE_ENABLE -I../ -Ptest.VCD_DUMP=1
 VLOGDEBUGFLAGS     = -Ptest.DEBUG_STOP=1
 VLOGFILES          = test.v ../f_VProc.v
 
