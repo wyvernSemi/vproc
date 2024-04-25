@@ -74,7 +74,7 @@ endif
 INCLUDEDIRS = -I$(SRCDIR) -I$(USRCDIR) $(SIMINCLUDEFLAG)
 
 # Flags for compiling C/C++ source code to object files
-CFLAGS              = -c -fPIC $(OPTFLAG) $(ARCHFLAG)     \
+CFLAGS              = $(OPTFLAG) $(ARCHFLAG)              \
                       $(USRFLAGS)                         \
                       -DVP_MAX_NODES=$(MAX_NUM_VPROC)     \
                       $(PLIVERSION) $(HDLLANGUAGE)        \
@@ -101,15 +101,15 @@ C++                 = g++
 
 # Rule to build VProc C sources
 $(VOBJDIR)/%.o: $(SRCDIR)/%.c $(SRCDIR)/*.h
-	@$(CC) $(CFLAGS) $< -o $@
+	@$(CC) -c -fPIC $(CFLAGS) $< -o $@
 
 # Rule to build user C sources
 $(VOBJDIR)/%.o: $(USRCDIR)/%.c
-	@$(CC) -Wno-write-strings $(CFLAGS) $< -o $@
+	@$(CC) -c -fPIC -Wno-write-strings $(CFLAGS) $< -o $@
 
 # Rule to build user C++ sources
 $(VOBJDIR)/%.o: $(USRCDIR)/%.cpp
-	@$(C++) $(CPPSTD) -Wno-write-strings $(CFLAGS) $< -o $@
+	@$(C++) -c -fPIC $(CPPSTD) -Wno-write-strings $(CFLAGS) $< -o $@
 
 # Rule to build (any) memory model C sources
 $(VOBJDIR)/%.o: $(MEMMODELDIR)/%.c $(MEMMODELDIR)/*.h
@@ -117,7 +117,7 @@ $(VOBJDIR)/%.o: $(MEMMODELDIR)/%.c $(MEMMODELDIR)/*.h
 
 # Rule to build (any) memory model C++ sources
 $(VOBJDIR)/%.o: $(MEMMODELDIR)/%.cpp $(MEMMODELDIR)/*.h
-	@$(C++) $(CFLAGS) $< -o $@
+	@$(C++) -c -fPIC $(CFLAGS) $< -o $@
 
 # Rule to build VProc library
 $(VLIB) : $(VOBJS) $(VOBJDIR)
