@@ -34,8 +34,6 @@
 
 `define       RegDel             1
 
-`define       VPROC_BYTE_ENABLE
-
 // =========================================================
 // Top level test module
 // =========================================================
@@ -88,6 +86,11 @@ wire          reset_irq = nreset & ~nreset_h;
 // Memory chip select in segment 0xa
 wire CS1 = (VPAddr1[31:28] == 4'ha) ? 1'b1 : 1'b0;
 wire CS2 = (VPAddr1[31:28] == 4'hb) ? 1'b1 : 1'b0;
+
+`ifndef VPROC_BYTE_ENABLE
+assign VPBE0 = 4'hf;
+assign VPBE1 = 4'hf;
+`endif
 
  // ---------------------------------------------------------
  // Virtual Processor 0
