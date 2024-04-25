@@ -19,14 +19,13 @@ More information can be found in the documentation located in <code>doc/VProc.pd
 
 ### VProc HDL component
 <p align="center">
-<img src="https://github.com/wyvernSemi/vproc/assets/21970031/71f770ac-5c5f-401c-bab2-4e3f376dba65" width=600>
+<img src="https://github.com/wyvernSemi/vproc/assets/21970031/71f770ac-5c5f-401c-bab2-4e3f376dba65" width=800>
 </p>
 <hr>
 
 ### VProc stack with Python
-
 <p align="center">
-<img src="https://github.com/wyvernSemi/vproc/assets/21970031/9173c345-2589-4cfa-a92e-3fca53a74369" width=600>
+<img src="https://github.com/wyvernSemi/vproc/assets/21970031/523db26f-e23b-4f26-9019-6fe985c9cb62" width=700>
 </p>
 
 Copyright &copy; 2024
