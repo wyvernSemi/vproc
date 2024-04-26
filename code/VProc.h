@@ -35,7 +35,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define VERSION_STRING         "VProc version 1.7. Copyright (c) 2004-2024 Simon Southwell."
+#define VERSION_STRING         "VProc version 1.7.1. Copyright (c) 2004-2024 Simon Southwell."
 
 #ifndef VP_MAX_NODES
 #define VP_MAX_NODES            64
@@ -120,4 +120,5 @@ typedef struct {
 
 // Reference to node state array
 extern pSchedState_t ns[VP_MAX_NODES];
+
 #endif
