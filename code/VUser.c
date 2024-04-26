@@ -30,35 +30,20 @@
 #include "VProc.h"
 #include "VUser.h"
 
-#ifdef WIN32
-# include <windows.h>
-
-// Map Linux dynamic loading calls to Windows equivalents
-# define dlsym GetProcAddress
-# define dlopen(_dll, _args) {LoadLibrary(_dll)}
-# define dlerror() ""
-# define dlclose FreeLibrary
-
-# ifdef _WIN64
-typedef long long nodecast_t;
-# else
-typedef long      nodecast_t;
-# endif
-#else
-typedef long      nodecast_t;
-#endif
-
-// For Icarus and Verilator
-# ifndef RTLD_DEFAULT
-# define RTLD_DEFAULT ((void *) 0)
-# endif
-
+// Forward declaration
 static void VUserInit (const unsigned node);
 
-/////////////////////////////////////////////////////////////
+// =========================================================================
+// Simulation interface functions 
+// =========================================================================
+
+// -------------------------------------------------------------------------
+// VUser()
+//
 // Entry point for new user process. Creates a new thread
 // calling VUserInit().
-//
+// -------------------------------------------------------------------------
+
 int VUser (const unsigned node)
 {
     pthread_t thread;
@@ -91,10 +76,13 @@ int VUser (const unsigned node)
     return 0;
 }
 
-/////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------
+// VUserInit()
+//
 // New thread initialisation procedure. Synchronises with
 // simulation before calling user procedure.
-//
+// -------------------------------------------------------------------------
+
 static void VUserInit (const unsigned node)
 {
     handle_t     hdl;
@@ -141,12 +129,15 @@ static void VUserInit (const unsigned node)
     VUserMain_func();
 }
 
-/////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------
+// VExch()
+//
 // Message exchange routine. Handles all messages to and from
 // simulation process (apart from initialisation. Each sent
 // message has a reply. Interrupt messages require that
 // the original IO message reply is waited for again.
-//
+// -------------------------------------------------------------------------
+
 static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
 {
     int status;
@@ -207,17 +198,27 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
 
 }
 
-/////////////////////////////////////////////////////////////
-// Invokes a write message exchange
+// =========================================================================
+// User API functions
+// =========================================================================
+
+// -------------------------------------------------------------------------
+// VWrite
 //
+// Invokes a write message exchange
+// -------------------------------------------------------------------------
+
 int VWrite (const unsigned addr, const unsigned data, const int delta, const unsigned node)
 {
     return VWriteBE(addr, data, 0xf, delta, node);
 }
 
-/////////////////////////////////////////////////////////////
-// Invokes a write message exchange with byte enables
+// -------------------------------------------------------------------------
+// VWriteBE
 //
+// Invokes a write message exchange with byte enables
+// -------------------------------------------------------------------------
+
 int VWriteBE (const unsigned addr, const unsigned data, const unsigned be, const int delta, const unsigned node)
 {
     rcv_buf_t  rbuf;
@@ -233,9 +234,12 @@ int VWriteBE (const unsigned addr, const unsigned data, const unsigned be, const
     return rbuf.data_in ;
 }
 
-/////////////////////////////////////////////////////////////
-// Invokes a read message exchange
+// -------------------------------------------------------------------------
+// VRead()
 //
+// Invokes a read message exchange
+// -------------------------------------------------------------------------
+
 int VRead (const unsigned addr, unsigned *rdata, const int delta, const unsigned node)
 {
     rcv_buf_t  rbuf;
@@ -253,9 +257,12 @@ int VRead (const unsigned addr, unsigned *rdata, const int delta, const unsigned
     return 0;
 }
 
-/////////////////////////////////////////////////////////////
-// Invokes a burst write message exchange
+// -------------------------------------------------------------------------
+// VBurstWrite()
 //
+// Invokes a burst write message exchange
+// -------------------------------------------------------------------------
+
 int VBurstWrite (const unsigned addr, void *data, const unsigned len, const unsigned node)
 {
     rcv_buf_t  rbuf;
@@ -272,9 +279,12 @@ int VBurstWrite (const unsigned addr, void *data, const unsigned len, const unsi
     return 0;
 }
 
-/////////////////////////////////////////////////////////////
-// Invokes a burst read message exchange
+// -------------------------------------------------------------------------
+// VBurstRead()
 //
+// Invokes a burst read message exchange
+// -------------------------------------------------------------------------
+
 int VBurstRead (const unsigned int addr, void *data, const unsigned len, const unsigned node)
 {
     rcv_buf_t  rbuf;
@@ -291,9 +301,12 @@ int VBurstRead (const unsigned int addr, void *data, const unsigned len, const u
     return 0;
 }
 
-/////////////////////////////////////////////////////////////
-// Invokes a tick message exchange
+// -------------------------------------------------------------------------
+// VTick()
 //
+// Invokes a tick message exchange
+// -------------------------------------------------------------------------
+
 int VTick (const unsigned ticks, const unsigned node)
 {
     rcv_buf_t  rbuf;
@@ -309,9 +322,13 @@ int VTick (const unsigned ticks, const unsigned node)
     return 0;
 }
 
-/////////////////////////////////////////////////////////////
-// Registers a user function as an interrupt callback
+// -------------------------------------------------------------------------
+// VRegInterrupt()
 //
+// Registers a user function as an level interrupt callback. Deprecated in
+// favour f vectored interrupts. Kept for backwards compatibility.
+// -------------------------------------------------------------------------
+
 void VRegInterrupt (const int level, const pVUserInt_t func, const unsigned node)
 {
     debug_io_printf("VRegInterrupt(): at node %d, registering interrupt level %d\n", node, level);
@@ -325,9 +342,12 @@ void VRegInterrupt (const int level, const pVUserInt_t func, const unsigned node
     ns[node]->VInt_table[level] = func;
 }
 
-/////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------
+// VRegIrq()
+// 
 // Registers a user function as a vector IRQ callback
-//
+// -------------------------------------------------------------------------
+
 void VRegIrq (const pVUserIrqCB_t func, const unsigned node)
 {
     debug_io_printf("VRegIrq(): at node %d, registering irq callback\n", node);
@@ -335,19 +355,25 @@ void VRegIrq (const pVUserIrqCB_t func, const unsigned node)
     ns[node]->VUserIrqCB = func;
 }
 
-/////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------
+// VRegIrqPy()
+//
 // Registers a python interface function as a vector IRQ
 // callback
-//
+// -------------------------------------------------------------------------
+
 void VRegIrqPy (const pPyIrqCB_t func, const unsigned node)
 {
     ns[node]->PyIrqCB = func;
 }
 
-/////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------
+// VRegUser()
+//
 // Registers a user function as a callback against
 // $vprocuser
-//
+// -------------------------------------------------------------------------
+
 void VRegUser (const pVUserCB_t func, const unsigned node)
 {
     debug_io_printf("VRegFinish(): at node %d, registering finish callback function\n", node);
