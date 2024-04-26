@@ -33,7 +33,32 @@
 #define MAX_INT_LEVEL   7
 #define MIN_INT_LEVEL   1
 
-// Backards compatinility definitions
+// When compiling in windows (32- or 64-bit) ...
+#ifdef WIN32
+# include <windows.h>
+
+// Map Linux dynamic loading calls to Windows equivalents
+# define dlsym GetProcAddress
+# define dlopen(_dll, _args) {LoadLibrary(_dll)}
+# define dlerror() ""
+# define dlclose FreeLibrary
+
+// Define a type to case node in print statements to avoid warnings
+# ifdef _WIN64
+typedef long long nodecast_t;
+# else
+typedef long      nodecast_t;
+# endif
+#else
+typedef long      nodecast_t;
+#endif
+
+// For Icarus and Verilator
+# ifndef RTLD_DEFAULT
+# define RTLD_DEFAULT ((void *) 0)
+# endif
+
+// Backards compatibility definitions
 #define uint64 uint64_t
 
 // Pointer to pthread_create compatible function
@@ -58,7 +83,7 @@ extern int  VUser         (const unsigned   node);
 #if defined(VPROC_VHDL) || defined (ICARUS) || defined (VPROC_SV)
 # define VPrint(...) printf (__VA_ARGS__)
 #else
-#define VPrint(...) vpi_printf (__VA_ARGS__)
+# define VPrint(...) vpi_printf (__VA_ARGS__)
 #endif
 
 #ifdef DEBUG
