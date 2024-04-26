@@ -50,6 +50,29 @@
 #define VPROC_NO_PLI
 #endif
 
+// Define a string of the configured programming interface
+#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
+# ifndef VPROC_PLI_VPI
+#  define PLI_STRING "PLI TF"
+# else
+#  define PLI_STRING "VPI"
+# endif
+#else
+# ifdef VPROC_VHDL_VHPI
+#  define PLI_STRING "VHPI"
+# else
+#  if !defined(VPROC_NO_PLI)
+#   define PLI_STRING "FLI"
+#  else
+#   if defined (VPROC_SV)
+#    define PLI_STRING "DPI-C"
+#   else
+#    define PLI_STRING "VHPIDIRECT"
+#   endif
+#  endif
+# endif
+#endif
+
 #if !defined(VPROC_NO_PLI)
 #include "veriuser.h"
 #include "vpi_user.h"
@@ -100,7 +123,7 @@
 #   else
 #   define debug_io_printf //
 #   endif
-    
+
 #define VINIT_PARAMS       int  node
 #define VSCHED_PARAMS      int  node, int Interrupt, int VPDataIn, int* VPDataOut, int* VPAddr, int* VPRw, int* VPTicks
 #define VPROCUSER_PARAMS   int  node, int value
@@ -160,7 +183,6 @@
 #define VPROC_RTN_TYPE    int
 
 #  endif
-
 # endif
 
 extern VPROC_RTN_TYPE VInit     (VINIT_PARAMS);
