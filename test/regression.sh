@@ -50,7 +50,7 @@ do
   do
    echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
    make -f $mkfile clean
-   make -f $mkfile USRCDIR=$usrcode run 2>&1 | grep -i "error"  | egrep -v "$FILTERSTR" | tee -a $LOGFILE
+   make -f $mkfile USRCDIR=$usrcode run 2>&1 | egrep -i "error|fatal"  | egrep -v "$FILTERSTR" | tee -a $LOGFILE
    make -f $mkfile clean
    echo "" | tee -a $LOGFILE
   done
@@ -67,7 +67,7 @@ make -f makefile.verilator                              \
         USER_C=VUserMain0.cpp                           \
         FILELIST=files2.verilator                       \
         BURSTDEF= FINISHFLAG=                           \
-        run 2>&1 | grep -i "error" | tee -a $LOGFILE
+        run 2>&1 | egrep -i "error|fatal" | tee -a $LOGFILE
 echo "" | tee -a $LOGFILE
 
 #
@@ -84,7 +84,7 @@ do
   do
    echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
    make -f $mkfile clean
-   make -f $mkfile USRCDIR=$usrcode run 2>&1 | grep -i "error" | egrep -v "$FILTERSTR" | tee -a $LOGFILE
+   make -f $mkfile USRCDIR=$usrcode run 2>&1 | egrep -i "error|fatal" | egrep -v "$FILTERSTR" | tee -a $LOGFILE
    make -f $mkfile clean
    echo "" | tee -a $LOGFILE
   done
@@ -106,7 +106,7 @@ then
     do
      echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
      make -f $mkfile clean
-     make -f $mkfile USRCDIR=$usrcode run 2>&1 | grep -i "error" | egrep -v "${FILTERSTR}|PCIED" | tee -a $LOGFILE
+     make -f $mkfile USRCDIR=$usrcode run 2>&1 | egrep -i "error|fatal" | egrep -v "${FILTERSTR}|PCIED" | tee -a $LOGFILE
      make -f $mkfile clean
      echo "" | tee -a $LOGFILE
     done
@@ -129,7 +129,7 @@ then
     do
      echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
      make -f $mkfile clean
-     make -f $mkfile USRCDIR=$usrcode run 2>&1 | grep -i "error" | egrep -v "$FILTERSTR" | tee -a $LOGFILE
+     make -f $mkfile USRCDIR=$usrcode run 2>&1 | egrep -i "error|fatal" | egrep -v "$FILTERSTR" | tee -a $LOGFILE
      make -f $mkfile clean
      echo "" | tee -a $LOGFILE
     done
@@ -154,7 +154,7 @@ then
     do
      echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
      make -f $mkfile clean 2>&1 > /dev/null
-     make -f $mkfile USRCDIR=$usrcode run 2>&1 | grep -i "error" | egrep -v "$FILTERSTR" | tee -a $LOGFILE
+     make -f $mkfile USRCDIR=$usrcode run 2>&1 | egrep -i "error|fatal" | egrep -v "$FILTERSTR" | tee -a $LOGFILE
      make -f $mkfile clean 2>&1 > /dev/null
      echo "" | tee -a $LOGFILE
     done
