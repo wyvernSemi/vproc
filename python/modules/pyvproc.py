@@ -51,6 +51,11 @@ class PyVProcClass :
   def write (self, addr, data, delta = 0) :
     self.__processIrq()
     self.api.PyWrite(addr, data, delta, self.node)
+    
+  # API method to write a word
+  def writeBE (self, addr, data, be, delta = 0) :
+    self.__processIrq()
+    self.api.PyWriteBE(addr, data, be, delta, self.node)
 
   # API method to read a word
   def read (self, addr,  delta = 0) :

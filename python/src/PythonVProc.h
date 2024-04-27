@@ -33,6 +33,7 @@
 
 // Pointer types for external API functions. Must match prototypes in VUser.h
 typedef int      (*wfunc_p)      (const unsigned, const unsigned, const int, const unsigned);
+typedef int      (*wbefunc_p)    (const unsigned, const unsigned, const unsigned, const int, const unsigned);
 typedef int      (*rfunc_p)      (const unsigned, unsigned *, const int, const unsigned);
 typedef int      (*wbfunc_p)     (const unsigned, void *, const unsigned, const unsigned);
 typedef int      (*rbfunc_p)     (const unsigned, void *, const unsigned, const unsigned);
@@ -44,6 +45,7 @@ typedef uint32_t (*pyfetchirq_p) (void *, const uint32_t);
 // API functions called from python 
 int      RunPython      (const int      node);
 uint32_t PyWrite        (const uint32_t addr,  const uint32_t data,  const int delta, const uint32_t node);
+uint32_t PyWriteBE      (const uint32_t addr,  const uint32_t data,  const uint32_t be, const int delta, const uint32_t node);
 uint32_t PyRead         (const uint32_t addr,  const int      delta, const uint32_t node);
 uint32_t PyTick         (const uint32_t ticks, const uint32_t node);
 uint32_t PyBurstWrite   (const uint32_t addr,  void *data, const uint32_t len, const uint32_t node);

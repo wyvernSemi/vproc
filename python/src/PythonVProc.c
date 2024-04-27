@@ -25,6 +25,7 @@
 
 // Define pointers to the external API functions
 static wfunc_p      Vwrite;
+static wbefunc_p    VwriteBE;
 static rfunc_p      Vread;
 static wbfunc_p     VburstWrite;
 static rbfunc_p     VburstRead;
@@ -54,6 +55,12 @@ static int BindToApiFuncs(void)
     if ((Vwrite = (wfunc_p)dlsym(hdl, "VWrite")) == NULL)
     {
         fprintf(stderr, "***ERROR: failed to find symbol VWrite\n");
+        return 1;
+    }
+    
+    if ((VwriteBE = (wfunc_p)dlsym(hdl, "VWriteBE")) == NULL)
+    {
+        fprintf(stderr, "***ERROR: failed to find symbol VWriteBE\n");
         return 1;
     }
 
@@ -205,6 +212,15 @@ uint32_t PyPrint(const char* str)
 uint32_t PyWrite (const uint32_t addr, const uint32_t data, const int delta, const uint32_t node)
 {
     return Vwrite(addr, data, delta, node);
+}
+
+// ------------------------------------------------------------
+// VWriteBE wrapper function for Python
+// ------------------------------------------------------------
+
+uint32_t PyWriteBE (const uint32_t addr, const uint32_t data, const uint32_t be, const int delta, const uint32_t node)
+{
+    return VwriteBE(addr, data, be, delta, node);
 }
 
 // ------------------------------------------------------------
