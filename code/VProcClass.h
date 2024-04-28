@@ -57,15 +57,49 @@ public:
                                                                                                        *data  = word;
                                                                                                        return status;};
 
-    int  burstWrite   (const unsigned   addr,           void       *data, const unsigned length)     {return VBurstWrite   (addr,  data, length, node);};
-    int  burstRead    (const unsigned   addr,           void       *data, const unsigned length)     {return VBurstRead    (addr,  data, length, node);};
-    int  tick         (const unsigned   ticks)                                                       {return VTick         (ticks,               node);};
-    void regIrq       (const pVUserIrqCB_t func)                                                     {       VRegIrq       (func,                node);};
-    void regInterrupt (const int        level,  const pVUserInt_t func)                              {       VRegInterrupt (level, func,         node);};
-    void regUser      (const pVUserCB_t func)                                                        {       VRegUser      (func,                node);};
+    int  burstWrite      (const unsigned   addr,           void    *data, const unsigned wordlen)    {return VBurstWrite     (addr,      data, wordlen, node);};
+    int  burstRead       (const unsigned   addr,           void    *data, const unsigned wordlen)    {return VBurstRead      (addr,      data, wordlen, node);};
+    int  tick            (const unsigned   ticks)                                                    {return VTick           (ticks,                    node);};
+    void regIrq          (const pVUserIrqCB_t func)                                                  {       VRegIrq         (func,                     node);};
+    void regInterrupt    (const int        level,  const pVUserInt_t func)                           {       VRegInterrupt   (level,     func,          node);};
+    void regUser         (const pVUserCB_t func)                                                     {       VRegUser        (func,                     node);};
+
+
+    int  burstWriteBytes (const unsigned   byteaddr,       void    *data, const unsigned bytelen) {unsigned foff, loff;
+                                                                                                   unsigned wlen = calcWordLen(byteaddr, bytelen, foff, loff);
+                                                                                                   for (int idx  = 0; idx < bytelen; idx++)
+                                                                                                       ((uint8_t*)bytebuf)[idx + (byteaddr&0x3)] = ((uint8_t*)data)[idx];
+
+                                                                                                   return VBurstWriteBE   (byteaddr & ~(0x3),
+                                                                                                                           bytebuf,
+                                                                                                                           wlen,
+                                                                                                                           (0xf << foff) & 0xf,
+                                                                                                                           0xf >> ((loff == 3) ? 0 : (3 - loff)),
+                                                                                                                           node);
+                                                                                                   };
+
+    int burstReadBytes   (const unsigned byteaddr,         void    *data, const unsigned bytelen) {unsigned foff, loff, wlen = calcWordLen(byteaddr, bytelen, foff, loff);
+                                                                                                   
+                                                                                                   int status = VBurstRead ((byteaddr & ~(0x3)), bytebuf, wlen, node);
+                                                                                                   
+                                                                                                   for (int idx  = 0; idx < bytelen; idx++)
+                                                                                                       ((uint8_t*)data)[idx] = ((uint8_t*)bytebuf)[idx + (byteaddr & 0x3)];
+                                                                                                   return status;
+                                                                                                  };
 
 private:
 
     // VProc node number this object is accessing
     unsigned node;
+    
+    // Internal byte buffer
+    uint32_t bytebuf [(MAXBURSTLEN+1) * 4];
+
+    // Calculate the required word length, and first and last offsets, for given byte length with address offset
+    unsigned calcWordLen(const unsigned byteaddr, const unsigned bytelen, unsigned &foff, unsigned &loff) {
+                 loff    = (byteaddr + bytelen - 1) & 0x3;
+                 foff    = byteaddr & 0x3;
+        int      diffoff = loff - foff;
+        return bytelen/4 + ((diffoff < 0) ? 1 : 0) + ((bytelen%4) ? 1 : 0);
+    };
 };

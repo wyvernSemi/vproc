@@ -61,15 +61,18 @@ end;
 
 architecture model of VProc is
 
-constant      WEbit       : integer := 0;
-constant      RDbit       : integer := 1;
-constant      BLKHIBIT    : integer := 13;
-constant      BLKLOBIT    : integer := 2;
-constant      BEHIBIT     : integer := 17;
-constant      BELOBIT     : integer := 14;
-constant      DeltaCycle  : integer := -1;
+constant      WEbit        : integer := 0;
+constant      RDbit        : integer := 1;
+constant      BLKHIBIT     : integer := 13;
+constant      BLKLOBIT     : integer := 2;
+constant      BEFIRSTLOBIT : integer := 14;
+constant      BEFIRSTHIBIT : integer := 17;
+constant      BELASTLOBIT  : integer := 18;
+constant      BELASTHIBIT  : integer := 21;
+constant      DeltaCycle   : integer := -1;
 
-signal        Initialised : integer := 0;
+signal        Initialised  : integer := 0;
+signal        LBE          : std_logic_vector(3 downto 0) := 4x"F";
 
 begin
   -- Initial
@@ -184,7 +187,8 @@ begin
                      VPTicks);
 
               Burst             <= std_logic_vector(to_unsigned(VPRW, 32)(BLKHIBIT downto BLKLOBIT));
-              BE                <= std_logic_vector(to_unsigned(VPRW, 32)(BEHIBIT downto BELOBIT));
+              BE                <= std_logic_vector(to_unsigned(VPRW, 32)(BEFIRSTHIBIT downto BEFIRSTLOBIT));
+              LBE               <= std_logic_vector(to_unsigned(VPRW, 32)(BELASTHIBIT downto BELASTLOBIT));
               WE                <= to_unsigned(VPRW, 32)(WEbit);
               RD                <= to_unsigned(VPRW, 32)(RDbit);
               Addr              <= std_logic_vector(to_signed(VPAddr, 32));
@@ -194,6 +198,11 @@ begin
               -- If new BlkCount is non-zero, setup burst transfer
               if BlkCount /= 0 then
                 BurstFirst      <= '1';
+              
+                -- If a single word transfer, set the last flag
+                if BlkCount = 1 then
+                  BurstLast      <= '1';
+                end if;
 
                 -- On writes, override VPDataOut to get from burst access task $VAccess at index 0
                 if to_unsigned(VPRW, 32)(WEbit)  = '1' then
@@ -226,6 +235,9 @@ begin
 
               if BlkCount = 1 then
                   BurstLast     <= '1';
+                  BE            <= LBE;
+              else
+                  BE            <= x"F";
               end if;
 
               -- When bursting, reassert non-delta VPTicks value to break out of loop.

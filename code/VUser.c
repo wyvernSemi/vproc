@@ -34,7 +34,7 @@
 static void VUserInit (const unsigned node);
 
 // =========================================================================
-// Simulation interface functions 
+// Simulation interface functions
 // =========================================================================
 
 // -------------------------------------------------------------------------
@@ -226,7 +226,7 @@ int VWriteBE (const unsigned addr, const unsigned data, const unsigned be, const
 
     sbuf.addr     = addr;
     sbuf.data_out = data;
-    sbuf.rw       = V_WRITE | ((be & 0xf) << BELOBIT);
+    sbuf.rw       = V_WRITE | ((be & 0xf) << BEFIRSTLOBIT);
     sbuf.ticks    = delta ? DELTA_CYCLE : 0;
 
     VExch(&sbuf, &rbuf, node);
@@ -263,7 +263,7 @@ int VRead (const unsigned addr, unsigned *rdata, const int delta, const unsigned
 // Invokes a burst write message exchange
 // -------------------------------------------------------------------------
 
-int VBurstWrite (const unsigned addr, void *data, const unsigned len, const unsigned node)
+int VBurstWrite (const unsigned addr, void *data, const unsigned wordlen, const unsigned node)
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
@@ -271,7 +271,31 @@ int VBurstWrite (const unsigned addr, void *data, const unsigned len, const unsi
     sbuf.addr     = addr;
     sbuf.data_out = 0;
     sbuf.data_p   = data;
-    sbuf.rw       = V_WRITE | ((len & 0xfff) << BURSTLENLOBIT) | (0xf << BELOBIT);;
+    sbuf.rw       = V_WRITE | ((wordlen & 0xfff) << BURSTLENLOBIT) | (0xf << BEFIRSTLOBIT) | (0xf << BELASTLOBIT);
+    sbuf.ticks    = 0;
+
+    VExch(&sbuf, &rbuf, node);
+
+    return 0;
+}
+
+// -------------------------------------------------------------------------
+// VBurstWrite()
+//
+// Invokes a burst write message exchange
+// -------------------------------------------------------------------------
+
+int VBurstWriteBE (const unsigned addr, void *data, const unsigned wordlen, const unsigned fbe, const unsigned lbe, const unsigned node)
+{
+    rcv_buf_t  rbuf;
+    send_buf_t sbuf;
+
+    sbuf.addr     = addr;
+    sbuf.data_out = 0;
+    sbuf.data_p   = data;
+    sbuf.rw       = V_WRITE | ((wordlen & 0xfff) << BURSTLENLOBIT) |
+                              ((fbe & 0xf)       << BEFIRSTLOBIT)  |
+                              ((lbe & 0xf)       << BELASTLOBIT);
     sbuf.ticks    = 0;
 
     VExch(&sbuf, &rbuf, node);
@@ -285,7 +309,7 @@ int VBurstWrite (const unsigned addr, void *data, const unsigned len, const unsi
 // Invokes a burst read message exchange
 // -------------------------------------------------------------------------
 
-int VBurstRead (const unsigned int addr, void *data, const unsigned len, const unsigned node)
+int VBurstRead (const unsigned int addr, void *data, const unsigned wordlen, const unsigned node)
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
@@ -293,7 +317,7 @@ int VBurstRead (const unsigned int addr, void *data, const unsigned len, const u
     sbuf.addr     = addr;
     sbuf.data_out = 0;
     sbuf.data_p   = data;
-    sbuf.rw       = V_READ | ((len & 0xfff) << 2);
+    sbuf.rw       = V_READ | ((wordlen & 0xfff) << 2) | (0xffff << BEFIRSTLOBIT);
     sbuf.ticks    = 0;
 
     VExch(&sbuf, &rbuf, node);
@@ -344,7 +368,7 @@ void VRegInterrupt (const int level, const pVUserInt_t func, const unsigned node
 
 // -------------------------------------------------------------------------
 // VRegIrq()
-// 
+//
 // Registers a user function as a vector IRQ callback
 // -------------------------------------------------------------------------
 

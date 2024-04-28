@@ -33,6 +33,8 @@
 #define MAX_INT_LEVEL   7
 #define MIN_INT_LEVEL   1
 
+#define MAXBURSTLEN     4096
+
 // When compiling in windows (32- or 64-bit) ...
 #ifdef WIN32
 # include <windows.h>
@@ -69,8 +71,9 @@ typedef void *(*pThreadFunc_t)(void *);
 extern int  VWrite        (const unsigned      addr,  const unsigned data, const int      delta, const unsigned node);
 extern int  VWriteBE      (const unsigned      addr,  const unsigned data, const unsigned be,    const int      delta, const unsigned node);
 extern int  VRead         (const unsigned      addr,  unsigned          *data, const int      delta, const unsigned node);
-extern int  VBurstWrite   (const unsigned      addr,  void              *data, const unsigned len,   const unsigned node);
-extern int  VBurstRead    (const unsigned      addr,  void              *data, const unsigned len,   const unsigned node);
+extern int  VBurstWrite   (const unsigned      addr,  void              *data, const unsigned wordlen,   const unsigned node);
+extern int  VBurstWriteBE (const unsigned      addr,  void              *data, const unsigned wordlen,   const unsigned fbe, const unsigned lbe, const unsigned node);
+extern int  VBurstRead    (const unsigned      addr,  void              *data, const unsigned wordlen,   const unsigned node);
 extern int  VTick         (const unsigned      ticks, const unsigned     node);
 extern void VRegInterrupt (const int           level, const pVUserInt_t  func, const unsigned node);
 extern void VRegIrq       (const pVUserIrqCB_t func,  const unsigned node);

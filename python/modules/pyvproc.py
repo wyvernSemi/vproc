@@ -51,7 +51,7 @@ class PyVProcClass :
   def write (self, addr, data, delta = 0) :
     self.__processIrq()
     self.api.PyWrite(addr, data, delta, self.node)
-    
+
   # API method to write a word
   def writeBE (self, addr, data, be, delta = 0) :
     self.__processIrq()
@@ -61,7 +61,7 @@ class PyVProcClass :
   def read (self, addr,  delta = 0) :
     self.__processIrq()
     return self.api.PyRead(addr, delta, self.node)
-    
+
   # API method to read a word as unsigned value
   def uread (self, addr,  delta = 0) :
     self.__processIrq()
@@ -72,12 +72,17 @@ class PyVProcClass :
     for i in range(ticks) :
       self.__processIrq()
       self.api.PyTick(1, self.node)
-    
+
   # API method to do a burst write
   def burstWrite(self, addr, data, length) :
     self.__processIrq()
     self.api.PyBurstWrite(addr, (c_int * len(data))(*data), length, self.node)
-    
+
+  # API method to do a burst write with byte enables
+  def burstWriteBE(self, addr, data, length, fbe, lbe) :
+    self.__processIrq()
+    self.api.PyBurstWrite(addr, (c_int * len(data))(*data), length, fbe, lbe, self.node)
+
   # API method to do a burst read
   def burstRead(self, addr, length) :
     self.__processIrq()
@@ -91,18 +96,18 @@ class PyVProcClass :
   # API method to register a vectored interrupt callback
   def regIrq(self, irqCb) :
     self.__irqcb = irqCb
-    
+
   def __processIrq (self) :
     while True :
       irq =  (c_int * 1)(0)
       count = self.api.PyFetchIrq(irq, self.node)
-      
+
       if count :
         if self.__irqcb != None :
           self.__irqcb(c_uint32(irq[0]).value)
       else :
         break
-    
+
   def VPrint(self, printstr) :
     bytestring = printstr.encode('utf-8')
     self.api.PyPrint(c_char_p(bytestring))

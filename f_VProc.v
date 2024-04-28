@@ -98,6 +98,7 @@ reg                   Initialised;
 integer               TickCount;
 integer               BlkCount;
 integer               AccIdx;
+integer               LBE;
 
 `ifndef VPROC_BYTE_ENABLE
 // When no byte enable define a local dummy register to
@@ -224,6 +225,7 @@ begin
                     WE                  <= VPRW[`WEBIT];
                     RD                  <= VPRW[`RDBIT];
                     BE                  <= VPRW[`BEBITS];
+                    LBE                 <= VPRW[`LBEBITS];
                     Addr                <= VPAddr;
 
                     // If new BlkCount is non-zero, setup burst transfer
@@ -234,6 +236,12 @@ begin
 
                         // Initialise the burst block counter with count bits
                         BlkCount        = VPRW[`BLKBITS];
+                        
+                        // If a single word transfer, set the last flag
+                        if (BlkCount == 1)
+                        begin
+                          BurstLast     <= 1'b1;
+                        end
 
                         // On writes, override VPDataOut to get from burst access task VAccess at index 0
                         if (VPRW[`WEBIT])
@@ -261,6 +269,11 @@ begin
                     if (BlkCount == 1)
                     begin
                         BurstLast       <= 1'b1;
+                        BE              <= LBE;
+                    end
+                    else
+                    begin
+                        BE              <= 4'hf;
                     end
 
                     // When bursting, reassert non-delta VPTicks value to break out of loop.

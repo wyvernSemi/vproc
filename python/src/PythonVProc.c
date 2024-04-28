@@ -28,6 +28,7 @@ static wfunc_p      Vwrite;
 static wbefunc_p    VwriteBE;
 static rfunc_p      Vread;
 static wbfunc_p     VburstWrite;
+static wbbefunc_p   VburstWriteBE;
 static rbfunc_p     VburstRead;
 static tkfunc_p     Vtick;
 static regirqfunc_p VregIrqPy;
@@ -73,6 +74,12 @@ static int BindToApiFuncs(void)
     if ((VburstWrite = (wbfunc_p)dlsym(hdl, "VBurstWrite")) == NULL)
     {
         fprintf(stderr, "***ERROR: failed to find symbol VBurstWrite\n");
+        return 1;
+    }
+    
+    if ((VburstWriteBE = (wbbefunc_p)dlsym(hdl, "VBurstWriteBE")) == NULL)
+    {
+        fprintf(stderr, "***ERROR: failed to find symbol VBurstWriteBE\n");
         return 1;
     }
 
@@ -250,6 +257,15 @@ uint32_t PyTick (const uint32_t ticks, const uint32_t node)
 // ------------------------------------------------------------
 
 uint32_t PyBurstWrite (const uint32_t addr, void *data, const uint32_t len, const uint32_t node)
+{
+    return VburstWrite(addr, data, len, node);
+}
+
+// ------------------------------------------------------------
+// VBurstWriteBE wrapper function for Python
+// ------------------------------------------------------------
+
+uint32_t PyBurstWriteBE (const uint32_t addr, void *data, const uint32_t len, uint32_t fbe, uint32_t lbe, const uint32_t node)
 {
     return VburstWrite(addr, data, len, node);
 }

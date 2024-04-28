@@ -35,7 +35,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define VERSION_STRING         "VProc version 1.7.2. Copyright (c) 2004-2024 Simon Southwell."
+#define VERSION_STRING         "VProc version 1.7.3. Copyright (c) 2004-2024 Simon Southwell."
 
 #ifndef VP_MAX_NODES
 #define VP_MAX_NODES            64
@@ -47,7 +47,8 @@
 #define V_READ                  2
 
 #define BURSTLENLOBIT           2
-#define BELOBIT                 14
+#define BEFIRSTLOBIT            14
+#define BELASTLOBIT             18
 
 // Error types
 #define VP_USER_ERR             1

@@ -30,6 +30,7 @@
 `define RDBIT                   1
 `define BLKBITS                 13:2
 `define BEBITS                  17:14
+`define LBEBITS                 21:18
 
 `define DELTACYCLE              -1
 `define DONTCARE                 0
