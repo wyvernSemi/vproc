@@ -93,6 +93,12 @@ public:
         processIrq();
         return VProc::burstWrite(addr, data, len);
     }
+    
+    int burstWriteBytes(const unsigned byteaddr, void *data, const unsigned bytelen)
+    {
+        processIrq();
+        return VProc::burstWriteBytes(byteaddr, data, bytelen);
+    }
 
     int readByte (const uint32_t byteaddr, uint32_t *data, const int delta = 0)
     {
@@ -116,6 +122,12 @@ public:
     {
         processIrq();
         return VProc::burstRead(addr, data, len);
+    }
+    
+    int burstReadBytes(const unsigned byteaddr, void *data, const unsigned bytelen)
+    {
+        processIrq();
+        return VProc::burstReadBytes(byteaddr, data, bytelen);
     }
 
     // Interrupt API methods
