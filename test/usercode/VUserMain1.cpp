@@ -204,7 +204,7 @@ extern "C" void VUserMain1()
     {
         wbuf[idx] = 0x00010000 + idx;
     }
-    
+
 
     vp1.burstWrite(addr, wbuf, 8);
     VPrint("Node %d: burst wrote 8 words from addr %08x\n", node, addr);
@@ -222,33 +222,33 @@ extern "C" void VUserMain1()
     }
 
     VPrint("Node %d: burst read 8 words from addr %08x\n", node, addr);
-    
+
     // -------------------------------------------
     // Write offset burst data to memory
-    
+
     addr = 0xa1000032;
 
     for (int idx = 0; idx < 11; idx++)
     {
-        ((uint8_t*)wbuf)[idx] = idx + 0x10; 
+        ((uint8_t*)wbuf)[idx] = idx + 0x10;
     }
-    
+
     vp1.tick(1);
     vp1.burstWriteBytes(addr, wbuf, 11);
     VPrint("Node %d: burst wrote 11 bytes from addr %08x\n", node, addr);
-    
+
     vp1.tick(2);
     vp1.burstReadBytes(addr, rbuf, 11);
-    
+
     for (int idx = 0; idx < 11; idx++)
     {
         if (((uint8_t*)rbuf)[idx] != ((uint8_t*)wbuf)[idx])
         {
-            VPrint("***Error: burst data byte miscompare in node %d (%08x v %08x at index %d)\n", node, ((uint8_t*)rbuf)[idx], ((uint8_t*)wbuf)[idx]);
+            VPrint("***Error: burst data byte miscompare in node %d (%08x v %08x at index %d)\n", node, ((uint8_t*)rbuf)[idx], ((uint8_t*)wbuf)[idx], idx);
             SLEEP;
         }
     }
-    
+
     VPrint("Node %d: burst read 11 bytes from addr %08x\n", node, addr);
 
     // Wait a bit and then stop the simulation
