@@ -1,6 +1,6 @@
 //=====================================================================
 //
-// VUser.h                                            Date: 2005/01/10 
+// VUser.h                                            Date: 2005/01/10
 //
 // Copyright (c) 2005-2024 Simon Southwell.
 //
@@ -55,30 +55,31 @@ typedef long      nodecast_t;
 typedef long      nodecast_t;
 #endif
 
-// For Icarus and Verilator
+// Needed for Icarus and Verilator
 # ifndef RTLD_DEFAULT
 # define RTLD_DEFAULT ((void *) 0)
 # endif
-
-// Backards compatibility definitions
-#define uint64 uint64_t
 
 // Pointer to pthread_create compatible function
 typedef void *(*pThreadFunc_t)(void *);
 
 // VUser function prototypes for API
 
-extern int  VWrite        (const unsigned      addr,  const unsigned data, const int      delta, const unsigned node);
-extern int  VWriteBE      (const unsigned      addr,  const unsigned data, const unsigned be,    const int      delta, const unsigned node);
-extern int  VRead         (const unsigned      addr,  unsigned          *data, const int      delta, const unsigned node);
-extern int  VBurstWrite   (const unsigned      addr,  void              *data, const unsigned wordlen,   const unsigned node);
-extern int  VBurstWriteBE (const unsigned      addr,  void              *data, const unsigned wordlen,   const unsigned fbe, const unsigned lbe, const unsigned node);
-extern int  VBurstRead    (const unsigned      addr,  void              *data, const unsigned wordlen,   const unsigned node);
-extern int  VTick         (const unsigned      ticks, const unsigned     node);
+extern int  VWrite        (const unsigned      addr,  const unsigned  data, const int      delta,   const unsigned node);
+extern int  VWriteBE      (const unsigned      addr,  const unsigned  data, const unsigned be,      const int      delta, const unsigned node);
+extern int  VRead         (const unsigned      addr,  unsigned       *data, const int      delta,   const unsigned node);
+extern int  VBurstWrite   (const unsigned      addr,  void           *data, const unsigned wordlen, const unsigned node);
+extern int  VBurstWriteBE (const unsigned      addr,  void           *data, const unsigned wordlen, const unsigned fbe, const unsigned lbe, const unsigned node);
+extern int  VBurstRead    (const unsigned      addr,  void           *data, const unsigned wordlen, const unsigned node);
+extern int  VTick         (const unsigned      ticks, const unsigned  node);
+extern void VRegUser      (const pVUserCB_t    func,  const unsigned  node);
+extern void VRegIrq       (const pVUserIrqCB_t func,  const unsigned  node);
+
+// *** Deprecated in favour of VRegIrq ***/
 extern void VRegInterrupt (const int           level, const pVUserInt_t  func, const unsigned node);
-extern void VRegIrq       (const pVUserIrqCB_t func,  const unsigned node);
-extern void VRegIrqPy     (const pPyIrqCB_t    func,  const unsigned node);
-extern void VRegUser      (const pVUserCB_t    func,  const unsigned node);
+
+// Internal function for Python interface
+extern void VRegIrqPy     (const pPyIrqCB_t    func,  const unsigned  node);
 
 // VUser function prototype for VInit in VSched.c
 extern int  VUser         (const unsigned   node);
