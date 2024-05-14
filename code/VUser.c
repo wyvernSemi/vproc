@@ -280,9 +280,9 @@ int VBurstWrite (const unsigned addr, void *data, const unsigned wordlen, const 
 }
 
 // -------------------------------------------------------------------------
-// VBurstWrite()
+// VBurstWriteBE()
 //
-// Invokes a burst write message exchange
+// Invokes a burst write message exchange with byte enables
 // -------------------------------------------------------------------------
 
 int VBurstWriteBE (const unsigned addr, void *data, const unsigned wordlen, const unsigned fbe, const unsigned lbe, const unsigned node)

@@ -45,7 +45,7 @@
 # define dlerror() ""
 # define dlclose FreeLibrary
 
-// Define a type to case node in print statements to avoid warnings
+// Define a type to cast node in print statements to avoid warnings
 # ifdef _WIN64
 typedef long long nodecast_t;
 # else
