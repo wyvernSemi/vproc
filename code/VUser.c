@@ -223,11 +223,15 @@ int VWriteBE (const unsigned addr, const unsigned data, const unsigned be, const
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
+    rw_t*      p_rw = (rw_t*)&sbuf.rw;
 
     sbuf.addr     = addr;
     sbuf.data_out = data;
-    sbuf.rw       = V_WRITE | ((be & 0xf) << BEFIRSTLOBIT);
     sbuf.ticks    = delta ? DELTA_CYCLE : 0;
+
+    sbuf.rw       = 0;  // clear RW fields
+    p_rw->write   = 1;
+    p_rw->fbe     = be & 0xf;
 
     VExch(&sbuf, &rbuf, node);
 
@@ -244,11 +248,15 @@ int VRead (const unsigned addr, unsigned *rdata, const int delta, const unsigned
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
+    rw_t*      p_rw = (rw_t*)&sbuf.rw;
 
     sbuf.addr     = addr;
     sbuf.data_out = 0;
-    sbuf.rw       = V_READ;
-    sbuf.ticks    = delta ? DELTA_CYCLE : 0;;
+    sbuf.ticks    = delta ? DELTA_CYCLE : 0;
+
+    sbuf.rw       = 0;  // clear RW fields
+    p_rw->read    = 1;
+    p_rw->fbe     = 0xf;
 
     VExch(&sbuf, &rbuf, node);
 
@@ -267,12 +275,18 @@ int VBurstWrite (const unsigned addr, void *data, const unsigned wordlen, const 
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
+    rw_t*      p_rw = (rw_t*)&sbuf.rw;
 
-    sbuf.addr     = addr;
-    sbuf.data_out = 0;
-    sbuf.data_p   = data;
-    sbuf.rw       = V_WRITE | ((wordlen & 0xfff) << BURSTLENLOBIT) | (0xf << BEFIRSTLOBIT) | (0xf << BELASTLOBIT);
-    sbuf.ticks    = 0;
+    sbuf.addr      = addr;
+    sbuf.data_out  = 0;
+    sbuf.data_p    = data;
+    sbuf.ticks     = 0;
+
+    sbuf.rw        = 0;  // clear RW fields
+    p_rw->write    = 1;
+    p_rw->burstlen = wordlen & 0xfff;
+    p_rw->fbe      = 0xf;
+    p_rw->lbe      = 0xf;
 
     VExch(&sbuf, &rbuf, node);
 
@@ -289,14 +303,18 @@ int VBurstWriteBE (const unsigned addr, void *data, const unsigned wordlen, cons
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
+    rw_t*      p_rw = (rw_t*)&sbuf.rw;
 
-    sbuf.addr     = addr;
-    sbuf.data_out = 0;
-    sbuf.data_p   = data;
-    sbuf.rw       = V_WRITE | ((wordlen & 0xfff) << BURSTLENLOBIT) |
-                              ((fbe & 0xf)       << BEFIRSTLOBIT)  |
-                              ((lbe & 0xf)       << BELASTLOBIT);
-    sbuf.ticks    = 0;
+    sbuf.addr      = addr;
+    sbuf.data_out  = 0;
+    sbuf.data_p    = data;
+    sbuf.ticks     = 0;
+
+    sbuf.rw        = 0;  // clear RW fields
+    p_rw->write    = 1;
+    p_rw->burstlen = wordlen & 0xfff;
+    p_rw->fbe      = fbe & 0xf;
+    p_rw->lbe      = lbe & 0xf;
 
     VExch(&sbuf, &rbuf, node);
 
@@ -313,12 +331,18 @@ int VBurstRead (const unsigned int addr, void *data, const unsigned wordlen, con
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
+    rw_t*      p_rw = (rw_t*)&sbuf.rw;
 
-    sbuf.addr     = addr;
-    sbuf.data_out = 0;
-    sbuf.data_p   = data;
-    sbuf.rw       = V_READ | ((wordlen & 0xfff) << 2) | (0xffff << BEFIRSTLOBIT);
-    sbuf.ticks    = 0;
+    sbuf.addr      = addr;
+    sbuf.data_out  = 0;
+    sbuf.data_p    = data;
+    sbuf.ticks     = 0;
+
+    sbuf.rw        = 0;  // clear RW fields
+    p_rw->read     = 1;
+    p_rw->burstlen = wordlen & 0xfff;
+    p_rw->fbe      = 0xf;
+    p_rw->lbe      = 0xf;
 
     VExch(&sbuf, &rbuf, node);
 

@@ -35,7 +35,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define VERSION_STRING         "VProc version 1.7.3. Copyright (c) 2004-2024 Simon Southwell."
+#define VERSION_STRING         "VProc version 1.7.3.1. Copyright (c) 2004-2024 Simon Southwell."
 
 #ifndef VP_MAX_NODES
 #define VP_MAX_NODES            64
@@ -75,6 +75,17 @@
 #define MAX_QUEUED_VEC_IRQ      (1 << NUM_IRQ_QUEUE_BITS)
 #define IRQ_QUEUE_INDEX_MASK    (MAX_QUEUED_VEC_IRQ - 1)
 #define IRQ_QUEUE_COUNT_MASK    (MAX_QUEUED_VEC_IRQ*2 - 1)
+
+// Bitfield structure for rw value of send_buf_t exchange structure
+typedef struct {
+    uint32_t write    : 1;
+    uint32_t read     : 1;
+    uint32_t burstlen : 12;
+    uint32_t fbe      : 4;
+    uint32_t lbe      : 4;
+    uint32_t rsvd     : 10;
+} rw_t;
+
 
 // User thread to simulation exchange structure
 typedef struct {
