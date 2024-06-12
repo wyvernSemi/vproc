@@ -120,9 +120,9 @@ run: verilog
 
 rungui: verilog
 	@if [ -e wave.do ]; then                                         \
-	    vsim -gui -gGUI_RUN -do wave.do $(VSIMFLAGS) -do "run -all"; \
+	    vsim -gui -gGUI_RUN=1 -do wave.do $(VSIMFLAGS) -do "run -all"; \
 	else                                                             \
-	    vsim -gui -gGUI_RUN $(VSIMFLAGS);                            \
+	    vsim -gui -gGUI_RUN=1 $(VSIMFLAGS);                            \
 	fi
 
 gui: rungui
