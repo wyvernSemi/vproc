@@ -1,6 +1,10 @@
 # RISC-V ISS model demonstration example
 
-This directory contains an example of co-simulating a RISC-V instruction set simulator C++ model on VProc
+This directory contains an example of co-simulating a RISC-V instruction set simulator C++ model on VProc with a simple test HDL environment with models for memory, timer, and a terminal model with UART interface to display text, capable of running a program in the FreeRTOS operating system. The setup is shown in the diagram below:
+
+<p align="center">
+<img src="https://github.com/wyvernSemi/vproc/assets/21970031/4531f2a5-b620-4812-b9bb-162c4e98eb4b" width=700>
+</p>
 
 ## Simple assembly code test
 
