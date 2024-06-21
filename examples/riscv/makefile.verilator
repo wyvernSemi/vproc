@@ -110,7 +110,7 @@ CPPSTD             = -std=c++20
 SIMFLAGS           = --binary -sv --trace                   \
                      $(FINISHFLAG)                          \
                      $(TIMINGFLAG)                          \
-                     $(VCDFLAG) $(BURSTDEF)                 \
+                     $(BURSTDEF)                            \
                      $(INCLFLAG)                            \
                      $(USRSIMFLAGS)                         \
                      $(WARNCONTROL)                         \

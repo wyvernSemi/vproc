@@ -1,42 +1,28 @@
-// =========================================================================
+//=============================================================
+// 
+// Copyright (c) 2021 Simon Southwell. All rights reserved.
 //
-//  File Name:         rv32csr_cpu_hdr.h
-//  Design Unit Name:
-//  Revision:          OSVVM MODELS STANDARD VERSION
+// Date: 12th July 2021
 //
-//  Maintainer:        Simon Southwell email:  simon.southwell@gmail.com
-//  Contributor(s):
-//     Simon Southwell      simon.southwell@gmail.com
+// Contains the definitions for the rv32csr_cpu derived class
 //
-//  Description:
-//    Contains the definitions for the rv32csr_cpu derived class
+// This file is part of the Zicsr extended RISC-V instruction
+// set simulator (rv32csr_cpu).
 //
-//    This file is part of the Zicsr extended RISC-V instruction
-//    set simulator (rv32csr_cpu).
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//  Revision History:
-//    Date      Version    Description
-//    07/2023   2023.??    Updates for supporting FreeRTOS
-//    01/2023   2023.01    Released with OSVVM CoSim
-//    Date: 12th July 2021 Earlier version
+// This code is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-//  This file is part of OSVVM.
+// You should have received a copy of the GNU General Public License
+// along with this code. If not, see <http://www.gnu.org/licenses/>.
 //
-//  Copyright (c) 2021 Simon Southwell. 
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//      https://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-//
-// =========================================================================
+//=============================================================
 
 #ifndef _RV32CSR_CPU_HDR_H_
 #define _RV32CSR_CPU_HDR_H_

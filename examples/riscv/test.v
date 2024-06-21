@@ -33,10 +33,15 @@
 `timescale 1ns/1ps
 
 `define RESET_PERIOD    10
-`define TIMEOUT_COUNT   4000
 
-`define DMEM_SEGMENT    4'h0
-`define IMEM_SEGMENT    4'h8
+`define MEMSEG          4'h0
+`define UARTSEG         4'h8
+
+`define IMEM_SUBSEGMENT 4'h0
+`define DMEM_SUBSEGMENT 4'h8
+
+`define TIMERSTARTADDR  32'hAFFFFFE0
+`define TIMERENDADDR    32'hAFFFFFEC
 
 `define HALT_ADDR       32'hAFFFFFF8
 `define INT_ADDR        32'hAFFFFFFC
@@ -46,7 +51,9 @@ module test
             CLK_FREQ_MHZ     = 100,
             USE_HARVARD      = 1,
             VCD_DUMP         = 0,
-            DISABLE_DELTA    = 0);
+            DISABLE_DELTA    = 0,
+            TIMEOUTCOUNT     = 4000,
+            RISCVTEST        = 0);
 
 // Clock, reset and simulation control state
 reg            clk;
@@ -60,6 +67,10 @@ wire [31:0]    writedata;
 wire  [3:0]    byteenable;
 wire           read;
 wire [31:0]    readdata;
+wire [31:0]    memreaddata;
+wire [31:0]    romreaddata;
+wire [31:0]    timreaddata;
+wire [31:0]    uartreaddata;
 wire [31:0]    ireaddata;
 
 wire           iread;
@@ -67,7 +78,10 @@ wire [31:0]    iaddress;
 
 reg            readdatavalid;
 reg            ireaddatavalid;
-reg            irq;
+reg            swirq;
+
+wire           timirq;
+wire  [2:0]   irq = {swirq, timirq, 1'b0};
 
 // -----------------------------------------------
 // Initialisation, clock and reset
@@ -84,7 +98,7 @@ begin
     
    count                               = -1;
    clk                                 = 1'b1;
-   irq                                 = 1'b0;
+   swirq                               = 1'b0;
    readdatavalid                       = 1'b0;
    ireaddatavalid                      = 1'b0;
 end
@@ -95,21 +109,43 @@ always #(500/CLK_FREQ_MHZ) clk         = ~clk;
 // Generate a reset signal using count
 assign reset_n                         = (count >= `RESET_PERIOD) ? 1'b1 : 1'b0;
 
+// -----------------------------------------------
+// Address decode
+// -----------------------------------------------
+
 // Generate  memory chip selects
-wire cs0 = iaddress[31:28] == `IMEM_SEGMENT ? 1'b1 : 1'b0;
-wire cs1 =  address[31:28] == `DMEM_SEGMENT ? 1'b1 : 1'b0;
+wire cs0 = iaddress[31:28] == `MEMSEG && iaddress[19:16] == `IMEM_SUBSEGMENT && iread == 1'b1                   ? 1'b1 : 1'b0;
+wire cs1 =  address[31:28] == `MEMSEG &&  address[19:16] == `IMEM_SUBSEGMENT && (read == 1'b1 || write == 1'b1) ? 1'b1 : 1'b0;
+wire cs4 =  address[31:28] == `MEMSEG &&  address[19:16] == `DMEM_SUBSEGMENT && (read == 1'b1 || write == 1'b1) ? 1'b1 : 1'b0;
+
+// Generate peripheral chip selects
+wire cs2 =  (read == 1'b1 || write ==1'b1) && address >= `TIMERSTARTADDR && address <= `TIMERENDADDR;
+wire cs3 =  (read == 1'b1 || write ==1'b1) && address[31:28] == `UARTSEG;
+
+// Software interrupt
+wire cs5 =  write == 1'b1 && address == `INT_ADDR;
+
+// Simulation control
+wire cs6 =  write == 1'b1 && address == `HALT_ADDR;
+
+// Amalgamate read data
+assign readdata = cs2 ? timreaddata  :
+                  cs3 ? uartreaddata :
+                  cs4 ? memreaddata  :
+                        romreaddata;
 
 // -----------------------------------------------
 // Simulation control process
 // -----------------------------------------------
+
 always @(posedge clk)
 begin
   count                                <= count + 1;
 
   // Stop/finish the simulations of timeout or a write to the halt address
-  if (count == `TIMEOUT_COUNT || (write == 1'b1 && address == `HALT_ADDR && writedata[0]))
+  if ((TIMEOUTCOUNT && count == TIMEOUTCOUNT) || (cs6 == 1'b1 && writedata[0]))
   begin
-    if (count >= `TIMEOUT_COUNT)
+    if (count >= TIMEOUTCOUNT)
     begin
       $display("***ERROR: simulation timed out!");  
     end
@@ -131,9 +167,9 @@ end
 
 always @(posedge clk)
 begin
-  if (write == 1'b1 && address == `INT_ADDR && byteenable[0] == 1'b1)
+  if (cs5 == 1'b1 && byteenable[0] == 1'b1)
   begin
-    irq                    <= writedata[0];
+    swirq                    <= writedata[0];
   end
 end
 
@@ -149,32 +185,32 @@ end
 // Virtual CPU
 // -----------------------------------------------
 
- riscVsim  #(.USE_HARVARD(USE_HARVARD),
-             .DISABLE_DELTA(DISABLE_DELTA)) cpu
- (
-   .clk                     (clk),
-
-   .daddress                (address),
-   .dwrite                  (write),
-   .dwritedata              (writedata),
-   .dbyteenable             (byteenable),
-   .dread                   (read),
-   .dreaddata               (readdata),
-   .dwaitrequest            (read & ~readdatavalid),
-   
-   .iaddress                (iaddress),
-   .iread                   (iread),
-   .ireaddata               (ireaddata),
-   .iwaitrequest            (iread & ~ireaddatavalid),
-
-   .irq                     (irq)
- );
+ riscVsim  #(.USE_HARVARD   (USE_HARVARD),
+             .DISABLE_DELTA (DISABLE_DELTA),
+             .RISCVTEST     (RISCVTEST)) cpu
+           (.clk               (clk),
+           
+            .daddress          (address),
+            .dwrite            (write),
+            .dwritedata        (writedata),
+            .dbyteenable       (byteenable),
+            .dread             (read),
+            .dreaddata         (readdata),
+            .dwaitrequest      (read & ~readdatavalid),
+            
+            .iaddress          (iaddress),
+            .iread             (iread),
+            .ireaddata         (ireaddata),
+            .iwaitrequest      (iread & ~ireaddatavalid),
+           
+            .irq               (irq)
+           );
 
  // ---------------------------------------------------------
- // Memory
+ // ROM
  // ---------------------------------------------------------
 
- Mem m     (.clk                (clk),
+ Mem r     (.clk                (clk),
  
             .CS0                (cs0),
             .A0                 (iaddress[15:2]),
@@ -188,7 +224,66 @@ end
             .BE1                (byteenable),
             .WE1                (write),
             .DI1                (writedata),
-            .DO1                (readdata)
+            .DO1                (romreaddata)
+           );
+
+ // ---------------------------------------------------------
+ // Memory
+ // ---------------------------------------------------------
+
+ Mem m     (.clk                (clk),
+ 
+            .CS0                (1'b0),
+            .A0                 (14'h0),
+            .BE0                (4'hf),
+            .WE0                (1'b0),
+            .DI0                (32'h0),
+            .DO0                (),
+
+            .CS1                (cs4),
+            .A1                 (address[15:2]),
+            .BE1                (byteenable),
+            .WE1                (write),
+            .DI1                (writedata),
+            .DO1                (memreaddata)
+           );
+
+ // ---------------------------------------------------------
+ // Timer
+ // ---------------------------------------------------------
+ 
+ mtimer #(.CLKFREQMHZ (CLK_FREQ_MHZ)) timer
+           (
+             .clk               (clk),
+             .nreset            (reset_n),
+             
+             .cs                (cs2),
+             .addr              (address[3:2]),
+             .wr                (write),
+             .wdata             (writedata),
+             .rd                (read),
+             .rdata             (timreaddata),
+             .rvalid            (),
+             
+             .irq               (timirq)
+           );
+
+ // ---------------------------------------------------------
+ // UART
+ // ---------------------------------------------------------
+
+  uart_model console
+           (
+             .clk               (clk),
+             .nreset            (reset_n),
+             
+             .cs                (cs3),
+             .addr              (address[4:0]),
+             .wr                (write),
+             .wdata             (writedata),
+             .rd                (read),
+             .rdata             (uartreaddata),
+             .rvalid            ()
            );
 
 endmodule
@@ -197,7 +292,10 @@ endmodule
 // Simple dual-port 64K byte memory model with byte enables
 // =========================================================
 
-module Mem (
+module Mem 
+#(parameter MEMWORDS          = 16384
+)
+(
     input         clk,
     input         WE0,
     input         CS0,
@@ -214,7 +312,7 @@ module Mem (
     output [31:0] DO1
 );
 
-reg [31:0] Mem [0:16383];
+reg [31:0] Mem [0:MEMWORDS-1];
 
 assign #1 DO0   = Mem[A0];
 assign #1 DO1   = Mem[A1];

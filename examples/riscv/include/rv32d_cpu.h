@@ -1,42 +1,28 @@
-// =========================================================================
+//=============================================================
 //
-//  File Name:         rv32d_cpu.h
-//  Design Unit Name:
-//  Revision:          OSVVM MODELS STANDARD VERSION
+// Copyright (c) 2021 Simon Southwell. All rights reserved.
 //
-//  Maintainer:        Simon Southwell email:  simon.southwell@gmail.com
-//  Contributor(s):
-//    Simon Southwell      simon.southwell@gmail.com
+// Date: 30th July 2021
 //
-//  Description:
-//    Contains the class definition for the rv32d_cpu derived class
-//    
-//    This file is part of the D extended RISC-V instruction
-//    set simulator (rv32d_cpu).
+// Contains the class definition for the rv32d_cpu derived class
 //
-//  Revision History:
-//    Date      Version    Description
-//    07/2023   2023.??    Updates for supporting FreeRTOS
-//    01/2023   2023.01    Released with OSVVM CoSim
-//    30th July 2021       Earlier version
+// This file is part of the M extended RISC-V instruction
+// set simulator (rv32d_cpu).
 //
-//  This file is part of OSVVM.
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//  Copyright (c) 2021 Simon Southwell. 
+// This code is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+// You should have received a copy of the GNU General Public License
+// along with this code. If not, see <http://www.gnu.org/licenses/>.
 //
-//      https://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-//
-// =========================================================================
+//=============================================================
 
 #ifndef _RV32D_CPU_H_
 #define _RV32D_CPU_H_

@@ -37,7 +37,7 @@ extern "C" {
 // I'm node 0
 int node = 0;
 
-static bool      irq = false;
+static uint32_t  irq                  = 0;
 static uint32_t  irq_state            = 0;
 
 static const int strbufsize = 256;
@@ -177,6 +177,9 @@ int parseArgs(int argcIn, char** argvIn, rv32i_cfg_s &cfg, const int node)
         case 'H':
             cfg.hlt_on_inst_err = true;
             break;
+        case 'T':
+            cfg.use_external_timer = true;
+            break;
         case 'e':
             cfg.hlt_on_ecall = true;
             break;
@@ -204,6 +207,7 @@ int parseArgs(int argcIn, char** argvIn, rv32i_cfg_s &cfg, const int node)
             fprintf(stderr, "   -n specify number of instructions to run (default 0, i.e. run until unimp)\n");
             fprintf(stderr, "   -d Enable disassemble mode (default off)\n");
             fprintf(stderr, "   -r Enable run-time disassemble mode (default off. Overridden by -d)\n");
+            fprintf(stderr, "   -T Use external memory mapped timer model (default internal)\n");
             fprintf(stderr, "   -H Halt on unimplemented instructions (default trap)\n");
             fprintf(stderr, "   -e Halt on ecall/ebreak instruction (default trap)\n");
             fprintf(stderr, "   -b Halt at a specific address (default off)\n");
@@ -232,19 +236,19 @@ int parseArgs(int argcIn, char** argvIn, rv32i_cfg_s &cfg, const int node)
 // in the main program flow.
 int vproc_irq_callback(int val)
 {
-    irq = val ? true : false;
+    irq = val;
 
     return 0;
 }
 
 // The ISS interrupt callback will return an interrupt when irq
-// is true, else it returns 0. The wakeup time in this model is always the next
+// is non-zero, else it returns 0. The wakeup time in this model is always the next
 // cycle.
 uint32_t iss_int_callback(const rv32i_time_t time, rv32i_time_t *wakeup_time)
 {
     *wakeup_time = time + 1;
 
-    return irq ? 1 : 0;
+    return irq;
 }
 
 // ---------------------------------------------

@@ -1,3 +1,5 @@
 ../../f_VProc.sv
+mtimer.v
+uart.v
 riscVsim.v
 test.v

@@ -1,42 +1,28 @@
-// =========================================================================
+//=============================================================
+// 
+// Copyright (c) 2021 Simon Southwell. All rights reserved.
 //
-//  File Name:         rv32i_cpu_hdr.h
-//  Design Unit Name:
-//  Revision:          OSVVM MODELS STANDARD VERSION
+// Date: 28th June 2021
 //
-//  Maintainer:        Simon Southwell email:  simon.southwell@gmail.com
-//  Contributor(s):
-//    Simon Southwell      simon.southwell@gmail.com
+// Contains the header for local definitions for the rv32i_cpu class
 //
-//  Description:
-//    Contains the header for local definitions for the rv32i_cpu class
+// This file is part of the base RISC-V instruction set simulator
+// (rv32i_cpu).
 //
-//    This file is part of the Zicsr extended RISC-V instruction
-//    set simulator (rv32i_cpu).
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//  Revision History:
-//    Date      Version    Description
-//    07/2023   2023.??    Updates for supporting FreeRTOS
-//    01/2023   2023.01    Released with OSVVM CoSim
-//    28th June 2021       Earlier version
+// This code is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-//  This file is part of OSVVM.
+// You should have received a copy of the GNU General Public License
+// along with this code. If not, see <http://www.gnu.org/licenses/>.
 //
-//  Copyright (c) 2021 Simon Southwell. 
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//      https://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-//
-// =========================================================================
+//=============================================================
 
 #ifndef _RV32I_CPU_HDR_H_
 #define _RV32I_CPU_HDR_H_
@@ -559,6 +545,7 @@ struct  rv32i_cfg_s {
     bool           dump_regs;
     bool           dump_csrs;
     bool           use_cycles_for_mtime;
+    bool           use_external_timer;
     uint32_t       num_mem_dump_words;
     uint32_t       mem_dump_start;
     bool           gdb_mode;
@@ -570,27 +557,28 @@ struct  rv32i_cfg_s {
 
     rv32i_cfg_s()
     {
-        exec_fname           = "test.exe";
-        user_fname           = false;
-        num_instr            = 0;
-        rt_dis               = false;
-        dis_en               = false;
-        abi_en               = false;
-        hlt_on_inst_err      = false;
-        hlt_on_ecall         = false;
-        hlt_on_ebreak        = false;
-        en_brk_on_addr       = false;
-        use_cycles_for_mtime = false;
-        dump_regs            = false;
-        dump_csrs            = false;
-        num_mem_dump_words   = 0;
-        mem_dump_start       = 0x1000;
-        gdb_mode             = false;
-        gdb_ip_portnum       = RV32_DEFAULT_TCP_PORT;
-        brk_addr             = RISCV_TEST_ENV_TERMINATE_ADDR;
-        update_rst_vec       = false;
-        new_rst_vec          = RV32I_RESET_VECTOR;
-        dbg_fp               = stdout;
+        exec_fname             = "test.exe";
+        user_fname             = false;
+        num_instr              = 0;
+        rt_dis                 = false;
+        dis_en                 = false;
+        abi_en                 = false;
+        hlt_on_inst_err        = false;
+        hlt_on_ecall           = false;
+        hlt_on_ebreak          = false;
+        en_brk_on_addr         = false;
+        use_cycles_for_mtime   = false;
+        use_external_timer     = false;
+        dump_regs              = false;
+        dump_csrs              = false;
+        num_mem_dump_words     = 0;
+        mem_dump_start         = 0x1000;
+        gdb_mode               = false;
+        gdb_ip_portnum         = RV32_DEFAULT_TCP_PORT;
+        brk_addr               = RISCV_TEST_ENV_TERMINATE_ADDR;
+        update_rst_vec         = false;
+        new_rst_vec            = RV32I_RESET_VECTOR;
+        dbg_fp                 = stdout;
     }
 };
 

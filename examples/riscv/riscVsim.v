@@ -34,7 +34,8 @@
 module riscVsim
  #(parameter          NODE          = 0,
                       USE_HARVARD   = 1,
-                      DISABLE_DELTA = 0)
+                      DISABLE_DELTA = 0,
+                      RISCVTEST     = 0)
  (
     input             clk,
 
@@ -53,7 +54,7 @@ module riscVsim
     input      [31:0] ireaddata,
     input             iwaitrequest,
 
-    input             irq
+    input       [2:0] irq
 );
 
 wire        instr_access;
@@ -63,7 +64,7 @@ wire        read_int;
 wire [31:0] nodenum = NODE;
 wire [31:0] rd_data;
 
-assign      instr_access = daddress[31];
+assign      instr_access = (RISCVTEST == 0) ? daddress[31] : daddress < (64*1024);
 assign      iaddress     = {1'b0, daddress[30:0]};
 assign      iread        = read_int &&  instr_access && USE_HARVARD;
 assign      dread        = read_int && (instr_access == 1'b0 || USE_HARVARD == 0);
@@ -82,7 +83,7 @@ assign      RDAck        = ((dread & ~dwaitrequest) == 1'b1 || (iread & ~iwaitre
             .DataIn                  (rd_data),
             .WRAck                   (dwrite),
             .RDAck                   (RDAck),
-            .Interrupt               ({2'b00, irq}),
+            .Interrupt               (irq),
             .Update                  (Update),
             .UpdateResponse          (Update),
             .Node                    (nodenum[3:0])

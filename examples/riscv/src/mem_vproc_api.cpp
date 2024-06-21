@@ -34,7 +34,7 @@ uint32_t read_instr(uint32_t addr)
 {
     uint32_t word;
 
-    VRead(addr & ~0x3 | 0x80000000, &word, NORMAL_UPDATE, node);
+    VRead(addr & ~0x3, &word, NORMAL_UPDATE, node);
 
     VTick(ACCESS_LEN, node);
 
@@ -59,7 +59,7 @@ uint32_t read_hword(uint32_t addr)
 
     VTick(ACCESS_LEN, node);
 
-    return word >> ((addr & 0x2UL) * 8);
+    return (word >> ((addr & 0x2UL) * 8)) & 0xffff;
 }
 
 uint32_t read_byte(uint32_t addr)
@@ -70,5 +70,5 @@ uint32_t read_byte(uint32_t addr)
 
     VTick(ACCESS_LEN, node);
 
-    return word >> ((addr & 0x3UL) * 8);
+    return (word >> ((addr & 0x3UL) * 8)) & 0xff;
 }
