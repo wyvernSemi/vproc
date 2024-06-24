@@ -229,7 +229,7 @@
 #define RV32I_NUM_SECONDARY_OPCODES                    8
 #define RV32I_NUM_TERTIARY_OPCODES                     128
 #define RV32I_NUM_SYSTEM_OPCODES                       32
-#define RV32I_INT_MEM_WORDS                            (16*1024)
+#define RV32I_INT_MEM_BYTES                            (1024*1024)
 
 // The RV32I base class has a hardwired MTVEC location since
 // since CSR accesses are not supported. Set to riscv-test-env

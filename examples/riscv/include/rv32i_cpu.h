@@ -303,7 +303,7 @@ protected:
     int32_t               trap;
 
     // Internal memory
-    uint8_t               internal_mem   [4*RV32I_INT_MEM_WORDS+4];
+    uint8_t               internal_mem   [RV32I_INT_MEM_BYTES+4];
 
     // Instructions retired count
     rv32i_time_t          instret_count;
