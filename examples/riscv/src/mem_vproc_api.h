@@ -23,7 +23,8 @@ extern "C" {
 // Define a sensible time for a register access, in clock cycles
 // Note that for the BFM, the actual length is ACCESS_LEN + 2
 //#define ACCESS_LEN                              10
-#define ACCESS_LEN                              2
+//#define ACCESS_LEN                              2
+#define ACCESS_LEN                              0
 
 #define HALT_ADDR                               0xAFFFFFF8
 
