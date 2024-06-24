@@ -10,6 +10,8 @@
 
 #if !defined _WIN32 && !defined _WIN64
 #include <unistd.h>
+#include <termios.h>
+#include <sys/time.h>
 
 #define STRDUP strdup
 #else
@@ -42,6 +44,63 @@ static uint32_t  irq_state            = 0;
 
 static const int strbufsize = 256;
 static char      argstr[strbufsize];
+
+static double tv_diff_usec;
+
+#if (!(defined _WIN32) && !(defined _WIN64)) || defined __CYGWIN__
+static struct timeval tv_start, tv_stop;
+#else
+LARGE_INTEGER freq, start, stop;
+#endif
+
+// ---------------------------------------------
+// Set up actions prior to running CPU
+// ---------------------------------------------
+
+static void pre_run_setup()
+{
+    // Initialise time
+#if (!(defined _WIN32) && !(defined _WIN64)) || defined __CYGWIN__
+    // For non-windows systems, turn off echoing of input key presses
+    struct termios t;
+
+    tcgetattr(STDIN_FILENO, &t);
+    t.c_lflag &= ~ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &t);
+
+    // Log time just before running (LINUX only)
+    (void)gettimeofday(&tv_start, NULL);
+#else
+
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&start);
+#endif
+}
+
+// ---------------------------------------------
+// Actions to run after CPU retruns from
+// executing
+// ---------------------------------------------
+static void post_run_actions()
+{
+    // Calculate time difference, in microseconds, from now
+    // to previously saved time stamp
+#if (!(defined _WIN32) && !(defined _WIN64))
+    // For non-windows systems, turn off echoing of input key presses
+    struct termios t;
+
+    tcgetattr(STDIN_FILENO, &t);
+    t.c_lflag |= ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &t);
+
+    // Get time just after running, and calculate run time (LINUX only)
+    (void)gettimeofday(&tv_stop, NULL);
+    tv_diff_usec = ((float)(tv_stop.tv_sec - tv_start.tv_sec)*1e6) + ((float)(tv_stop.tv_usec - tv_start.tv_usec));
+#else
+    QueryPerformanceCounter(&stop);
+    tv_diff_usec = (double)(stop.QuadPart - start.QuadPart)*1e6/(double)freq.QuadPart;
+#endif
+}
 
 // ---------------------------------------------
 // External memory map access
@@ -326,16 +385,29 @@ extern "C" void VUserMain0()
             // Load an executable
             if (!pCpu->read_elf(cfg.exec_fname))
             {
+                pre_run_setup();
+
                 // Run processor
                 pCpu->run(cfg);
 
-                if (pCpu->regi_val(10) || pCpu->regi_val(17) != 93)
+                post_run_actions();
+
+                if (cfg.num_instr != 0)
                 {
-                    VPrint("*FAIL*: exit code = 0x%08x finish code = 0x%08x running %s\n", pCpu->regi_val(10) >> 1, pCpu->regi_val(17), cfg.exec_fname);
+
+                    VPrint("\nNumber of executed instructions = %.1f million (%.0f IPS)\n\n",
+                                 (float)cfg.num_instr/1e6, (float)cfg.num_instr/(tv_diff_usec/1e6));
                 }
                 else
                 {
-                    VPrint("PASS: exit code = 0x%08x running %s\n", pCpu->regi_val(10), cfg.exec_fname);
+                    if (pCpu->regi_val(10) || pCpu->regi_val(17) != 93)
+                    {
+                        VPrint("*FAIL*: exit code = 0x%08x finish code = 0x%08x running %s\n", pCpu->regi_val(10) >> 1, pCpu->regi_val(17), cfg.exec_fname);
+                    }
+                    else
+                    {
+                        VPrint("PASS: exit code = 0x%08x running %s\n", pCpu->regi_val(10), cfg.exec_fname);
+                    }
                 }
             }
         }
