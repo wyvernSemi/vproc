@@ -106,8 +106,12 @@ WARNCONTROL        = -Wno-PINMISSING
 # C++ version 20 required for Verilator
 CPPSTD             = -std=c++20
 
+# Set as blank to speed up simulation if not generating waves
+SIMTRACE           = --trace
+
 # Compilation flags for Verilator
-SIMFLAGS           = --binary -sv --trace                   \
+SIMFLAGS           = --binary -sv  -O3                       \
+                     $(SIMTRACE)                            \
                      $(FINISHFLAG)                          \
                      $(TIMINGFLAG)                          \
                      $(BURSTDEF)                            \
