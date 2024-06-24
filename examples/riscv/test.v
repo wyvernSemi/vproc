@@ -77,7 +77,6 @@ wire           iread;
 wire [31:0]    iaddress;
 
 reg            readdatavalid;
-reg            ireaddatavalid;
 reg            swirq;
 
 wire           timirq;
@@ -100,7 +99,6 @@ begin
    clk                                 = 1'b1;
    swirq                               = 1'b0;
    readdatavalid                       = 1'b0;
-   ireaddatavalid                      = 1'b0;
 end
 
 // Generate a clock
@@ -121,6 +119,9 @@ wire cs4 =  address[31:28] == `MEMSEG &&  address[19:16] == `DMEM_SUBSEGMENT && 
 // Generate peripheral chip selects
 wire cs2 =  (read == 1'b1 || write ==1'b1) && address >= `TIMERSTARTADDR && address <= `TIMERENDADDR;
 wire cs3 =  (read == 1'b1 || write ==1'b1) && address[31:28] == `UARTSEG;
+
+// Peripheral accesses have a wait state
+wire dwaitrequest = read & (cs2 | cs3) & ~readdatavalid;
 
 // Software interrupt
 wire cs5 =  write == 1'b1 && address == `INT_ADDR;
@@ -145,7 +146,7 @@ begin
   // Stop/finish the simulations of timeout or a write to the halt address
   if ((TIMEOUTCOUNT && count == TIMEOUTCOUNT) || (cs6 == 1'b1 && writedata[0]))
   begin
-    if (count >= TIMEOUTCOUNT)
+    if (count >= TIMEOUTCOUNT && TIMEOUTCOUNT > 0)
     begin
       $display("***ERROR: simulation timed out!");  
     end
@@ -177,8 +178,9 @@ end
 // -----------------------------------------------
 always @(posedge clk)
 begin
-  readdatavalid            <= read  & ~readdatavalid;
-  ireaddatavalid           <= iread & ~ireaddatavalid;
+  // Generate a read data valid signal only after a wait state for
+  // a peripheral access
+  readdatavalid            <= dwaitrequest;
 end
 
 // -----------------------------------------------
@@ -196,12 +198,12 @@ end
             .dbyteenable       (byteenable),
             .dread             (read),
             .dreaddata         (readdata),
-            .dwaitrequest      (read & ~readdatavalid),
+            .dwaitrequest      (dwaitrequest),
             
             .iaddress          (iaddress),
             .iread             (iread),
             .ireaddata         (ireaddata),
-            .iwaitrequest      (iread & ~ireaddatavalid),
+            .iwaitrequest      (1'b0),
            
             .irq               (irq)
            );
@@ -314,8 +316,8 @@ module Mem
 
 reg [31:0] Mem [0:MEMWORDS-1];
 
-assign #1 DO0   = Mem[A0];
-assign #1 DO1   = Mem[A1];
+assign DO0   = Mem[A0];
+assign DO1   = Mem[A1];
 
 always @(posedge clk)
 begin
