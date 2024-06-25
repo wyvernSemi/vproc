@@ -144,6 +144,11 @@ public:
     // Will be overloaded by rv32csr_cpu.
     LIBRISCV32_API void          register_int_callback(p_rv32i_intcallback_t callback_func) { };
 
+    // Return cycle count
+    inline uint64_t clk_cycles() {
+        return cycle_count;
+    }
+
     // ------------------------------------------------
     // Public member variables
     // ------------------------------------------------
@@ -440,10 +445,6 @@ protected:
             return time_point_cast<microseconds>(system_clock::now()).time_since_epoch().count();
         }
     };
-
-    inline uint64_t clk_cycles() {
-        return cycle_count;
-    }
 
     inline uint64_t inst_retired() {
         return instret_count;
