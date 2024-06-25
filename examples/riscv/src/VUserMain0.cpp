@@ -44,10 +44,11 @@ static uint32_t  irq_state            = 0;
 
 static const int strbufsize = 256;
 static char      argstr[strbufsize];
+static rv32*     pCpu;
 
-static double tv_diff_usec;
+static double    tv_diff_usec;
 
-#if (!(defined _WIN32) && !(defined _WIN64)) || defined __CYGWIN__
+#if (!(defined _WIN32) && !(defined _WIN64))
 static struct timeval tv_start, tv_stop;
 #else
 LARGE_INTEGER freq, start, stop;
@@ -109,7 +110,40 @@ static void post_run_actions()
 
 int ext_mem_access(const uint32_t addr, uint32_t& data, const int type, const rv32i_time_t time)
 {
-    int processed = 2;
+    int processed = 1;
+
+#ifdef USE_INTERNAL_MEMORY
+
+# ifndef INT_MEM_TOP
+# define INT_MEM_TOP 0x00100000
+# endif
+
+    uint64_t curr_cycles;
+    uint32_t cycle_diff;
+    static uint64_t last_cycles = 0;
+
+    curr_cycles = pCpu->clk_cycles();
+    cycle_diff = (uint32_t)(curr_cycles - last_cycles);
+
+    // Accessing memory
+    if (addr < INT_MEM_TOP)
+    {
+        if ((type & MEM_NOT_DBG_MASK) == MEM_RD_ACCESS_INSTR && cycle_diff >= 1000)
+        {
+            VTick(cycle_diff, node);
+            last_cycles = curr_cycles;
+        }
+
+        return RV32I_EXT_MEM_NOT_PROCESSED;
+    }
+    // Accessing peripherals
+    else
+    {
+        VTick(cycle_diff, node);
+        last_cycles = curr_cycles;
+    }
+
+#endif
 
     switch (type & MEM_NOT_DBG_MASK)
     {
@@ -210,7 +244,7 @@ int parseArgs(int argcIn, char** argvIn, rv32i_cfg_s &cfg, const int node)
     // Parse the command line arguments and/or configuration file
     // Process the command line options *only* for the INI filename, as we
     // want the command line options to override the INI options
-    while ((c = getopt(argc, argv, RV32I_GETOPT_ARG_STR)) != EOF)
+    while ((c = getopt(argc, argv, "t:n:bA:rdHTeED:gp:S:Cah")) != EOF)
     {
         switch (c)
         {
@@ -242,6 +276,9 @@ int parseArgs(int argcIn, char** argvIn, rv32i_cfg_s &cfg, const int node)
         case 'e':
             cfg.hlt_on_ecall = true;
             break;
+        case 'E':
+            cfg.hlt_on_ebreak = true;
+            break;
         case 'D':
             if ((cfg.dbg_fp = fopen(optarg, "wb")) == NULL)
             {
@@ -259,6 +296,12 @@ int parseArgs(int argcIn, char** argvIn, rv32i_cfg_s &cfg, const int node)
             cfg.update_rst_vec = true;
             cfg.new_rst_vec    = strtol(optarg, NULL, 0);
             break;
+        case 'C':
+            cfg.use_cycles_for_mtime = true;
+            break;
+        case 'a':
+            cfg.abi_en = true;
+            break;
         case 'h':
         default:
             fprintf(stderr, "Usage: %s -t <test executable> [-hHebdrg][-n <num instructions>]\n      [-S <start addr>][-A <brk addr>][-D <debug o/p filename>][-p <port num>]\n", argv[0]);
@@ -266,9 +309,12 @@ int parseArgs(int argcIn, char** argvIn, rv32i_cfg_s &cfg, const int node)
             fprintf(stderr, "   -n specify number of instructions to run (default 0, i.e. run until unimp)\n");
             fprintf(stderr, "   -d Enable disassemble mode (default off)\n");
             fprintf(stderr, "   -r Enable run-time disassemble mode (default off. Overridden by -d)\n");
+            fprintf(stderr, "   -C Use cycle count for internal mtime timer (default real-time)\n");
+            fprintf(stderr, "   -a display ABI register names when disassembling (default x names)\n");
             fprintf(stderr, "   -T Use external memory mapped timer model (default internal)\n");
             fprintf(stderr, "   -H Halt on unimplemented instructions (default trap)\n");
-            fprintf(stderr, "   -e Halt on ecall/ebreak instruction (default trap)\n");
+            fprintf(stderr, "   -e Halt on ecall instruction (default trap)\n");
+            fprintf(stderr, "   -E Halt on ebreak instruction (default trap)\n");
             fprintf(stderr, "   -b Halt at a specific address (default off)\n");
             fprintf(stderr, "   -A Specify halt address if -b active (default 0x00000040)\n");
             fprintf(stderr, "   -D Specify file for debug output (default stdout)\n");
@@ -316,7 +362,6 @@ uint32_t iss_int_callback(const rv32i_time_t time, rv32i_time_t *wakeup_time)
 
 extern "C" void VUserMain0()
 {
-    rv32*         pCpu;
     rv32i_cfg_s   cfg;
 
     VPrint("\n*****************************\n");
