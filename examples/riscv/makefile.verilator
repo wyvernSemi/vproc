@@ -110,7 +110,7 @@ CPPSTD             = -std=c++20
 SIMTRACE           = --trace
 
 # Compilation flags for Verilator
-SIMFLAGS           = --binary -sv  -O3                       \
+SIMFLAGS           = --binary -sv                           \
                      $(SIMTRACE)                            \
                      $(FINISHFLAG)                          \
                      $(TIMINGFLAG)                          \
