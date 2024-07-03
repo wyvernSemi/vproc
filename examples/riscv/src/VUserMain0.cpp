@@ -40,7 +40,6 @@ extern "C" {
 int node = 0;
 
 static uint32_t  irq                  = 0;
-static uint32_t  irq_state            = 0;
 
 static const int strbufsize = 256;
 static char      argstr[strbufsize];
