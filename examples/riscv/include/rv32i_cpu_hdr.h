@@ -113,6 +113,7 @@
 
 // External memory callback return values
 #define RV32I_EXT_MEM_NOT_PROCESSED                    (-1)
+#define RV32I_UNIMP_NOT_PROCESSED                      RV32I_EXT_MEM_NOT_PROCESSED
 
 #define RV32_DEFAULT_TCP_PORT                          0xc000
 
@@ -455,32 +456,6 @@
 // TYPEDEFS
 // -------------------------------------------------------------------------
 
-// Define a type for time
-typedef  int64_t rv32i_time_t;
-
-// Define the type of the callback functions. These must be used
-// by any function registered with the ISS.
-
-// External interrupt callback is passed current time value. The function can
-// optionally return a future time in 'wakeup_time' which will delay the
-// subsequent recall to be at, or beyond, that time. Any time less will result
-// in the function be called in the next time slot. The return value is a
-// 32 bit bitmap of requesting external interrupts.
-
-typedef uint32_t (*p_rv32i_intcallback_t) (const rv32i_time_t time, rv32i_time_t *wakeup_time);
-
-// Memory access callback is passed a 32 bit address, a pointer to a 32 bit data
-// word, a type, and the current time. The type is one of the 6 values defined
-// above. If a write type, 'data' will point to the value to be written, else it
-// should be updated with the read value to be returned, if the callback intercepts
-// the address. If the callback matches against the provided address, the function
-// must return a non-zero value. If the address did not match one processed by the
-// function, then -1 must be returned. By default the ISS will assume a single
-// cycle access for intercepted addresses (i.e. 0 wait states). If the value returned
-// is greater than 0, the cycle count will be incremented by the value returned.
-
-typedef int      (*p_rv32i_memcallback_t) (const uint32_t byte_addr, uint32_t &data, const int type, const rv32i_time_t time);
-
 // Decode table entry structure type definition
 typedef struct
 {
@@ -508,6 +483,37 @@ typedef struct {
     uint32_t                                           imm_j;          // Sign extended immediate value for J type
     rv32i_table_entry_t                                entry;          // Copy of instruction tabel entry
 } rv32i_decode_t, *p_rv32i_decode_t;
+
+// Define a type for time
+typedef  int64_t rv32i_time_t;
+
+// Define the type of the callback functions. These must be used
+// by any function registered with the ISS.
+
+// External interrupt callback is passed current time value. The function can
+// optionally return a future time in 'wakeup_time' which will delay the
+// subsequent recall to be at, or beyond, that time. Any time less will result
+// in the function be called in the next time slot. The return value is a
+// 32 bit bitmap of requesting external interrupts.
+
+typedef uint32_t (*p_rv32i_intcallback_t) (const rv32i_time_t time, rv32i_time_t *wakeup_time);
+
+// Memory access callback is passed a 32 bit address, a pointer to a 32 bit data
+// word, a type, and the current time. The type is one of the 6 values defined
+// above. If a write type, 'data' will point to the value to be written, else it
+// should be updated with the read value to be returned, if the callback intercepts
+// the address. If the callback matches against the provided address, the function
+// must return a non-zero value. If the address did not match one processed by the
+// function, then -1 must be returned. By default the ISS will assume a single
+// cycle access for intercepted addresses (i.e. 0 wait states). If the value returned
+// is greater than 0, the cycle count will be incremented by the value returned.
+
+typedef int      (*p_rv32i_memcallback_t)   (const uint32_t byte_addr, uint32_t &data, const int type, const rv32i_time_t time);
+
+// Pointer to callback function type for unimplmented/illegal instructions. Takes the decode structure
+// as an argument, and returns a new pc value in next argument if last argument, pc_updated, flag set.
+// The return value is the same as for p_rv32i_memcallback_t.
+typedef int      (*p_rv32i_unimpcallback_t) (const p_rv32i_decode_t d, uint64_t &pc, bool &pc_updated, int32_t &cb_trap);
 
 // Forward class reference for following type definition
 class rv32i_cpu;

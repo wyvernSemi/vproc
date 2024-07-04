@@ -114,7 +114,8 @@ public:
     LIBRISCV32_API void        write_mem                      (const uint32_t byte_addr, const uint32_t data, const int type, bool &fault);
 
     // Callback function registration
-    LIBRISCV32_API void        register_ext_mem_callback      (p_rv32i_memcallback_t callback_func) { p_mem_callback = callback_func; };
+    LIBRISCV32_API void        register_ext_mem_callback      (p_rv32i_memcallback_t   callback_func) { p_mem_callback   = callback_func; };
+    LIBRISCV32_API void        register_unimp_callback        (p_rv32i_unimpcallback_t callback_func) { p_unimp_callback = callback_func; };
 
     // Reset the cpu (i.e. generate a reset pin assertion event)
     LIBRISCV32_API void        reset_cpu                      (void)                                { reset(); };
@@ -320,8 +321,9 @@ protected:
     char                  str            [NUM_DISASSEM_BUFS][DISASSEM_STR_SIZE];
     int                   str_idx;
 
-    // Pointer to external memory callback function
+    // Pointer to callback functions
     p_rv32i_memcallback_t p_mem_callback;
+    p_rv32i_unimpcallback_t p_unimp_callback;
 
     // Current instruction
     uint32_t              curr_instr;
