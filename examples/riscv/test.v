@@ -2,15 +2,14 @@
 //  Title      : Test bench for RISC-V virtual processor
 //  Project    : UNKNOWN
 // -----------------------------------------------------------------------------
-//  File       : tb.v
+//  File       : test.v
 //  Author     : Simon Southwell
 //  Created    : 2024-04-08
 //  Standard   : Verilog 2001
 // -----------------------------------------------------------------------------
 //  Description:
-//  This block defines the top level test bench for the memory model. Release
-//  on asccess to VProc (github.com/wyvernSemi/vproc) located in the same
-//  directory as this folder
+//  This block defines the top level test bench for the rv32 ISS co-simulating
+//  with Verilog.
 // -----------------------------------------------------------------------------
 //  Copyright (c) 2024 Simon Southwell
 // -----------------------------------------------------------------------------
