@@ -487,6 +487,19 @@ typedef struct {
 // Define a type for time
 typedef  int64_t rv32i_time_t;
 
+// Argument structure for unimplemented instruction callback 
+typedef struct unimp_args_s
+{
+    uint64_t regs[RV32I_NUM_OF_REGISTERS];
+    bool     regs_updated;
+    uint64_t pc;
+    bool     pc_updated;
+    int32_t  trap;
+
+    unimp_args_s() : regs{0}, regs_updated(false), pc(0), pc_updated(false), trap(0)
+    {};
+} unimp_args_t;
+
 // Define the type of the callback functions. These must be used
 // by any function registered with the ISS.
 
@@ -511,9 +524,9 @@ typedef uint32_t (*p_rv32i_intcallback_t) (const rv32i_time_t time, rv32i_time_t
 typedef int      (*p_rv32i_memcallback_t)   (const uint32_t byte_addr, uint32_t &data, const int type, const rv32i_time_t time);
 
 // Pointer to callback function type for unimplmented/illegal instructions. Takes the decode structure
-// as an argument, and returns a new pc value in next argument if last argument, pc_updated, flag set.
-// The return value is the same as for p_rv32i_memcallback_t.
-typedef int      (*p_rv32i_unimpcallback_t) (const p_rv32i_decode_t d, uint64_t &pc, bool &pc_updated, int32_t &cb_trap);
+// as an argument, and returns new register, pc and trap values in args, with flags for new registers
+// and PC updates, and a non-zero value for traps.
+typedef int      (*p_rv32i_unimpcallback_t) (const p_rv32i_decode_t d, unimp_args_t &args);
 
 // Forward class reference for following type definition
 class rv32i_cpu;
