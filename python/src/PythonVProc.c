@@ -59,7 +59,7 @@ static int BindToApiFuncs(void)
         return 1;
     }
     
-    if ((VwriteBE = (wfunc_p)dlsym(hdl, "VWriteBE")) == NULL)
+    if ((VwriteBE = (wbefunc_p)dlsym(hdl, "VWriteBE")) == NULL)
     {
         fprintf(stderr, "***ERROR: failed to find symbol VWriteBE\n");
         return 1;
