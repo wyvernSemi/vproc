@@ -31,7 +31,7 @@
 #include "rv32csr_cpu_hdr.h"
 #include RV32CSR_INCLUDE
 
-class rv32csr_cpu : public RV32_ZICSR_INHERITANCE_CLASS
+class rv32csr_cpu : public rv32csr_consts, public RV32_ZICSR_INHERITANCE_CLASS
 {
 public:
              LIBRISCV32_API      rv32csr_cpu      (FILE* dbgfp = stdout);

@@ -164,7 +164,7 @@ typedef long long rv32gdb_skt_t;
 // ENUMERATIONS
 // -------------------------------------------------------------------------
 
-// Indexes/IDs of LM32 registers that match GDB's expectations
+// Indexes/IDs of RV32 registers that match GDB's expectations
 enum lm32gdb_regs_e 
 {
   RV32_REG_R0,  RV32_REG_R1,  RV32_REG_R2,  RV32_REG_R3,   

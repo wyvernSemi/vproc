@@ -46,7 +46,7 @@
 // Class definition for RISC-V RV32I instruction set simulator model
 // -------------------------------------------------------------------------
 
-class rv32i_cpu
+class rv32i_cpu : public rv32i_consts
 {
 public:
 
@@ -57,7 +57,7 @@ public:
     // Define a class to hold all of the CPU registers. This makes it easier
     // to access all of the state as a single unit for debug purposes, and
     // save & restore features.
-    class rv32i_hart_state
+    class rv32i_hart_state : public rv32i_consts
     {
     public:
 

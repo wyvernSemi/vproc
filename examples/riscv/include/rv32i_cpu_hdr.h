@@ -49,53 +49,7 @@
 # define SIGHUP                                        1
 #endif
 
-#define DISASSEM_STR_SIZE                              100
-#define NUM_DISASSEM_BUFS                              6
-
-// General bit position masks
-#define MASK_BIT31                                     0x80000000
-#define MASK_SIGN_BIT6                                 0x00000020
-#define MASK_SIGN_BYTE                                 0x00000080
-#define MASK_SIGN_BIT9                                 0x00000100
-#define MASK_SIGN_BIT10                                0x00000200
-#define MASK_SIGN_BIT12                                0x00000800
-#define MASK_SIGN_BIT13                                0x00001000
-#define MASK_SIGN_HWORD                                0x00008000
-#define MASK_SIGN_BIT17                                0x00010000
-#define MASK_SIGN_BIT18                                0x00020000
-#define MASK_SIGN_BIT21                                0x00100000
-#define MASK_SIGN_BIT32                                MASK_BIT31
-
-// General bit masks
-#define MASK_INSTR_ADDR                                0xfffffffc
-#define BIT2_MASK                                      0x00000003
-#define BIT5_MASK                                      0x0000001f
-#define BIT6_MASK                                      0x0000003f
-#define BYTE_MASK                                      0x000000ff
-#define BIT9_MASK                                      0x000001ff
-#define BIT10_MASK                                     0x000003ff
-#define BIT12_MASK                                     0x00000fff
-#define BIT13_MASK                                     0x00001fff
-#define HWORD_MASK                                     0x0000ffff
-#define BIT17_MASK                                     0x0001ffff
-#define BIT18_MASK                                     0x0003ffff
-#define BIT21_MASK                                     0x001fffff
-#define WORD_MASK                                      0xffffffff
-                                                       
-#define MEM_SIZE_BITS                                  32
-#define MAXCODEMEM                                     (0x1ULL << MEM_SIZE_BITS)
-
-// Exit code types
-#ifndef NO_ERROR
-#define NO_ERROR                                       0
-#endif
-#define USER_ERROR                                     1
-#define INSTR_ERROR                                    2
-#define INTERNAL_ERROR                                 3
-
-#define RISCV_TEST_ENV_TERMINATE_ADDR                  0x40
-
-// Memory access types
+// Backwards compatibility definitions for external callback functions
 #define MEM_WR_ACCESS_BYTE                             0
 #define MEM_WR_ACCESS_HWORD                            1
 #define MEM_WR_ACCESS_WORD                             2
@@ -108,167 +62,238 @@
 #define MEM_NOT_DBG_MASK                               0x0f
 #define MEM_DBG_MASK                                   0x10
 
-#define SIGN32_BIT                                     0x80000000U
-#define SIGN64_BIT                                     0x8000000000000000L
-
-// External memory callback return values
 #define RV32I_EXT_MEM_NOT_PROCESSED                    (-1)
-#define RV32I_UNIMP_NOT_PROCESSED                      RV32I_EXT_MEM_NOT_PROCESSED
+#define RV32I_UNIMP_NOT_PROCESSED                      RV32I_EXT_MEM_NOT_PROCESSED;
 
-#define RV32_DEFAULT_TCP_PORT                          0xc000
+// -------------------------------------------------------------------------
+// RV32I constant definitions
+// -------------------------------------------------------------------------
 
-// --------------------------------
-// RISC-V specific definitions
-//
+class rv32i_consts
+{
+public:
 
-// Instruction field masks
-#define RV32I_MASK_OPCODE                              0x0000007f
-#define RV32I_OPCODE_START_BIT                         0
+    static const uint32_t DISASSEM_STR_SIZE                            = 100;
+    static const uint32_t NUM_DISASSEM_BUFS                            = 6;
 
-#define RV32I_MASK_32BIT_INSTR                         0x3
+    // General bit position masks
+    static const uint32_t MASK_BIT31                                   = 0x80000000;
+    static const uint32_t MASK_SIGN_BIT6                               = 0x00000020;
+    static const uint32_t MASK_SIGN_BYTE                               = 0x00000080;
+    static const uint32_t MASK_SIGN_BIT9                               = 0x00000100;
+    static const uint32_t MASK_SIGN_BIT10                              = 0x00000200;
+    static const uint32_t MASK_SIGN_BIT12                              = 0x00000800;
+    static const uint32_t MASK_SIGN_BIT13                              = 0x00001000;
+    static const uint32_t MASK_SIGN_HWORD                              = 0x00008000;
+    static const uint32_t MASK_SIGN_BIT17                              = 0x00010000;
+    static const uint32_t MASK_SIGN_BIT18                              = 0x00020000;
+    static const uint32_t MASK_SIGN_BIT21                              = 0x00100000;
+    static const uint32_t MASK_SIGN_BIT32                              = MASK_BIT31;
 
-#define RV32I_MASK_Rx_RD                               0x00000f80
-#define RV32I_MASK_Rx_RS1                              0x000f8000
-#define RV32I_MASK_Rx_RS2                              0x01f00000
-#define RV32I_Rx_RD_START_BIT                          7
-#define RV32I_Rx_RS1_START_BIT                         15
-#define RV32I_Rx_RS2_START_BIT                         20
-
-#define RV32I_SHIFT_RSVD_BIT_MASK                      0xbe000000
- 
-#define RV32I_MASK_FUNCT_3                             0x00007000
-#define RV32I_MASK_FUNCT_7                             0xfe000000
-#define RV32I_FUNCT_3_START_BIT                        12
-#define RV32I_FUNCT_7_START_BIT                        25
-
-#define RV32I_MASK_IMM_SIGN_BIT                        0x80000000
-#define RV32I_MASK_IMM_I                               0xfff00000
-#define RV32I_MASK_IMM_I_SHAMT                         0x01f
-#define RV32I_MASK_IMM_S_4_0                           0x00000f80
-#define RV32I_MASK_IMM_S_11_5                          0xfe000000
-#define RV32I_MASK_IMM_B_4_1                           0x00000f00
-#define RV32I_MASK_IMM_B_10_5                          0x7e000000
-#define RV32I_MASK_IMM_B_11                            0x00000080
-#define RV32I_MASK_IMM_B_12                            0x80000000
-#define RV32I_MASK_IMM_U                               0xfffff000
-#define RV32I_MASK_IMM_J_10_1                          0x7fe00000
-#define RV32I_MASK_IMM_J_11                            0x00100000
-#define RV32I_MASK_IMM_J_19_12                         0x000ff000
-#define RV32I_MASK_IMM_J_20                            0x80000000
-#define RV32I_IMM_SIGN_BIT                             31
-#define RV32I_IMM_I_START_BIT                          20
-#define RV32I_IMM_S_4_0_START_BIT                      7
-#define RV32I_IMM_S_11_5_START_BIT                     25
-#define RV32I_IMM_B_4_1_START_BIT                      8
-#define RV32I_IMM_B_10_5_START_BIT                     25
-#define RV32I_IMM_B_11_START_BIT                       7
-#define RV32I_IMM_B_12_START_BIT                       31
-#define RV32I_IMM_U_START_BIT                          12
-#define RV32I_IMM_J_10_1_START_BIT                     21
-#define RV32I_IMM_J_11_START_BIT                       20
-#define RV32I_IMM_J_19_12_START_BIT                    12
-#define RV32I_IMM_J_20_START_BIT                       31
-
-// Decode types
-#define RV32I_INSTR_ILLEGAL                            (-1)
-#define RV32I_INSTR_FMT_R                              0x00
-#define RV32I_INSTR_FMT_I                              0x01
-#define RV32I_INSTR_FMT_S                              0x02
-#define RV32I_INSTR_FMT_B                              0x03
-#define RV32I_INSTR_FMT_U                              0x04
-#define RV32I_INSTR_FMT_J                              0x05
-#define RV32I_INSTR_FMT_R4                             0x06
-
-#define RV32C_INSTR_FMT_R                              0x10
-#define RV32C_INSTR_FMT_I                              0x11
-#define RV32C_INSTR_FMT_S                              0x12
-#define RV32C_INSTR_FMT_B                              0x13
-#define RV32C_INSTR_FMT_A                              0x14
-#define RV32C_INSTR_FMT_J                              0x15
-#define RV32C_INSTR_FMT_SS                             0x16
-#define RV32C_INSTR_FMT_IW                             0x17
-#define RV32C_INSTR_FMT_L                              0x18
-
-// Trap types                                          
-#define RV32I_IADDR_MISALIGNED                         0
-#define RV32I_INSTR_ACCESS_FAULT                       1
-#define RV32I_ILLEGAL_INSTR                            2
-#define RV32I_BREAK_POINT                              3
-#define RV32I_LADDR_MISALIGNED                         4
-#define RV32I_LOAD_ACCESS_FAULT                        5
-#define RV32I_ST_AMO_ADDR_MISALIGNED                   6
-#define RV32I_ST_AMO_ACCESS_FAULT                      7
-#define RV32I_ENV_CALL_U_MODE                          8
-#define RV32I_ENV_CALL_S_MODE                          9
-#define RV32I_ENV_CALL_M_MODE                          11
-#define RV32I_INSTR_PAGE_FAULT                         12
-#define RV32I_LOAD_PAGE_FAULT                          13
-#define RV32I_ST_AMO_PAGE_FAULT                        15
-
-//#define RV32_IADDR_ALIGN_MASK                          0x00000003
-
-// SYSTEM intructions' opcode
-#define RV32I_SYS_OPCODE                               0x73
+    // General bit masks
+    static const uint32_t MASK_INSTR_ADDR                              = 0xfffffffc;
+    static const uint32_t BIT2_MASK                                    = 0x00000003;
+    static const uint32_t BIT5_MASK                                    = 0x0000001f;
+    static const uint32_t BIT6_MASK                                    = 0x0000003f;
+    static const uint32_t BYTE_MASK                                    = 0x000000ff;
+    static const uint32_t BIT9_MASK                                    = 0x000001ff;
+    static const uint32_t BIT10_MASK                                   = 0x000003ff;
+    static const uint32_t BIT12_MASK                                   = 0x00000fff;
+    static const uint32_t BIT13_MASK                                   = 0x00001fff;
+    static const uint32_t HWORD_MASK                                   = 0x0000ffff;
+    static const uint32_t BIT17_MASK                                   = 0x0001ffff;
+    static const uint32_t BIT18_MASK                                   = 0x0003ffff;
+    static const uint32_t BIT21_MASK                                   = 0x001fffff;
+    static const uint32_t WORD_MASK                                    = 0xffffffff;
                                                        
-#define RV32CSR_PRIV_MASK                              0x300
-#define RV32CSR_RIV_START_BIT                          8
-#define RV32_PRIV_USER                                 0
-#define RV32_PRIV_SUPERVISOR                           1
-#define RV32_PRIV_HYPERVISOR                           2
-#define RV32_PRIV_MACHINE                              3
-#define RV32CSR_RW_MASK                                0xc00
+    static const uint32_t MEM_SIZE_BITS                                = 32;
+    static const uint64_t MAXCODEMEM                                   = (0x1ULL << MEM_SIZE_BITS);
 
-// Basic configurations definitions
-#ifdef RV32E_EXTENSION
-#define RV32I_NUM_OF_REGISTERS                         16
-#else
-#define RV32I_NUM_OF_REGISTERS                         32
+    // Exit code types
+#ifndef NO_ERROR
+    static const uint32_t NO_ERROR                                     = 0;
 #endif
-#define RV32I_NUM_OF_HARTS                             1
-#define RV32I_CSR_SPACE_SIZE                           4096
-#define RV32I_NUM_PRIMARY_OPCODES                      32
-#define RV32I_NUM_SECONDARY_OPCODES                    8
-#define RV32I_NUM_TERTIARY_OPCODES                     128
-#define RV32I_NUM_SYSTEM_OPCODES                       32
-#define RV32I_INT_MEM_BYTES                            (1024*1024)
+    static const uint32_t USER_ERROR                                   = 1;
+    static const uint32_t INSTR_ERROR                                  = 2;
+    static const uint32_t INTERNAL_ERROR                               = 3;
 
-// The RV32I base class has a hardwired MTVEC location since
-// since CSR accesses are not supported. Set to riscv-test-env
-// trap_vector location (assuming _start at 0x00000000)
-#define RV32I_FIXED_MTVEC_ADDR                         0x00000004
+    static const uint32_t RISCV_TEST_ENV_TERMINATE_ADDR                = 0x40;
 
-// Reset vector (implementation dependent)
-#define RV32I_RESET_VECTOR                             0x00000000
+    // Memory access types
+    static const uint32_t RV32I_MEM_WR_ACCESS_BYTE                     = MEM_WR_ACCESS_BYTE;
+    static const uint32_t RV32I_MEM_WR_ACCESS_HWORD                    = MEM_WR_ACCESS_HWORD;
+    static const uint32_t RV32I_MEM_WR_ACCESS_WORD                     = MEM_WR_ACCESS_WORD;
+    static const uint32_t RV32I_MEM_WR_ACCESS_INSTR                    = MEM_WR_ACCESS_INSTR;
+    static const uint32_t RV32I_MEM_RD_ACCESS_BYTE                     = MEM_RD_ACCESS_BYTE;
+    static const uint32_t RV32I_MEM_RD_ACCESS_HWORD                    = MEM_RD_ACCESS_HWORD;
+    static const uint32_t RV32I_MEM_RD_ACCESS_WORD                     = MEM_RD_ACCESS_WORD;
+    static const uint32_t RV32I_MEM_RD_ACCESS_INSTR                    = MEM_RD_ACCESS_INSTR;
 
-// Memory mapped mtime and mtimecmp register offsets 
-#define RV32I_RTCLOCK_ADDRESS                          0xafffffe0
-#define RV32I_RTCLOCK_CMP_ADDRESS                      0xafffffe8
+    static const uint32_t RV32I_MEM_NOT_DBG_MASK                       = MEM_NOT_DBG_MASK;
+    static const uint32_t RV32I_MEM_DBG_MASK                           = MEM_DBG_MASK;
 
-// FP rounding modes
-#define RV32I_RNE                                      0
-#define RV32I_RTZ                                      1
-#define RV32I_RDN                                      2
-#define RV32I_RUP                                      3
-#define RV32I_RMM                                      4
-#define RV32I_DYN                                      7
+    static const uint32_t SIGN32_BIT                                   = 0x80000000U;
+    static const uint64_t SIGN64_BIT                                   = 0x8000000000000000L;
 
-// FP flga masks
-#define RV32I_NX                                       0x01
-#define RV32I_UF                                       0x02
-#define RV32I_OF                                       0x04
-#define RV32I_DZ                                       0x08
-#define RV32I_NV                                       0x10
+    // External memory callback return values
+    static const uint32_t EXT_MEM_NOT_PROCESSED                         = RV32I_EXT_MEM_NOT_PROCESSED;
+    static const uint32_t UNIMP_NOT_PROCESSED                           = RV32I_EXT_MEM_NOT_PROCESSED;
 
-#define RV32I_QNANF                                    0xffffffff7fc00000UL
-#define RV32I_SNANF                                    0xffffffff7f800001UL
-#define RV32I_QNAND                                    0x7ff8000000000000UL
-#define RV32I_SNAND                                    0x7ff0000000000001UL
+    static const uint32_t RV32_DEFAULT_TCP_PORT                        = 0xc000;
 
-// Timing model definitions
-#define RV32I_DEFAULT_INSTR_CYCLE_COUNT                1
-#define RV32I_JUMP_INSTR_EXTRA_CYCLES                  3
-#define RV32I_BRANCH_TAKEN_EXTRA_CYCLES                3
-#define RV32I_TRAP_EXTRA_CYCLES                        3
+    // --------------------------------
+    // RISC-V specific definitions
+    //
+
+    // Instruction field masks
+    static const uint32_t RV32I_MASK_OPCODE                            = 0x0000007f;
+    static const uint32_t RV32I_OPCODE_START_BIT                       = 0;
+
+    static const uint32_t RV32I_MASK_32BIT_INSTR                       = 0x3;
+
+    static const uint32_t RV32I_MASK_Rx_RD                             = 0x00000f80;
+    static const uint32_t RV32I_MASK_Rx_RS1                            = 0x000f8000;
+    static const uint32_t RV32I_MASK_Rx_RS2                            = 0x01f00000;
+    static const uint32_t RV32I_Rx_RD_START_BIT                        = 7;
+    static const uint32_t RV32I_Rx_RS1_START_BIT                       = 15;
+    static const uint32_t RV32I_Rx_RS2_START_BIT                       = 20;
+
+    static const uint32_t RV32I_SHIFT_RSVD_BIT_MASK                    = 0xbe000000;
+
+    static const uint32_t RV32I_MASK_FUNCT_3                           = 0x00007000;
+    static const uint32_t RV32I_MASK_FUNCT_7                           = 0xfe000000;
+    static const uint32_t RV32I_FUNCT_3_START_BIT                      = 12;
+    static const uint32_t RV32I_FUNCT_7_START_BIT                      = 25;
+
+    static const uint32_t RV32I_MASK_IMM_SIGN_BIT                      = 0x80000000;
+    static const uint32_t RV32I_MASK_IMM_I                             = 0xfff00000;
+    static const uint32_t RV32I_MASK_IMM_I_SHAMT                       = 0x01f;
+    static const uint32_t RV32I_MASK_IMM_S_4_0                         = 0x00000f80;
+    static const uint32_t RV32I_MASK_IMM_S_11_5                        = 0xfe000000;
+    static const uint32_t RV32I_MASK_IMM_B_4_1                         = 0x00000f00;
+    static const uint32_t RV32I_MASK_IMM_B_10_5                        = 0x7e000000;
+    static const uint32_t RV32I_MASK_IMM_B_11                          = 0x00000080;
+    static const uint32_t RV32I_MASK_IMM_B_12                          = 0x80000000;
+    static const uint32_t RV32I_MASK_IMM_U                             = 0xfffff000;
+    static const uint32_t RV32I_MASK_IMM_J_10_1                        = 0x7fe00000;
+    static const uint32_t RV32I_MASK_IMM_J_11                          = 0x00100000;
+    static const uint32_t RV32I_MASK_IMM_J_19_12                       = 0x000ff000;
+    static const uint32_t RV32I_MASK_IMM_J_20                          = 0x80000000;
+    static const uint32_t RV32I_IMM_SIGN_BIT                           = 31;
+    static const uint32_t RV32I_IMM_I_START_BIT                        = 20;
+    static const uint32_t RV32I_IMM_S_4_0_START_BIT                    = 7;
+    static const uint32_t RV32I_IMM_S_11_5_START_BIT                   = 25;
+    static const uint32_t RV32I_IMM_B_4_1_START_BIT                    = 8;
+    static const uint32_t RV32I_IMM_B_10_5_START_BIT                   = 25;
+    static const uint32_t RV32I_IMM_B_11_START_BIT                     = 7;
+    static const uint32_t RV32I_IMM_B_12_START_BIT                     = 31;
+    static const uint32_t RV32I_IMM_U_START_BIT                        = 12;
+    static const uint32_t RV32I_IMM_J_10_1_START_BIT                   = 21;
+    static const uint32_t RV32I_IMM_J_11_START_BIT                     = 20;
+    static const uint32_t RV32I_IMM_J_19_12_START_BIT                  = 12;
+    static const uint32_t RV32I_IMM_J_20_START_BIT                     = 31;
+
+    // Decode types
+    static const int32_t  RV32I_INSTR_ILLEGAL                          = (-1);
+    static const int32_t  RV32I_INSTR_FMT_R                            = 0x00;
+    static const int32_t  RV32I_INSTR_FMT_I                            = 0x01;
+    static const int32_t  RV32I_INSTR_FMT_S                            = 0x02;
+    static const int32_t  RV32I_INSTR_FMT_B                            = 0x03;
+    static const int32_t  RV32I_INSTR_FMT_U                            = 0x04;
+    static const int32_t  RV32I_INSTR_FMT_J                            = 0x05;
+    static const int32_t  RV32I_INSTR_FMT_R4                           = 0x06;
+
+    static const uint32_t RV32C_INSTR_FMT_R                            = 0x10;
+    static const uint32_t RV32C_INSTR_FMT_I                            = 0x11;
+    static const uint32_t RV32C_INSTR_FMT_S                            = 0x12;
+    static const uint32_t RV32C_INSTR_FMT_B                            = 0x13;
+    static const uint32_t RV32C_INSTR_FMT_A                            = 0x14;
+    static const uint32_t RV32C_INSTR_FMT_J                            = 0x15;
+    static const uint32_t RV32C_INSTR_FMT_SS                           = 0x16;
+    static const uint32_t RV32C_INSTR_FMT_IW                           = 0x17;
+    static const uint32_t RV32C_INSTR_FMT_L                            = 0x18;
+
+    // Trap types
+    static const uint32_t RV32I_IADDR_MISALIGNED                       = 0;
+    static const uint32_t RV32I_INSTR_ACCESS_FAULT                     = 1;
+    static const uint32_t RV32I_ILLEGAL_INSTR                          = 2;
+    static const uint32_t RV32I_BREAK_POINT                            = 3;
+    static const uint32_t RV32I_LADDR_MISALIGNED                       = 4;
+    static const uint32_t RV32I_LOAD_ACCESS_FAULT                      = 5;
+    static const uint32_t RV32I_ST_AMO_ADDR_MISALIGNED                 = 6;
+    static const uint32_t RV32I_ST_AMO_ACCESS_FAULT                    = 7;
+    static const uint32_t RV32I_ENV_CALL_U_MODE                        = 8;
+    static const uint32_t RV32I_ENV_CALL_S_MODE                        = 9;
+    static const uint32_t RV32I_ENV_CALL_M_MODE                        = 11;
+    static const uint32_t RV32I_INSTR_PAGE_FAULT                       = 12;
+    static const uint32_t RV32I_LOAD_PAGE_FAULT                        = 13;
+    static const uint32_t RV32I_ST_AMO_PAGE_FAULT                      = 15;
+
+    //  static const uint32_t RV32_IADDR_ALIGN_MASK                        = 0x00000003;
+
+    // SYSTEM intructions' opcode
+    static const uint32_t RV32I_SYS_OPCODE                             = 0x73;
+
+    static const uint32_t RV32CSR_PRIV_MASK                            = 0x300;
+    static const uint32_t RV32CSR_RIV_START_BIT                        = 8;
+    static const uint32_t RV32_PRIV_USER                               = 0;
+    static const uint32_t RV32_PRIV_SUPERVISOR                         = 1;
+    static const uint32_t RV32_PRIV_HYPERVISOR                         = 2;
+    static const uint32_t RV32_PRIV_MACHINE                            = 3;
+    static const uint32_t RV32CSR_RW_MASK                              = 0xc00;
+
+    // Basic configurations definitions
+#ifdef RV32E_EXTENSION
+    static const uint32_t RV32I_NUM_OF_REGISTERS                       = 16;
+#else
+    static const uint32_t RV32I_NUM_OF_REGISTERS                       = 32;
+#endif
+    static const uint32_t RV32I_NUM_OF_HARTS                           = 1;
+    static const uint32_t RV32I_CSR_SPACE_SIZE                         = 4096;
+    static const uint32_t RV32I_NUM_PRIMARY_OPCODES                    = 32;
+    static const uint32_t RV32I_NUM_SECONDARY_OPCODES                  = 8;
+    static const uint32_t RV32I_NUM_TERTIARY_OPCODES                   = 128;
+    static const uint32_t RV32I_NUM_SYSTEM_OPCODES                     = 32;
+    static const uint32_t RV32I_INT_MEM_BYTES                          = (1024*1024);
+
+    // The RV32I base class has a hardwired MTVEC location since
+    // since CSR accesses are not supported. Set to riscv-test-env
+    // trap_vector location (assuming _start at 0x00000000)
+    static const uint32_t RV32I_FIXED_MTVEC_ADDR                       = 0x00000004;
+
+    // Reset vector (implementation dependent)
+    static const uint32_t RV32I_RESET_VECTOR                           = 0x00000000;
+
+    // Memory mapped mtime and mtimecmp register offsets
+    static const uint32_t RV32I_RTCLOCK_ADDRESS                        = 0xafffffe0;
+    static const uint32_t RV32I_RTCLOCK_CMP_ADDRESS                    = 0xafffffe8;
+
+    // FP rounding modes
+    static const uint32_t RV32I_RNE                                    = 0;
+    static const uint32_t RV32I_RTZ                                    = 1;
+    static const uint32_t RV32I_RDN                                    = 2;
+    static const uint32_t RV32I_RUP                                    = 3;
+    static const uint32_t RV32I_RMM                                    = 4;
+    static const uint32_t RV32I_DYN                                    = 7;
+
+    // FP flag masks
+    static const uint32_t RV32I_NX                                     = 0x01;
+    static const uint32_t RV32I_UF                                     = 0x02;
+    static const uint32_t RV32I_OF                                     = 0x04;
+    static const uint32_t RV32I_DZ                                     = 0x08;
+    static const uint32_t RV32I_NV                                     = 0x10;
+
+    static const uint64_t RV32I_QNANF                                  = 0xffffffff7fc00000UL;
+    static const uint64_t RV32I_SNANF                                  = 0xffffffff7f800001UL;
+    static const uint64_t RV32I_QNAND                                  = 0x7ff8000000000000UL;
+    static const uint64_t RV32I_SNAND                                  = 0x7ff0000000000001UL;
+
+    // Timing model definitions
+    static const uint32_t RV32I_DEFAULT_INSTR_CYCLE_COUNT              = 1;
+    static const uint32_t RV32I_JUMP_INSTR_EXTRA_CYCLES                = 3;
+    static const uint32_t RV32I_BRANCH_TAKEN_EXTRA_CYCLES              = 3;
+    static const uint32_t RV32I_TRAP_EXTRA_CYCLES                      = 3;
+};
 
 // -------------------------------------------------------------------------
 // MACROS
@@ -490,13 +515,16 @@ typedef  int64_t rv32i_time_t;
 // Argument structure for unimplemented instruction callback 
 typedef struct unimp_args_s
 {
-    uint64_t regs[RV32I_NUM_OF_REGISTERS];
+    uint64_t regs[rv32i_consts::RV32I_NUM_OF_REGISTERS];
     bool     regs_updated;
     uint64_t pc;
     bool     pc_updated;
     int32_t  trap;
 
-    unimp_args_s() : regs{0}, regs_updated(false), pc(0), pc_updated(false), trap(0)
+    bool     is_compressed_instr;
+    uint16_t compressed_instr;
+
+    unimp_args_s() : regs{0}, regs_updated(false), pc(0), pc_updated(false), trap(0), is_compressed_instr(false), compressed_instr(0)
     {};
 } unimp_args_t;
 
@@ -593,10 +621,10 @@ struct  rv32i_cfg_s {
         num_mem_dump_words     = 0;
         mem_dump_start         = 0x1000;
         gdb_mode               = false;
-        gdb_ip_portnum         = RV32_DEFAULT_TCP_PORT;
-        brk_addr               = RISCV_TEST_ENV_TERMINATE_ADDR;
+        gdb_ip_portnum         = rv32i_consts::RV32_DEFAULT_TCP_PORT;
+        brk_addr               = rv32i_consts::RISCV_TEST_ENV_TERMINATE_ADDR;
         update_rst_vec         = false;
-        new_rst_vec            = RV32I_RESET_VECTOR;
+        new_rst_vec            = rv32i_consts::RV32I_RESET_VECTOR;
         dbg_fp                 = stdout;
     }
 };
