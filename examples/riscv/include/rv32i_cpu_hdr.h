@@ -50,20 +50,20 @@
 #endif
 
 // Backwards compatibility definitions for external callback functions
-#define MEM_WR_ACCESS_BYTE                             0
-#define MEM_WR_ACCESS_HWORD                            1
-#define MEM_WR_ACCESS_WORD                             2
-#define MEM_WR_ACCESS_INSTR                            3
-#define MEM_RD_ACCESS_BYTE                             4
-#define MEM_RD_ACCESS_HWORD                            5
-#define MEM_RD_ACCESS_WORD                             6
-#define MEM_RD_ACCESS_INSTR                            7
+constexpr auto MEM_WR_ACCESS_BYTE                    = 0;
+constexpr auto MEM_WR_ACCESS_HWORD                   = 1;
+constexpr auto MEM_WR_ACCESS_WORD                    = 2;
+constexpr auto MEM_WR_ACCESS_INSTR                   = 3;
+constexpr auto MEM_RD_ACCESS_BYTE                    = 4;
+constexpr auto MEM_RD_ACCESS_HWORD                   = 5;
+constexpr auto MEM_RD_ACCESS_WORD                    = 6;
+constexpr auto MEM_RD_ACCESS_INSTR                   = 7;
 
-#define MEM_NOT_DBG_MASK                               0x0f
-#define MEM_DBG_MASK                                   0x10
+constexpr auto MEM_NOT_DBG_MASK                      = 0x0f;
+constexpr auto MEM_DBG_MASK                          = 0x10;
 
-#define RV32I_EXT_MEM_NOT_PROCESSED                    (-1)
-#define RV32I_UNIMP_NOT_PROCESSED                      RV32I_EXT_MEM_NOT_PROCESSED;
+constexpr auto RV32I_EXT_MEM_NOT_PROCESSED           = -1;
+constexpr auto RV32I_UNIMP_NOT_PROCESSED             = RV32I_EXT_MEM_NOT_PROCESSED;
 
 // -------------------------------------------------------------------------
 // RV32I constant definitions
@@ -134,10 +134,6 @@ public:
 
     static const uint32_t SIGN32_BIT                                   = 0x80000000U;
     static const uint64_t SIGN64_BIT                                   = 0x8000000000000000L;
-
-    // External memory callback return values
-    static const uint32_t EXT_MEM_NOT_PROCESSED                         = RV32I_EXT_MEM_NOT_PROCESSED;
-    static const uint32_t UNIMP_NOT_PROCESSED                           = RV32I_EXT_MEM_NOT_PROCESSED;
 
     static const uint32_t RV32_DEFAULT_TCP_PORT                        = 0xc000;
 
