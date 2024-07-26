@@ -23,35 +23,64 @@
 #------------------------------------------------------
 # User overridable definitions
 
-MAX_NUM_VPROC      = 64
-USRFLAGS           =
-SRCDIR             = ../code
-USRCDIR            = usercode
-TESTDIR            = .
-VOBJDIR            = $(TESTDIR)/obj
-
-# User test source code file list
-USER_C             = VUserMain0.c VUserMain1.cpp
-
-#------------------------------------------------------
-# Settings specific to target simulator 
+# Target HDL language (VERILOG | VHDL)
+HDL                = VERILOG
 
 # Simulator/Language specific C/C++ compile and link flags
-ARCHFLAG           = -m32
 OPTFLAG            = -g
-HDLLANGUAGE        =
+
+# User specific C/C++ compile flags
+USRFLAGS           =
+
+# User test source code file list
+USER_C             = VUserMain0.c                          \
+                     VUserMain1.cpp
+
+# Location of user code and test directories
+USRCDIR            = usercode
+TESTDIR            = .
+
+# Optional memory model (or other additional auxiliary code) definitions
+MEM_C              =
+MEMMODELDIR        = .
+
+#------------------------------------------------------
+# Internal variable definitions
+
+MAX_NUM_VPROC      = 64
+SRCDIR             = ../code
+VOBJDIR            = $(TESTDIR)/obj
+
+#------------------------------------------------------
+# Settings specific to target simulator
+
 SIMULATOR          = -DMODELSIM
-PLIVERSION         = -DVPROC_PLI_VPI
 VERIUSEROBJ        = $(VOBJDIR)/veriuser.o
 SIMINCLUDEFLAG     = -I$(MODEL_TECH)/../include
 SIMFLAGSSO         = -L$(MODEL_TECH) -lmtipli
 
-# Optional Memory model definitions
-MEM_C              =
-MEMMODELDIR        = .
+# Get the help message from the simulator, filtered on Questa
+SIMTYPE            = $(shell vsim -help | grep -i questa)
+
+# If the SIMTYPE string is not empty, then this is Questa and a 64-bit compile,
+# else assume it's ModelSim and do a 32-bit compile.
+ifneq ("$(SIMTYPE)", "")
+  ARCHFLAG         = -m64
+else
+  ARCHFLAG         = -m32
+endif
+
+ifeq ("$(HDL)", "VHDL")
+  HDLLANGUAGE      = -DVPROC_VHDL
+  HDLCMD           = vcom -quiet -2008 -work work -f files.tcl
+  PLIVERSION       =
+else
+  HDLLANGUAGE      =
+  HDLCMD           = vlog +define+VPROC_BURST_IF +define+VPROC_BYTE_INTERFACE +incdir+../ -f test.vc
+  PLIVERSION       = -DVPROC_PLI_VPI
+endif
 
 # Common logic simulator flags
-VLOGFLAGS          = +define+VPROC_BURST_IF +define+VPROC_BYTE_INTERFACE +incdir+../
 VPROC_TOP          = test
 VSIMFLAGS          = -pli $(VPROC_PLI) $(VPROC_TOP)
 
@@ -76,33 +105,37 @@ ifeq ("$(MODEL_TECH)", "")
 endif
 
 #------------------------------------------------------
+# Include common build rules
+#------------------------------------------------------
+
+include makefile.common
+
+#------------------------------------------------------
 # BUILD RULES
 #------------------------------------------------------
 
-all: verilog
+all: hdl
 
-# Include common build rules
-include makefile.common
-
-# Let modelsim decide what's changed in the verilog
-.PHONY: verilog
-verilog: $(VPROC_PLI)
+# Let the simulator decide what's changed in the HDL
+.PHONY: hdl
+hdl: $(VPROC_PLI)
 	@if [ ! -d "./work" ]; then                            \
 	      vlib work;                                       \
 	fi
-	@vlog ${VLOGFLAGS} -f test.vc
+	@$(HDLCMD)
+
 
 #------------------------------------------------------
 # EXECUTION RULES
 #------------------------------------------------------
 
-sim: verilog
+sim: hdl
 	@vsim -c $(VSIMFLAGS)
 
-run: verilog
+run: hdl
 	@vsim -c $(VSIMFLAGS) -do "run -all" -do "quit"
 
-rungui: verilog
+rungui: hdl
 	@if [ -e wave.do ]; then                               \
 	    vsim -gui -do wave.do $(VSIMFLAGS) -do "run -all"; \
 	else                                                   \

@@ -43,8 +43,8 @@
 #    POSTVPROCSOFLAGS   : Simulator specific flags for shared object compliation/linking post vproc library flag
 
 # Generated  PLI C library
-VPROC_PLI           = ${TESTDIR}/VProc.so
-VLIB                = ${TESTDIR}/libvproc.a
+VPROC_PLI           = $(TESTDIR)/VProc.so
+VLIB                = $(TESTDIR)/libvproc.a
 
 # VPROC C source code
 VPROC_C             = VSched.c VUser.c
@@ -98,6 +98,8 @@ C++                 = g++
 #------------------------------------------------------
 # Build rules
 #------------------------------------------------------
+
+default: all
 
 # Rule to build VProc C sources
 $(VOBJDIR)/%.o: $(SRCDIR)/%.c $(SRCDIR)/*.h

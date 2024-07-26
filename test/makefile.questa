@@ -21,11 +21,31 @@
 #
 ###################################################################
 
-USRFLAGS  =
+###################################################################
+# THIS FILE IS DEPRECATED AND IS FOR BACKWARDS COMPATIBILITY      #
+###################################################################
 
-# Set up the common make command for the ModelSim makefile with -m64 
-# set as the architecture flag
-COMMONCMD = $(MAKE) --no-print-directory USRFLAGS=${USRFLAGS} ARCHFLAG=-m64 -f makefile
+# User overridable variables
+HDL                = VERILOG
+USRFLAGS           =
+OPTFLAG            = -g
+USER_C             = VUserMain0.c VUserMain1.cpp
+USRCDIR            = usercode
+TESTDIR            = .
+MEMC               =
+MEMMODELDIR        = .
+
+# Set up the common make command for the ModelSim/Questa makefile
+COMMONCMD = $(MAKE) --no-print-directory            \
+                    HDL="$(HDL)"                    \
+                    USRFLAGS="$(USRFLAGS)"          \
+                    OPTFLAG="$(OPTFLAG)"            \
+                    USER_C="$(USER_C)"              \
+                    USRCDIR="$(USRCDIR)"            \
+                    TESTDIR="$(TESTDIR)"            \
+                    MEMC="$(MEMC)"                  \
+                    MEMMODELDIR="$(MEMMODELDIR)"    \
+                    -f makefile
 
 #------------------------------------------------------
 # BUILD RULES

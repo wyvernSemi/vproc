@@ -20,112 +20,56 @@
 #
 ###################################################################
 
-#------------------------------------------------------
-# User overridable definitions
+###################################################################
+# THIS FILE IS DEPRECATED AND IS FOR BACKWARDS COMPATIBILITY      #
+###################################################################
 
-MAX_NUM_VPROC      = 64
+# User overridable variables
+HDL                = VHDL
 USRFLAGS           =
-SRCDIR             = ../code
+OPTFLAG            = -g
+USER_C             = VUserMain0.c VUserMain1.cpp
 USRCDIR            = usercode
 TESTDIR            = .
-VOBJDIR            = $(TESTDIR)/obj
-
-# User test source code file list
-USER_C             = VUserMain0.c VUserMain1.cpp
-
-#------------------------------------------------------
-# Settings specific to target simulator 
-
-# Simulator/Language specific C/C++ compile and link flags
-ARCHFLAG           = -m32
-OPTFLAG            = -g
-HDLLANGUAGE        = -DVPROC_VHDL
-SIMULATOR          = -DMODELSIM
-PLIVERSION         = 
-VERIUSEROBJ        = $(VOBJDIR)/veriuser.o
-SIMINCLUDEFLAG     = -I$(MODEL_TECH)/../include
-SIMFLAGSSO         = -L$(MODEL_TECH) -lmtipli
-
-# Optional Memory model definitions
-MEM_C              =
+MEMC               =
 MEMMODELDIR        = .
 
-# Common flags for vsim
-VPROC_TOP          = test
-VSIMFLAGS          = -pli $(VPROC_PLI) $(VPROC_TOP)
-
-#------------------------------------------------------
-# MODEL_TECH path
-
-# Get OS type
-OSTYPE:=$(shell uname)
-
-# If run from a place where MODEL_TECH is not defined, construct from path to PLI library
-ifeq ("$(MODEL_TECH)", "")
-  ifeq ($(OSTYPE), Linux)
-    PLILIB         = libmtipli.so
-  else
-    PLILIB         = mtipli.dll
-  endif
-
-  VSIMPATH         = $(shell which vsim)
-  SIMROOT          = $(shell dirname $(VSIMPATH))/..
-  PLILIBPATH       = $(shell find $(SIMROOT) -name "$(PLILIB)")
-  MODEL_TECH       = $(shell dirname $(PLILIBPATH))
-endif
+# Set up the common make command for the ModelSim/Questa makefile
+COMMONCMD = $(MAKE) --no-print-directory            \
+                    HDL="$(HDL)"                    \
+                    USRFLAGS="$(USRFLAGS)"          \
+                    OPTFLAG="$(OPTFLAG)"            \
+                    USER_C="$(USER_C)"              \
+                    USRCDIR="$(USRCDIR)"            \
+                    TESTDIR="$(TESTDIR)"            \
+                    MEMC="$(MEMC)"                  \
+                    MEMMODELDIR="$(MEMMODELDIR)"    \
+                    -f makefile
 
 #------------------------------------------------------
 # BUILD RULES
 #------------------------------------------------------
 
-all: vhdl
-
-# Include common build rules
-include makefile.common
-
-# Let modelsim decide what's changed in the VHDL
-.PHONY: vhdl
-vhdl: $(VPROC_PLI)
-	@if [ ! -d "./work" ]; then                            \
-	      vlib work;                                       \
-	fi
-	@vcom -quiet -2008 -f files.tcl -work work
+all:
+	@$(COMMONCMD)
 
 #------------------------------------------------------
 # EXECUTION RULES
 #------------------------------------------------------
 
-sim: vhdl
-	@vsim -c $(VSIMFLAGS)
+sim:
+	@$(COMMONCMD) sim
 
-run: vhdl
-	@vsim -c $(VSIMFLAGS) -do "run -all" -do "quit"
+run:
+	@$(COMMONCMD) run
 
-rungui: vhdl
-	@if [ -e wave.do ]; then                               \
-	    vsim -gui -do wave.do $(VSIMFLAGS) -do "run -all"; \
-	else                                                   \
-	    vsim -gui $(VSIMFLAGS);                            \
-	fi
+rungui:
+	@$(COMMONCMD) rungui
 
 gui: rungui
 
-.SILENT:
 help:
-	@$(info make help          Display this message)
-	@$(info make               Build C/C++ and HDL code without running simulation)
-	@$(info make sim           Build and run command line interactive (sim not started))
-	@$(info make run           Build and run batch simulation)
-	@$(info make rungui/gui    Build and run GUI simulation)
-	@$(info make clean         clean previous build artefacts)
-
-#------------------------------------------------------
-# CLEANING RULES
-#------------------------------------------------------
+	@$(COMMONCMD) help
 
 clean:
-	@rm -rf $(VPROC_PLI) $(VLIB) $(VOBJDIR) *.wlf transcript
-	@if [ -d "./work" ]; then                              \
-	    vdel -all;                                         \
-	fi
-
+	@$(COMMONCMD) clean
