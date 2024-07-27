@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 ###################################################################
-# Regression test script for Virtual Processor
+# Regression test script for the VProc virtual processor
 #
 # Copyright (c) 2024 Simon Southwell.
 #
@@ -28,9 +28,11 @@ rm -rf $LOGFILE
 
 OSTYPE=`uname`
 
-MKFILEBASE="makefile.questa makefile.ica makefile.nvc makefile.ghdl"
+MKFILEBASE="makefile makefile.ica makefile.nvc makefile.ghdl"
 FILTERSTR="EIO|, Warnings:|Note"
 
+# Vivado not installed on Linux in local setup. Add makefile.vivado
+# unconditionally if it is installed.
 if [ "$OSTYPE" != "Linux" ]
 then
   MKFILEBASE="$MKFILEBASE makefile.vivado"
@@ -46,7 +48,7 @@ echo "" | tee -a $LOGFILE
 echo "============ C/C++ regression tests ============" $'\n' | tee -a $LOGFILE
 for usrcode in usercode usercodeIrq
 do
-  for mkfile in $MKFILEBASE "makefile.vhd ARCHFLAG=-m64" makefile.verilator
+  for mkfile in $MKFILEBASE "makefile HDL=VHDL" makefile.verilator
   do
    echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
    make -f $mkfile clean
@@ -80,7 +82,7 @@ echo "=========== python regression tests ============" $'\n' | tee -a $LOGFILE
 for usrcode in usercode
 do
   export PYTHONPATH=$usrcode
-  for mkfile in $MKFILEBASE "makefile.vhd ARCHFLAG=-m64"
+  for mkfile in $MKFILEBASE "makefile HDL=VHDL"
   do
    echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
    make -f $mkfile clean
@@ -94,15 +96,16 @@ done
 # PCIe regression tests (if repository checked out)
 #
 cd $REGRESSDIR
+TESTDIR=../../pcievhost/verilog/test
 
-if [ -d ../../pcievhost/verilog/test ]
+if [ -d $TESTDIR ]
 then
-  cd ../../pcievhost/verilog/test
+  cd $TESTDIR
 
   echo "============ PCIe regression tests =============" $'\n' | tee -a $LOGFILE
   for usrcode in usercode
   do
-    for mkfile in makefile.questa makefile.ica
+    for mkfile in makefile makefile.ica
     do
      echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
      make -f $mkfile clean
@@ -111,21 +114,24 @@ then
      echo "" | tee -a $LOGFILE
     done
   done
+else
+  echo  "======= Skipping PCIe regression tests ========" $'\n' | tee -a $LOGFILE
 fi
 
 #
 # usbModel regression tests  (if repository checked out)
 #
 cd $REGRESSDIR
+TESTDIR=../../usbModel/model/verilog/test
 
-if [ -d ../../usbModel/model/verilog/test ]
+if [ -d $TESTDIR ]
 then
-  cd ../../usbModel/model/verilog/test
+  cd $TESTDIR
 
   echo "========== usbModel regression tests ===========" $'\n' | tee -a $LOGFILE
   for usrcode in usercode
   do
-    for mkfile in makefile.questa makefile.ica
+    for mkfile in makefile makefile.ica
     do
      echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
      make -f $mkfile clean
@@ -134,6 +140,8 @@ then
      echo "" | tee -a $LOGFILE
     done
   done
+else
+  echo  "===== Skipping usbModel regression tests ======" $'\n' | tee -a $LOGFILE
 fi
 
 #
@@ -141,16 +149,17 @@ fi
 #
 
 cd $REGRESSDIR
+TESTDIR=../../tcpIpPg/test
 
-if [ -d ../../tcpIpPg/test ]
+if [ -d $TESTDIR ]
 then
 
-  cd ../../tcpIpPg/test
+  cd $TESTDIR
 
   echo "========== tcpIpPg regression tests ============" $'\n' | tee -a $LOGFILE
   for usrcode in src
   do
-    for mkfile in makefile.questa makefile.ica
+    for mkfile in makefile "makefile HDL=VHDL" makefile.ica
     do
      echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
      make -f $mkfile clean 2>&1 > /dev/null
@@ -159,6 +168,8 @@ then
      echo "" | tee -a $LOGFILE
     done
   done
+else
+  echo  "====== Skipping tcpIpPg regression tests ======" $'\n' | tee -a $LOGFILE
 fi
 
 cd $REGRESSDIR

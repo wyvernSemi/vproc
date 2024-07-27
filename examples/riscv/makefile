@@ -35,10 +35,20 @@ VOBJDIR            = $(TESTDIR)/obj
 USER_C             = VUserMain0.cpp mem_vproc_api.cpp getopt.c
 
 #------------------------------------------------------
-# Settings specific to target simulator 
+# Settings specific to target simulator
+
+# Get the help message from the simulator, filtered on Questa
+SIMTYPE            = $(shell vsim -help | grep -i questa)
+
+# If the SIMTYPE string is not empty, then this is Questa and a 64-bit compile,
+# else assume it's ModelSim and do a 32-bit compile.
+ifneq ("$(SIMTYPE)", "")
+  ARCHFLAG         = -m64
+else
+  ARCHFLAG         = -m32
+endif
 
 # Simulator/Language specific C/C++ compile and link flags
-ARCHFLAG           = -m32
 OPTFLAG            = -g
 HDLLANGUAGE        =
 SIMULATOR          = -DMODELSIM

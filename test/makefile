@@ -44,6 +44,9 @@ TESTDIR            = .
 MEM_C              =
 MEMMODELDIR        = .
 
+# Build arcgitecture target (default x64. A value of -m32 targets x86)
+ARCHFLAG           = -m64
+
 #------------------------------------------------------
 # Internal variable definitions
 
@@ -58,17 +61,6 @@ SIMULATOR          = -DMODELSIM
 VERIUSEROBJ        = $(VOBJDIR)/veriuser.o
 SIMINCLUDEFLAG     = -I$(MODEL_TECH)/../include
 SIMFLAGSSO         = -L$(MODEL_TECH) -lmtipli
-
-# Get the help message from the simulator, filtered on Questa
-SIMTYPE            = $(shell vsim -help | grep -i questa)
-
-# If the SIMTYPE string is not empty, then this is Questa and a 64-bit compile,
-# else assume it's ModelSim and do a 32-bit compile.
-ifneq ("$(SIMTYPE)", "")
-  ARCHFLAG         = -m64
-else
-  ARCHFLAG         = -m32
-endif
 
 ifeq ("$(HDL)", "VHDL")
   HDLLANGUAGE      = -DVPROC_VHDL

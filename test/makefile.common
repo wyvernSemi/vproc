@@ -50,21 +50,21 @@ VLIB                = $(TESTDIR)/libvproc.a
 VPROC_C             = VSched.c VUser.c
        
 # Separate C and C++ source files
-USER_CPP_BASE       = $(notdir $(filter %cpp, ${USER_C}))
-USER_C_BASE         = $(notdir $(filter %c,   ${USER_C}))
-MEM_CPP_BASE        = $(notdir $(filter %cpp, ${MEM_C}))
-MEM_C_BASE          = $(notdir $(filter %c,   ${MEM_C}))
+USER_CPP_BASE       = $(notdir $(filter %cpp, $(USER_C)))
+USER_C_BASE         = $(notdir $(filter %c,   $(USER_C)))
+MEM_CPP_BASE        = $(notdir $(filter %cpp, $(MEM_C)))
+MEM_C_BASE          = $(notdir $(filter %c,   $(MEM_C)))
 
 # Create list of object files (excluding any veriuser object)
-VOBJS               = ${addprefix ${VOBJDIR}/,            \
-                          ${USER_C_BASE:%.c=%.o}          \
-                          ${USER_CPP_BASE:%.cpp=%.o}      \
-                          ${VPROC_C:%.c=%.o}              \
-                          ${MEM_C_BASE:%.c=%.o}           \
-                          ${MEM_CPP_BASE:%.cpp=%.o}}
+VOBJS               = $(addprefix $(VOBJDIR)/,            \
+                          $(USER_C_BASE:%.c=%.o)          \
+                          $(USER_CPP_BASE:%.cpp=%.o)      \
+                          $(VPROC_C:%.c=%.o)              \
+                          $(MEM_C_BASE:%.c=%.o)           \
+                          $(MEM_CPP_BASE:%.cpp=%.o))
                       
 # Set OS specific variables between Linux and Windows (MinGW)
-ifeq (${OSTYPE}, Linux)
+ifeq ($(OSTYPE), Linux)
   FLAGSOS           = -shared -lpthread -lrt -rdynamic
 else
   FLAGSOS           = -shared -Wl,-export-all-symbols

@@ -25,42 +25,44 @@ USRFLAGS           =
 SRCDIR             = ../../code
 PYSRCDIR           = ../src
 TESTDIR            = .
-ARCHFLAG           = -m32
+ARCHFLAG           = -m64
+OPTFLAGS           = -g
+HDL                = VERILOG
 
 # Define the maximum number of supported VProcs in the compile pli library
 MAX_NUM_VPROC      = 16
 
 # Object directory for intermediate compile files
-VOBJDIR            = ${TESTDIR}/obj
+VOBJDIR            = $(TESTDIR)/obj
 
 # Name of the Python executable
 PYEXENAME          = python3
 
 # If PYTHONHOME environment variable not set give an error
-ifeq ("${PYTHONHOME}", "")
+ifeq ("$(PYTHONHOME)", "")
   $(error "PYTHONHOME environment variable not set.")
 endif
 
 # Extract the python version number in the format python.<major>.<minor#1>
 # which is the name of the python libray to link.
-SHELLCMD           = ${PYEXENAME} -V | awk -F"[. ]" '{print "python" $$2 "." $$3}'
-PYVER              = $(shell ${SHELLCMD})
+SHELLCMD           = $(PYEXENAME) -V | awk -F"[. ]" '{print "python" $$2 "." $$3}'
+PYVER              = $(shell $(SHELLCMD))
 
 # Get OS type
 OSTYPE:=$(shell uname)
 
 # If run from a place where MODEL_TECH is not defined, construct from path to PLI library
-ifeq ("${MODEL_TECH}", "")
-  ifeq (${OSTYPE}, Linux)
+ifeq ("$(MODEL_TECH)", "")
+  ifeq ($(OSTYPE), Linux)
     PLILIB         = libmtipli.so
   else
     PLILIB         = mtipli.dll
   endif
 
   VSIMPATH         = $(shell which vsim)
-  SIMROOT          = $(shell dirname ${VSIMPATH})/..
-  PLILIBPATH       = $(shell find ${SIMROOT} -name "${PLILIB}")
-  MODEL_TECH       = $(shell dirname ${PLILIBPATH})
+  SIMROOT          = $(shell dirname $(VSIMPATH))/..
+  PLILIBPATH       = $(shell find $(SIMROOT) -name "$(PLILIB)")
+  MODEL_TECH       = $(shell dirname $(PLILIBPATH))
 endif
 
 # VPROC C source code
@@ -74,22 +76,31 @@ PYTHON_C           = PythonVProc.c
 USER_C             = VUserMainPy.c
 
 # Construct list of objects for VProc.so
-VOBJS              = $(addprefix ${VOBJDIR}/, ${USER_C:%.c=%.o} ${VPROC_C:%.c=%.o})
+VOBJS              = $(addprefix $(VOBJDIR)/, $(USER_C:%.c=%.o) $(VPROC_C:%.c=%.o))
 
-PLIFLAG            = -DVPROC_PLI_VPI
 VLOGFLAGS          = +define+VPROC_BURST_IF +incdir+../..
 
 # Generated  PLI C library
-VPROC_PLI          = ${TESTDIR}/VProc.so
-VLIB               = ${TESTDIR}/libvproc.a
+VPROC_PLI          = $(TESTDIR)/VProc.so
+VLIB               = $(TESTDIR)/libvproc.a
 
 # Python interface foreign module shared object
-PYVRPOC_PLI        = ${TESTDIR}/PyVProc.so
+PYVRPOC_PLI        = $(TESTDIR)/PyVProc.so
+
+ifeq ("$(HDL)", "VHDL")
+  HDLLANGUAGE      = -DVPROC_VHDL
+  HDLCMD           = vcom -quiet -2008 -work work -f files.tcl
+  PLIVERSION       =
+else
+  HDLLANGUAGE      =
+  HDLCMD           = vlog $(VLOGFLAGS) -f test.vc
+  PLIVERSION       = -DVPROC_PLI_VPI
+endif
 
 VPROC_TOP          = test
 
 # Set OS specific variables between Linux and Windows (MinGW)
-ifeq (${OSTYPE}, Linux)
+ifeq ($(OSTYPE), Linux)
   CFLAGS_SO        = -shared -lpthread -lrt -rdynamic
 else
   CFLAGS_SO        = -shared -Wl,-export-all-symbols
@@ -99,94 +110,94 @@ CC                 = gcc
 C++                = g++
 CPPSTD             = -std=c++11
 CFLAGS             = -fPIC                                 \
-                     ${ARCHFLAG}                           \
-                     ${PLIFLAG}                            \
-                     -g                                    \
+                     $(ARCHFLAG)                           \
+                     $(PLIVERSION)                         \
+                     $(OPTFLAGS)                           \
                      -D_GNU_SOURCE                         \
-                     ${USRFLAGS}                           \
-                     -I${SRCDIR}                           \
-                     -I${PYSRCDIR}                         \
-                     -I${PYTHONHOME}/include/${PYVER}      \
-                     -I${MODEL_TECH}/../include            \
-                     -DVP_MAX_NODES=${MAX_NUM_VPROC}       \
+                     $(USRFLAGS)                           \
+                     -I$(SRCDIR)                           \
+                     -I$(PYSRCDIR)                         \
+                     -I$(PYTHONHOME)/include/$(PYVER)      \
+                     -I$(MODEL_TECH)/../include            \
+                     -DVP_MAX_NODES=$(MAX_NUM_VPROC)       \
                      -DMODELSIM                            \
+                     $(HDLLANGUAGE)                        \
                      -D_REENTRANT
 
 # Common flags for vsim
-VSIMFLAGS          = -pli ${VPROC_PLI} ${VPROC_TOP}
+VSIMFLAGS          = -pli $(VPROC_PLI) $(VPROC_TOP)
 VCFILE             = test.vc
 
 #------------------------------------------------------
 # BUILD RULES
 #------------------------------------------------------
 
-all: ${VPROC_PLI} verilog
+all: $(VPROC_PLI) hdl
 
-${VOBJDIR}/%.o: ${SRCDIR}/%.c ${SRCDIR}/*.h
-	@${CC} -c ${CFLAGS} $< -o $@
+$(VOBJDIR)/%.o: $(SRCDIR)/%.c $(SRCDIR)/*.h
+	@$(CC) -c $(CFLAGS) $< -o $@
 
-${VOBJDIR}/%.o: ${SRCDIR}/%.cpp ${SRCDIR}/*.h
-	@${C++}-c ${CFLAGS} $< -o $@
+$(VOBJDIR)/%.o: $(SRCDIR)/%.cpp $(SRCDIR)/*.h
+	@$(C++)-c $(CFLAGS) $< -o $@
 
-${VOBJDIR}/%.o: ${PYSRCDIR}/%.c
-	@${CC} -Wno-write-strings -c ${CFLAGS} $< -o $@
+$(VOBJDIR)/%.o: $(PYSRCDIR)/%.c
+	@$(CC) -Wno-write-strings -c $(CFLAGS) $< -o $@
 
-${VLIB} : ${VOBJS} ${VOBJDIR}
-	@ar cr ${VLIB} ${VOBJS}
+$(VLIB) : $(VOBJS) $(VOBJDIR)
+	@ar cr $(VLIB) $(VOBJS)
 
-${VOBJS}: | ${VOBJDIR}
+$(VOBJS): | $(VOBJDIR)
 
-${VOBJDIR}:
-	@mkdir ${VOBJDIR}
+$(VOBJDIR):
+	@mkdir $(VOBJDIR)
 
-${VPROC_PLI}: ${PYVRPOC_PLI} ${VLIB} ${VOBJDIR}/veriuser.o
-	@${C++} ${CPPSTD}                                      \
-           ${CFLAGS_SO}                                    \
+$(VPROC_PLI): $(PYVRPOC_PLI) $(VLIB) $(VOBJDIR)/veriuser.o
+	@$(C++) $(CPPSTD)                                      \
+           $(CFLAGS_SO)                                    \
            -Wl,-whole-archive                              \
-           ${CFLAGS}                                       \
-           ${VOBJDIR}/veriuser.o                           \
+           $(CFLAGS)                                       \
+           $(VOBJDIR)/veriuser.o                           \
            -lpthread                                       \
-           -L${MODEL_TECH}                                 \
+           -L$(MODEL_TECH)                                 \
            -lmtipli                                        \
-           -L${TESTDIR} -lvproc -l:PyVProc.so              \
+           -L$(TESTDIR) -lvproc -l:PyVProc.so              \
            -Wl,-no-whole-archive                           \
            -o $@
 
-${PYVRPOC_PLI}: ${PYSRCDIR}/${PYTHON_C}
-	@${CC} -fPIC -shared -DNO_PLI_INCLUDE                  \
+$(PYVRPOC_PLI): $(PYSRCDIR)/$(PYTHON_C)
+	@$(CC) -fPIC -shared -DNO_PLI_INCLUDE                  \
            $^                                              \
            -I../../code -L../../                           \
-           ${ARCHFLAG}                                     \
-           -I${PYTHONHOME}/include/${PYVER}                \
-           -L${PYTHONHOME}/lib -l${PYVER}                  \
+           $(ARCHFLAG)                                     \
+           -I$(PYTHONHOME)/include/$(PYVER)                \
+           -L$(PYTHONHOME)/lib -l$(PYVER)                  \
            -ldl                                            \
            -o $@
 
-# Let simulator decide what's changed in the verilog
-.PHONY: verilog
-
-verilog: ${VPROC_PLI}
+# Let simulator decide what's changed in the HDL
+.PHONY: hdl
+hdl: $(VPROC_PLI)
 	@if [ ! -d "./work" ]; then                            \
 	    vlib work;                                         \
 	fi
-	@vlog ${VLOGFLAGS} -f ${VCFILE}
+	@$(HDLCMD)
     
 
 #------------------------------------------------------
 # EXECUTION RULES
 #------------------------------------------------------
 
-sim: verilog
-	@vsim -c ${VSIMFLAGS}
+sim: hdl
+	@vsim -c $(VSIMFLAGS)
 
-run: verilog
-	@vsim -c ${VSIMFLAGS} -do "run -all" -do "quit"
+run: hdl
+	@vsim -c $(VSIMFLAGS) -do "run -all" -do "quit"
 
-rungui: verilog
+rungui: hdl
 	@if [ -e wave.do ]; then                               \
-	    vsim -gui -do wave.do ${VSIMFLAGS} -do "run -all"; \
+	    vsim -gui -do wave.do $(VSIMFLAGS) -do "run -all"; \
 	else                                                   \
-	    vsim -gui ${VSIMFLAGS};                            \
+	    vsim -gui $(VSIMFLAGS);                            \
 	fi
 
 gui: rungui
@@ -205,5 +216,5 @@ help:
 #------------------------------------------------------
 
 clean:
-	@rm -rf ${VPROC_PLI} ${VLIB} ${VOBJDIR} ${PYVRPOC_PLI} *.wlf wlf* work *vstf transcript
+	@rm -rf $(VPROC_PLI) $(VLIB) $(VOBJDIR) $(PYVRPOC_PLI) *.wlf wlf* work *vstf transcript
 
