@@ -159,7 +159,7 @@ then
   echo "========== tcpIpPg regression tests ============" $'\n' | tee -a $LOGFILE
   for usrcode in src
   do
-    for mkfile in makefile "makefile HDL=VHDL" makefile.ica
+    for mkfile in $MKFILEBASE "makefile HDL=VHDL" makefile.verilator
     do
      echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
      make -f $mkfile clean 2>&1 > /dev/null
