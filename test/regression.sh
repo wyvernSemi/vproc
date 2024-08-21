@@ -35,8 +35,10 @@ FILTERSTR="EIO|, Warnings:|Note"
 # unconditionally if it is installed.
 if [ "$OSTYPE" != "Linux" ]
 then
-  MKFILEBASE="$MKFILEBASE makefile.vivado"
+  MAKEFILEXSIM=makefile.vivado
 fi
+
+MKFILEBASE="$MKFILEBASE $MAKEFILEXSIM"
 
 clear
 date | tee -a $LOGFILE
@@ -131,7 +133,7 @@ then
   echo "========== usbModel regression tests ===========" $'\n' | tee -a $LOGFILE
   for usrcode in usercode
   do
-    for mkfile in makefile makefile.ica
+    for mkfile in makefile makefile.ica makefile.verilator $MAKEFILEXSIM
     do
      echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
      make -f $mkfile clean
