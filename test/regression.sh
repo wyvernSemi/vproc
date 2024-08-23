@@ -107,7 +107,7 @@ then
   echo "============ PCIe regression tests =============" $'\n' | tee -a $LOGFILE
   for usrcode in usercode
   do
-    for mkfile in makefile makefile.ica makefile.vivado makefile.verilator
+    for mkfile in makefile makefile.ica makefile.verilator $MAKEFILEXSIM
     do
      echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
      make -f $mkfile clean
