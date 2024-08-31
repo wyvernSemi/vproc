@@ -121,7 +121,7 @@ else
 fi
 
 #
-# usbModel regression tests  (if repository checked out)
+# usbModel Verilog regression tests  (if repository checked out)
 #
 cd $REGRESSDIR
 TESTDIR=../../usbModel/model/verilog/test
@@ -130,7 +130,7 @@ if [ -d $TESTDIR ]
 then
   cd $TESTDIR
 
-  echo "========== usbModel regression tests ===========" $'\n' | tee -a $LOGFILE
+  echo "======= usbModel Verilog regression tests =======" $'\n' | tee -a $LOGFILE
   for usrcode in usercode
   do
     for mkfile in makefile makefile.ica makefile.verilator $MAKEFILEXSIM
@@ -143,7 +143,32 @@ then
     done
   done
 else
-  echo  "===== Skipping usbModel regression tests ======" $'\n' | tee -a $LOGFILE
+  echo  "== Skipping usbModel Verilog regression tests ==" $'\n' | tee -a $LOGFILE
+fi
+
+#
+# usbModel Verilog regression tests  (if repository checked out)
+#
+cd $REGRESSDIR
+TESTDIR=../../usbModel/model/vhdl/test
+
+if [ -d $TESTDIR ]
+then
+  cd $TESTDIR
+
+  echo "========= usbModel VHDL regression tests ========" $'\n' | tee -a $LOGFILE
+
+  for mkfile in makefile makefile.nvc makefile.ghdl
+  do
+   echo "Running $mkfile with usercode/ ..." | tee -a $LOGFILE
+   make -f $mkfile clean
+   make -f $mkfile run 2>&1 | egrep -i "error|fatal" | egrep -v "$FILTERSTR" | tee -a $LOGFILE
+   make -f $mkfile clean
+   echo "" | tee -a $LOGFILE
+  done
+
+else
+  echo  "=== Skipping usbModel VHDL regression tests ===" $'\n' | tee -a $LOGFILE
 fi
 
 #
