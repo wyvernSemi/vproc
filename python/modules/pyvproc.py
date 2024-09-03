@@ -87,10 +87,9 @@ class PyVProcClass :
   def burstRead(self, addr, length) :
     self.__processIrq()
     data = []
-    cdata = (c_int * length)(0)
+    cdata = (c_uint32 * length)(0)
     self.api.PyBurstRead(addr, cdata, length, self.node)
-    for i in range(length) :
-      data.append(c_uint32(cdata[i]).value)
+    data = cdata[:]
     return data
 
   # API method to register a vectored interrupt callback
