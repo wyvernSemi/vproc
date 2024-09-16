@@ -1,0 +1,3 @@
+# Bus Functional Model Wrappers
+
+This directory contains simple VProc VHDL and Verilog bus functional model wrappers for the Altera Avalon and AXI4 memory mapped interfaces. Both models support the basic single word write and read transactions, but burst operations are not yet implemented. The AXI wrappers implement the minimal bus compliant signalling for an AXI4 manager with the xPROT signals fixed at 0. The Avalon wrappers also support byte enable signalling.
