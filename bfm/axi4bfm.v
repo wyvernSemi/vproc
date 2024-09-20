@@ -25,6 +25,11 @@
 //
 // ====================================================================
 
+`ifndef VPROC_BYTE_ENABLE
+`define VPROC_BYTE_ENABLE
+`endif
+
+
 module axi4bfm
 #(parameter ADDRWIDTH           = 32,       // For future proofing. Do not change
             DATAWIDTH           = 32,       // For future proofing. Do not change
@@ -40,12 +45,14 @@ module axi4bfm
   output                        awvalid,
   input                         awready,
   output               [2:0]    awprot,
+  output               [7:0]    awlen,
 
   // Write Data channel
   output     [DATAWIDTH-1:0]    wdata,
   output                        wvalid,
   input                         wready,
   output                        wlast,
+  output               [3:0]    wstrb,
 
   // Write response channel
   input                         bvalid,
@@ -56,6 +63,7 @@ module axi4bfm
   output                        arvalid,
   input                         arready,
   output               [2:0]    arprot,
+  output               [7:0]    arlen,
 
   // Read data/response channel
   input      [DATAWIDTH-1:0]    rdata,
@@ -77,6 +85,11 @@ wire                            vpwe;
 wire                            vprd;
 wire                            vpwrack;
 wire                            vprdack;
+wire                      [3:0] vpbyteenable;
+wire                     [11:0] vpburst;
+wire                            vpbursteq0;
+wire                            vplast;
+reg                      [11:0] burstcount;
 
 // Delta cycle signals
 wire                            update;
@@ -101,6 +114,12 @@ assign bready                   = bvalid;
 // else driven X. This ensures external IP does not use invalid held values.
 assign awaddr                   = awvalid ? vpaddr    : {ADDRWIDTH{1'bx}};
 assign araddr                   = arvalid ? vpaddr    : {ADDRWIDTH{1'bx}};
+
+// Burst
+assign vpbursteq0               = vpburst == 12'h000;
+assign awlen                    = ~vpbursteq0 ? vpburst[7:0] - 1 : 8'h00;
+assign arlen                    = awlen;
+
 assign wdata                    = wvalid  ? vpdataout : {DATAWIDTH{1'bx}};
 
 // The write address and valid signals active when VProc writing,
@@ -115,7 +134,10 @@ assign wvalid                   = vpwe & ~wacked;
 assign vpwrack                  = (awready & wready) | (awacked & wready) | (awready & wacked);
 
 // Write Last always signalled when data valid as only one word at a time.
-assign wlast                    = wvalid;
+assign wlast                    = wvalid & (vplast | vpbursteq0);
+
+// Export VProc's byte enables
+assign wstrb                    = vpbyteenable;
 
 // The read address is valid when VProc RD strobe active until it has
 // been acknowledged.
@@ -137,6 +159,7 @@ begin
   awacked                       = 1'b0;
   wacked                        = 1'b0;
   updateresponse                = 1'b1;
+  burstcount                    = 12'h000;
 end
 
 // ---------------------------------------------------------
@@ -147,18 +170,31 @@ end
 
 always @(posedge clk)
 begin
+
   // A channel is flagged as acknowledged if the VProc strobe active and the AXI
   // ready signal is active. This state is held until The entire transaction
   // is acknowledged back to VProc.
 
   // Read address channel
-  aracked                       <= (aracked | (vprd & arready)) & ~vprdack;
+  aracked                       <= (aracked | (vprd & arready)) & ~(vprdack & burstcount <= 12'h000);
 
   // Write address channel
   awacked                       <= (awacked | (vpwe & awready)) & ~vpwrack;
 
   // Write data channel
   wacked                        <= (wacked  | (vpwe & wready))  & ~vpwrack;
+  
+  // If a new burst count, set the counter to the burst length
+  if (arvalid == 1'b1 && burstcount == 0)
+  begin
+    burstcount                  <= vpburst;
+  end
+  
+  // If the counter is not zero, decrement the count when a word is received
+  if (burstcount > 0 && rvalid == 1'b1 && rready == 1'b1)
+  begin
+    burstcount                  <= burstcount - 1;
+  end
 
 end
 
@@ -187,10 +223,16 @@ end
              .DataOut           (vpdataout),
              .WE                (vpwe),
              .WRAck             (vpwrack),
+             
+             .BE                (vpbyteenable),
 
              .DataIn            (rdata),
              .RD                (vprd),
              .RDAck             (vprdack),
+             
+             .Burst             (vpburst),
+             .BurstFirst        (),
+             .BurstLast         (vplast),
 
              .Interrupt         (irq),
 

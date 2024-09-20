@@ -136,7 +136,6 @@ rungui: hdl
 
 gui: rungui
 
-.SILENT:
 help:
 	@$(info make help          Display this message)
 	@$(info make               Build C/C++ and HDL code without running simulation)

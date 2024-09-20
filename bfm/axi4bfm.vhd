@@ -33,7 +33,7 @@ entity axi4bfm is
   generic    (ADDRWIDTH           : integer :=  32;       -- For future proofing. Do not change
               DATAWIDTH           : integer :=  32;       -- For future proofing. Do not change
               IRQWIDTH            : integer :=  32;       -- Valid ranges => 1 to 32
-              BURST_ADDR_INCR     : integer :=  1;        -- Valid values => 1, 2, 4
+              BURST_ADDR_INCR     : integer :=  4;        -- Valid values => 1, 2, 4
               NODE                : integer :=  0
   );
   port (
@@ -43,13 +43,16 @@ entity axi4bfm is
     awaddr                        : out std_logic_vector (ADDRWIDTH-1 downto 0);
     awvalid                       : out std_logic;
     awready                       : in  std_logic;
-    awprot                        : out std_logic_vector (2 downto 0);
+    awlen                         : out std_logic_vector (7 downto 0) ;
+    awburst                       : out std_logic_vector (1 downto 0) := "01";
+    awprot                        : out std_logic_vector (2 downto 0) := "000";
 
     -- Write Data channel
     wdata                         : out std_logic_vector (DATAWIDTH-1 downto 0);
     wvalid                        : out std_logic;
     wready                        : in  std_logic;
     wlast                         : out std_logic;
+    wstrb                         : out std_logic_vector (DATAWIDTH/8-1 downto 0);
 
     -- Write response channel
     bvalid                        : in  std_logic;
@@ -59,7 +62,9 @@ entity axi4bfm is
     araddr                        : out std_logic_vector (ADDRWIDTH-1 downto 0);
     arvalid                       : out std_logic;
     arready                       : in  std_logic;
-    arprot                        : out std_logic_vector (2 downto 0);
+    arlen                         : out std_logic_vector (7 downto 0);
+    arburst                       : out std_logic_vector (1 downto 0) := "01";
+    arprot                        : out std_logic_vector (2 downto 0) := "000";
 
     -- Read data/response channel
     rdata                         : in  std_logic_vector (DATAWIDTH-1 downto 0);
@@ -84,6 +89,11 @@ signal vpwe                       : std_logic;
 signal vprd                       : std_logic;
 signal vpwrack                    : std_logic;
 signal vprdack                    : std_logic;
+signal vpbyteenable               : std_logic_vector (3 downto 0);
+signal vpburst                    : std_logic_vector (11 downto 0);
+signal vpbursteq0                 : std_logic;
+signal vplast                     : std_logic;
+signal burstcount                 : unsigned (11 downto 0) := 12x"000";
 
 -- Delta cycle signals
 signal update                     : std_logic;
@@ -101,40 +111,47 @@ begin
 -- Combinatorial logic
 -- ---------------------------------------------------------
 
--- Default signalling (no protection, and write response always acknowleged)
-awprot                          <= "000";
-arprot                          <= "000";
-bready                          <= bvalid;
+-- Default signalling
+bready                        <= bvalid;
 
 -- The address/write data ports are only valid when their valid signals active,
 -- else driven X. This ensures external IP does not use invalid held values.
-awaddr                          <= vpaddr    when awvalid = '1' else (others => 'X');
-araddr                          <= vpaddr    when arvalid = '1' else (others => 'X');
-wdata                           <= vpdataout when wvalid  = '1' else (others => 'X');
+awaddr                        <= vpaddr    when awvalid = '1' else (others => 'X');
+araddr                        <= vpaddr    when arvalid = '1' else (others => 'X');
+
+-- Burst
+vpbursteq0                    <= '1' when vpburst = 12x"000" else '0';
+awlen                         <= std_logic_vector(unsigned(vpburst(7 downto 0)) - 1) when vpbursteq0 = '0' else (others => '0');
+arlen                         <= awlen;
+
+wdata                         <= vpdataout when wvalid  = '1' else (others => 'X');
 
 -- The write address and valid signals active when VProc writing,
 -- but only until they have been acknowledged.
-awvalid                         <= vpwe and not awacked;
-wvalid                          <= vpwe and not wacked;
+awvalid                       <= vpwe and not awacked;
+wvalid                        <= vpwe and not wacked;
 
 -- VProc write acknowledged only once both address and write channels have
 -- been acknowledged. This could be if both channels acknowledged together,
 -- if write address acknowledged first then write data, or write data acknowledged
 -- first and then write address.
-vpwrack                         <= (awready and wready) or (awacked and wready) or (awready and wacked);
+vpwrack                       <= (awready and wready) or (awacked and wready) or (awready and wacked);
 
 -- Write Last always signalled when data valid as only one word at a time.
-wlast                           <= wvalid;
+wlast                         <= wvalid and (vplast or vpbursteq0);
+
+-- Export VProc's byte enables
+wstrb                         <= vpbyteenable;
 
 -- The read address is valid when VProc RD strobe active until it has
 -- been acknowledged.
-arvalid                         <= vprd and not aracked;
+arvalid                       <= vprd and not aracked;
 
 -- Read data always accepted.
-rready                          <= rvalid;
+rready                        <= rvalid;
 
 -- The VProc read acknowlege comes straight from the AXI read data bus valid.
-vprdack                         <= rvalid;
+vprdack                       <= rvalid;
 
 -- ---------------------------------------------------------
 -- Synchronous process to generate state to indicate acknowledged
@@ -143,20 +160,35 @@ vprdack                         <= rvalid;
 -- ---------------------------------------------------------
 
 process (clk)
+  variable burst_cnt_leq_1 : std_logic;
 begin
   if clk'event and clk = '1' then
+  
+    burst_cnt_leq_1           := '1' when to_integer(burstcount) <= 1 else '0'; 
+  
     -- A channel is flagged as acknowledged if the VProc strobe active and the AXI
     -- ready signal is active. This state is held until The entire transaction
     -- is acknowledged back to VProc.
 
     -- Read address channel
-    aracked                     <= (aracked or (vprd and arready)) and not vprdack;
+    aracked                   <= (aracked or (vprd and arready)) and not (vprdack and burst_cnt_leq_1);
 
     -- Write address channel
-    awacked                     <= (awacked or (vpwe and awready)) and not vpwrack;
+    awacked                   <= (awacked or (vpwe and awready)) and not vpwrack;
 
     -- Write data channel
-    wacked                      <= (wacked  or (vpwe and wready))  and not vpwrack;
+    wacked                    <= (wacked  or (vpwe and wready))  and not vpwrack;
+    
+    -- If a new burst count, set the counter to the burst length
+    if arvalid = '1' and to_integer(burstcount) = 0 then
+      burstcount              <= unsigned(vpburst);
+    end if;
+    
+    -- If the counter is not zero, decrement the count when a word is received
+    if burstcount > 0 and rvalid = '1' and rready = '1' then
+      burstcount              <= burstcount - 1;
+    end if;
+    
   end if;
 
 end process;
@@ -169,7 +201,7 @@ end process;
 
 process (update)
 begin
-  updateresponse                <=  not updateresponse;
+  updateresponse              <=  not updateresponse;
 end process;
 
 -- ---------------------------------------------------------
@@ -178,27 +210,33 @@ end process;
 
   vp : entity work.VProc
   generic map (
-    INT_WIDTH         => IRQWIDTH,
-    BURST_ADDR_INCR   => BURST_ADDR_INCR
-  )
-  port map    (
-    Clk               => clk,
-
-    Addr              => vpaddr,
-
-    DataOut           => vpdataout,
-    WE                => vpwe,
-    WRAck             => vpwrack,
-
-    DataIn            => rdata,
-    RD                => vprd,
-    RDAck             => vprdack,
-
-    Interrupt         => irq,
-
-    Update            => update,
-    UpdateResponse    => updateresponse,
-    Node              => std_logic_vector(to_unsigned(NODE, 4))
+    INT_WIDTH                 => IRQWIDTH,
+    BURST_ADDR_INCR           => BURST_ADDR_INCR
+  )                           
+  port map (                  
+    Clk                       => clk,
+                              
+    Addr                      => vpaddr,
+                              
+    DataOut                   => vpdataout,
+    WE                        => vpwe,
+    WRAck                     => vpwrack,
+                              
+    BE                        => vpbyteenable,
+                              
+    DataIn                    => rdata,
+    RD                        => vprd,
+    RDAck                     => vprdack,
+                              
+    Burst                     => vpburst,     
+    BurstFirst                => open,
+    BurstLast                 => vplast,
+                              
+    Interrupt                 => irq,
+                              
+    Update                    => update,
+    UpdateResponse            => updateresponse,
+    Node                      => std_logic_vector(to_unsigned(NODE, 4))
   );
 
 end bfm;
