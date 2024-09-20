@@ -115,7 +115,7 @@ $(VOBJDIR)/%.o: $(USRCDIR)/%.cpp
 
 # Rule to build (any) memory model C sources
 $(VOBJDIR)/%.o: $(MEMMODELDIR)/%.c $(MEMMODELDIR)/*.h
-	@$(CC) $(CFLAGS) $< -o $@
+	@$(CC) -c -fPIC $(CFLAGS) $< -o $@
 
 # Rule to build (any) memory model C++ sources
 $(VOBJDIR)/%.o: $(MEMMODELDIR)/%.cpp $(MEMMODELDIR)/*.h
