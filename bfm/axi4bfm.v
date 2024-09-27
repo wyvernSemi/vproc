@@ -29,6 +29,7 @@
 `define VPROC_BYTE_ENABLE
 `endif
 
+`include "vprocdefs.vh"
 
 module axi4bfm
 #(parameter ADDRWIDTH           = 32,       // For future proofing. Do not change
@@ -155,11 +156,12 @@ assign vprdack                  = rvalid;
 
 initial
 begin
-  aracked                       = 1'b0;
-  awacked                       = 1'b0;
-  wacked                        = 1'b0;
-  updateresponse                = 1'b1;
-  burstcount                    = 12'h000;
+  `MINDELAY
+  aracked                       <= 1'b0;
+  awacked                       <= 1'b0;
+  wacked                        <= 1'b0;
+  updateresponse                <= 1'b1;
+  burstcount                    <= 12'h000;
 end
 
 // ---------------------------------------------------------
