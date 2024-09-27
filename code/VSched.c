@@ -147,6 +147,10 @@ static void setVhpiParams(const struct vhpiCbDataS* cb, int args[], int start_of
 // If not VHDL FLI, VHDL VHPI or PLI TF, define VPI specific instructions
 #if !defined (VPROC_VHDL) && !defined(VPROC_VHDL_VHPI) && defined(VPROC_PLI_VPI)
 
+#ifndef MEM_MODEL_VPI_TBL
+#define MEM_MODEL_VPI_TBL
+#endif
+
 // -------------------------------------------------------------------------
 // register_vpi_tasks()
 //
@@ -161,6 +165,7 @@ static void register_vpi_tasks()
        {vpiSysTask, 0, "$vaccess",   VAccess,   0, 0, 0},
        {vpiSysTask, 0, "$vprocuser", VProcUser, 0, 0, 0},
        {vpiSysTask, 0, "$virq",      VIrq,      0, 0, 0},
+       MEM_MODEL_VPI_TBL
       };
 
 
