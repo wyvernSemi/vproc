@@ -1,0 +1,150 @@
+###################################################################
+# Makefile for VProc Virtual Processor and mem_model testcode
+# in Icarus Verilog
+#
+# Copyright (c) 2024 Simon Southwell.
+#
+# This file is part of VProc.
+#
+# VProc is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VProc is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with VProc. If not, see <http://www.gnu.org/licenses/>.
+#
+###################################################################
+
+# MODEL_TECH environment variable must be set
+
+# User C/C++ overridable flags
+PLIVERSION         =
+USRFLAGS           =
+USER_C             = VUserMain0.c
+USRCDIR            = usercode
+BUSTYPE            = AVALON
+
+# User simulation overridable flags
+USRSIMFLAGS        =
+
+VPROCDIR           = ../..
+TESTDIR            = $(CURDIR)
+VOBJDIR            = $(TESTDIR)/obj
+MEMMODELDIR        = $(CURDIR)/../../../mem_model
+MEMMODELREPO       = https://github.com/wyvernSemi/mem_model.git
+
+# VProc C source code
+VPROC_C            = VSched.c VUser.c
+
+# Memory model C source code
+MEM_C              = mem.c mem_model.c
+
+# Generated  PLI C library
+VPROC_PLI          = $(TESTDIR)/VProc.so
+
+# Get OS type
+OSTYPE:=$(shell uname)
+
+# Set OS specific variables between Linux and Windows (MinGW)
+ifeq (${OSTYPE}, Linux)
+  SIMINCLUDEFLAG   = -I/usr/include/iverilog
+else
+  SIMINCLUDEFLAG   = -I/mingw64/include/iverilog
+endif
+
+CFLAGS             = $(USRFLAGS)                           \
+                     -I$(MEMMODELDIR)/src                  \
+                     $(SIMINCLUDEFLAG)                     \
+                     -DINCL_VLOG_MEM_MODEL                 \
+                     -DMEM_MODEL_DEFAULT_ENDIAN=1          \
+                     -Wno-incompatible-pointer-types       \
+                     $(HDLFLAG)
+
+# Simulation configuration
+
+HDLFLAG            =
+
+ifeq ("$(BUSTYPE)", "AXI")
+  FILELIST         = test.vc
+  SIM_TOP          = testaxi
+  SIMDEFS          = -DVPROC_BYTE_ENABLE -DMEM_EN_TX_BYTEENABLE -DVPROC_BURST_IF
+  HDLFLAG          += -DAXI
+else               
+  FILELIST         = test_av.vc
+  SIMDEFS          = -DVPROC_BYTE_ENABLE
+  SIM_TOP          = testavm
+endif              
+
+VHDLFILES          = $(foreach vhdlfile, $(file < $(FILELIST)), $(vhdlfile))
+
+SPACE              =
+
+#------------------------------------------------------
+# BUILD RULES
+#------------------------------------------------------
+
+all: hdl
+
+$(VPROC_PLI):
+	@make --no-print-directory             \
+          -C $(VPROCDIR)/test              \
+          -f makefile.ica                  \
+          USRFLAGS="$(CFLAGS)"             \
+          USRCDIR=$(CURDIR)/$(USRCDIR)     \
+          USER_C="$(USER_C)"               \
+          MEMMODELDIR="$(MEMMODELDIR)/src" \
+          MEM_C="$(MEM_C)"                 \
+          PLIVERSION=$(PLIVERSION)         \
+          TESTDIR=$(TESTDIR)
+
+$(MEMMODELDIR):
+	@git clone $(MEMMODELREPO) $(MEMMODELDIR) --recursive
+
+# Let simulator decide what's changed in the HDL
+hdl: $(VPROC_PLI)
+	@iverilog $(SIMDEFS) -I../../ -Ptest.VCD_DUMP=1 -o sim $(VHDLFILES)
+
+#------------------------------------------------------
+# EXECUTION RULES
+#------------------------------------------------------
+
+sim: all
+	@vvp -s -m $(VPROC_PLI) sim
+
+run: all
+	@vvp -n -m $(VPROC_PLI) sim
+
+rungui: all
+	@vvp -n -m $(VPROC_PLI) sim
+	@if [ -e waves.gtkw ]; then                            \
+	    gtkwave -A waves.vcd;                              \
+	else                                                   \
+	    gtkwave waves.vcd;                                 \
+	fi
+
+gui : rungui
+
+help:
+	@$(info make help          Display this message)
+	@$(info make               Build C/C++ and HDL code without running simulation)
+	@$(info make sim           Build and run command line interactive (sim not started))
+	@$(info make run           Build and run batch simulation)
+	@$(info make rungui/gui    Build and run GUI simulation)
+	@$(info make clean         clean previous build artefacts)
+	@$(info $(SPACE))
+	@$(info Command line options:)
+	@$(info $(SPACE)  BUSTYPE=[AVALON|AXI])
+	@$(info $(SPACE))
+
+#------------------------------------------------------
+# CLEANING RULES
+#------------------------------------------------------
+
+clean:
+	@rm -rf $(VPROC_PLI) libvproc.a obj sim *.vcd

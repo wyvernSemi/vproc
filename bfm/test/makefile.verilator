@@ -1,0 +1,187 @@
+###################################################################
+# Makefile for VProc Virtual Processor and mem_model testcode
+# in Verilator
+#
+# Copyright (c) 2024 Simon Southwell.
+#
+# This file is part of VProc.
+#
+# VProc is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VProc is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with VProc. If not, see <http://www.gnu.org/licenses/>.
+#
+###################################################################
+
+# MODEL_TECH environment variable must be set
+
+# User C/C++ overridable flags
+PLIVERSION         =
+USRFLAGS           =
+USER_C             = VUserMain0.c
+USRCDIR            = usercode
+BUSTYPE            = AVALON
+
+# User simulation overridable flags
+USRSIMFLAGS        =
+
+VPROCDIR           = ../..
+TESTDIR            = $(CURDIR)
+VOBJDIR            = $(TESTDIR)/obj
+MEMMODELDIR        = $(CURDIR)/../../../mem_model
+MEMMODELREPO       = https://github.com/wyvernSemi/mem_model.git
+
+# VProc C source code
+VPROC_C            = VSched.c VUser.c
+
+# Memory model C source code
+MEM_C              = mem.c mem_model.c
+
+# Generated  PLI C library
+VLIB               = $(TESTDIR)/libvproc.a
+
+# Get OS type
+OSTYPE:=$(shell uname)
+
+# Set OS specific variables between Linux and Windows (MinGW)
+ifeq (${OSTYPE}, Linux)
+  SIMINCLUDEFLAG   = -I/usr/include/iverilog
+else
+  SIMINCLUDEFLAG   = -I/mingw64/include/iverilog
+endif
+
+CFLAGS             = $(USRFLAGS)                           \
+                     -I$(MEMMODELDIR)/src                  \
+                     $(SIMINCLUDEFLAG)                     \
+                     -DINCL_VLOG_MEM_MODEL                 \
+                     -DMEM_MODEL_DEFAULT_ENDIAN=1          \
+                     -DMEM_ZERO_NEW_PAGES                  \
+                     -Wno-incompatible-pointer-types       \
+                     $(HDLFLAG)
+
+# Simulation configuration
+
+HDLFLAG            =
+
+ifeq ("$(BUSTYPE)", "AXI")
+  FILELIST         = files_axi_verilator.tcl
+  SIM_TOP          = testaxi
+  SIMDEFS          = +define+VPROC_BYTE_ENABLE +define+MEM_EN_TX_BYTEENABLE +define+VPROC_BURST_IF
+  HDLFLAG          += -DAXI
+else
+  FILELIST         = files_av_verilator.tcl
+  SIM_TOP          = testavm
+  SIMDEFS          = +define+VPROC_BYTE_ENABLE
+endif
+
+# set to -GVCD_DUMP=1 to generate VCD ouput, or blank for none
+VCDFLAG            = -GVCD_DUMP=1
+
+# Set to -GFINISH=1 for $finish at execution end, or blank for $stop
+# (Verilator generates an error on $stop)
+FINISHFLAG         = -GFINISH=1
+
+# Set to --timing for delta cycle support, or -GDISABLE_DELTA for no delta-cycle
+TIMINGFLAG         = --timing
+
+# C++ version 20 required for Verilator
+CPPSTD             = -std=c++20
+
+# Get OS type
+OSTYPE             := $(shell uname)
+
+ifeq ($(OSTYPE), Linux)
+  SIMFLAGSSO       = -Wl,-E -lrt -rdynamic
+else
+  SIMFLAGSSO       = -Wl,-export-all-symbols
+endif
+
+SIMFLAGS           = --binary -sv --trace                   \
+                     $(FINISHFLAG)                          \
+                     $(TIMINGFLAG)                          \
+                     $(VCDFLAG) $(SIMDEFS)                  \
+                     $(USRSIMFLAGS)                         \
+                     -Wno-INITIALDLY                        \
+                     -Mdir work -Wno-WIDTH                  \
+                     -I.. -I$(VPROCDIR) -I$(MEMMODELDIR)    \
+                     --top $(SIM_TOP)                       \
+                     -MAKEFLAGS "--quiet"                   \
+                     -CFLAGS "$(CPPSTD) -Wno-attributes"    \
+                     -LDFLAGS "$(SIMFLAGSSO)                \
+                     -Wl,-whole-archive -L../ -lvproc -Wl,-no-whole-archive -ldl"
+
+SIMEXE             = work/V$(SIM_TOP)
+
+WAVEFILE           = waves.vcd
+WAVESAVEFILE       = wave.gtkw
+
+SPACE              =
+
+#------------------------------------------------------
+# BUILD RULES
+#------------------------------------------------------
+
+all: hdl
+
+$(VLIB):
+	@make --no-print-directory             \
+          -C $(VPROCDIR)/test              \
+          -f makefile.verilator            \
+          USRFLAGS="$(CFLAGS)"             \
+          USRCDIR=$(CURDIR)/$(USRCDIR)     \
+          USER_C="$(USER_C)"               \
+          MEMMODELDIR="$(MEMMODELDIR)/src" \
+          MEM_C="$(MEM_C)"                 \
+          PLIVERSION=$(PLIVERSION)         \
+          TESTDIR=$(TESTDIR)               \
+          $(VLIB)
+
+$(MEMMODELDIR):
+	@git clone $(MEMMODELREPO) $(MEMMODELDIR) --recursive
+
+# Let simulator decide what's changed in the HDL
+hdl: $(VLIB)
+	@verilator -F $(FILELIST) $(SIMFLAGS)
+
+#------------------------------------------------------
+# EXECUTION RULES
+#------------------------------------------------------
+
+run: hdl
+	@$(SIMEXE)
+
+rungui: hdl
+	@$(SIMEXE)
+	@if [ -e $(WAVESAVEFILE) ]; then                       \
+	    gtkwave -a $(WAVESAVEFILE) $(WAVEFILE);            \
+	else                                                   \
+	    gtkwave $(WAVEFILE);                               \
+	fi
+
+gui: rungui
+
+help:
+	@$(info make help          Display this message)
+	@$(info make               Build C/C++ and HDL code without running simulation)
+	@$(info make run           Build and run batch simulation)
+	@$(info make rungui/gui    Build and run GUI simulation)
+	@$(info make clean         clean previous build artefacts)
+	@$(info $(SPACE))
+	@$(info Command line options:)
+	@$(info $(SPACE)  BUSTYPE=[AVALON|AXI])
+	@$(info $(SPACE))
+
+#------------------------------------------------------
+# CLEANING RULES
+#------------------------------------------------------
+
+clean:
+	@rm -rf $(VLIB) $(VOBJDIR) waves.fst work $(WAVEFILE)
