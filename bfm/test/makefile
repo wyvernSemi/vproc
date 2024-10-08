@@ -24,7 +24,7 @@
 # MODEL_TECH environment variable must be set
 
 # User C/C++ overridable flags
-PLIVERSION         = -DVPROC_PLI_VPI
+PLIVERSION         =
 USRFLAGS           =
 USER_C             = VUserMain0.c
 USRCDIR            = usercode
@@ -70,16 +70,18 @@ CFLAGS             = $(USRFLAGS)                           \
 # Simulation configuration
 
 HDLFLAG            =
-
+SIMDEFS            = 
 ifeq ("$(HDL)", "VHDL")
   ifeq ("$(BUSTYPE)", "AXI")
-    FILELIST       = files_axi.tcl
-    SIMDEFS        =
+    FILELIST       = files.tcl
     SIM_TOP        = testaxi
     HDLFLAG        += -DAXI 
+  else ifeq ("$(BUSTYPE)", "AHB")
+    FILELIST       = files_ahb.tcl
+    SIM_TOP        = testahb
+    HDLFLAG        += -DAHB
   else
     FILELIST       = files_av.tcl
-    SIMDEFS        =
     SIM_TOP        = testavm
   endif
   HDLFLAG          += -DVPROC_VHDL
@@ -90,14 +92,20 @@ else
   ifeq ("$(BUSTYPE)", "AXI")
     FILELIST       = test.vc
     SIM_TOP        = testaxi
-    SIMDEFS        =
     HDLFLAG        += -DAXI
+  else ifeq ("$(BUSTYPE)", "AHB")
+    FILELIST       = test_ahb.vc
+    SIMDEFS        = +define+VPROC_BYTE_ENABLE
+    SIM_TOP        = testahb
+    HDLFLAG        += -DAHB
   else
     FILELIST       = test_av.vc
     SIMDEFS        = +define+VPROC_BYTE_ENABLE
     SIM_TOP        = testavm
   endif
-  HDLCMD           = vlog -quiet $(SIMDEFS) +define+MEM_EN_TX_BYTEENABLE +define+VPROC_BURST_IF +define+VPROC_BYTE_ENABLE +incdir+../../ -f $(FILELIST)
+  PLIVERSION       = -DVPROC_PLI_VPI
+  HDLCMD           = vlog -quiet $(SIMDEFS) +define+MEM_EN_TX_BYTEENABLE +define+VPROC_BURST_IF +define+VPROC_BYTE_ENABLE \
+                     +incdir+../ +incdir+../../ -f $(FILELIST)
   VSIMFLAGS        = -pli $(VPROC_PLI) $(USRSIMFLAGS) $(SIM_TOP)
   VERIUSER         = $(VOBJDIR)/veriuser.o
 endif
@@ -140,10 +148,10 @@ run: hdl
 	@vsim -c -no_autoacc $(VSIMFLAGS) -do "run -all" -do "quit"
 
 rungui: hdl
-	@if [ -e wave.do ]; then                               \
-	    vsim -gui -do wave.do $(VSIMFLAGS) -do "run -all"; \
-	else                                                   \
-	    vsim -gui $(VSIMFLAGS);                            \
+	@if [ -e wave.do ]; then                                              \
+	    vsim -gui -voptargs=+acc -do wave.do $(VSIMFLAGS) -do "run -all"; \
+	else                                                                  \
+	    vsim -gui -voptargs=+acc $(VSIMFLAGS);                            \
 	fi
 
 gui: rungui
@@ -156,7 +164,7 @@ help:
 	@$(info make clean         clean previous build artefacts)
 	@$(info $(SPACE))
 	@$(info Command line options:)
-	@$(info $(SPACE)  HDL=[VERILOG|VHDL] BUSTYPE=[AVALON|AXI])
+	@$(info $(SPACE)  HDL=[VERILOG|VHDL] BUSTYPE=[AVALON|AHB|AXI])
 	@$(info $(SPACE))
 
 #------------------------------------------------------

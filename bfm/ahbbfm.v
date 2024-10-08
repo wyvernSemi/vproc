@@ -78,6 +78,9 @@ reg           [DATAWIDTH-1:0] wdata_phase;
 reg                           rd_active;
 reg           [ADDRWIDTH-1:0] burstaddr;
 
+reg           [DATAWIDTH-1:0] hrdata_int;
+reg                           hready_int;
+
 // -----------------------------------------
 // Combinatorial logic
 // -----------------------------------------
@@ -102,19 +105,19 @@ assign hwdata                 = wdata_phase;
 assign hwstrb                 = hwrite ? be : {DATAWIDTH/8{1'bx}};
 
 // VProc data input is straight from HRDATA
-assign datain                 = hrdata;
+assign datain                 = hrdata_int;
 
 // Write acknowledge whe writing and HREADY
-assign wrack                  = we & hready;
+assign wrack                  = we & hready_int;
 
 // Acknowledge read when reading, HREADY and either not the first command or bursting and data is returned.
-assign rdack                  = rd & hready & (htrans != `AHB_BFM_TRANS_NONSEQ || (|burst && rd_active));
+assign rdack                  = rd & hready_int & (htrans != `AHB_BFM_TRANS_NONSEQ || (|burst && rd_active));
 
 // Process for HTRANS
 always @(*)
 begin
     // Default HTRANS to idle.
-    htrans                    <= `AHB_BFM_TRANS_IDLE;
+    htrans                    = `AHB_BFM_TRANS_IDLE;
     
     // If writing, first command is a NONSEQ (not bursting or first burst),
     // and subsequent commands in a burst are SEQ
@@ -122,11 +125,11 @@ begin
     begin
       if (burst == 0 || burstfirst == 1'b1)
       begin
-        htrans                <= `AHB_BFM_TRANS_NONSEQ;
+        htrans                = `AHB_BFM_TRANS_NONSEQ;
       end
       else if (burstfirst != 1'b1)
       begin
-        htrans                <= `AHB_BFM_TRANS_SEQ;
+        htrans                = `AHB_BFM_TRANS_SEQ;
       end
     end
 
@@ -136,11 +139,11 @@ begin
     begin
       if (rd_active != 1'b1)
       begin
-        htrans                <= `AHB_BFM_TRANS_NONSEQ;
+        htrans                = `AHB_BFM_TRANS_NONSEQ;
       end
       else if (burst != 0 && burstlast != 1'b1)
       begin
-        htrans                <= `AHB_BFM_TRANS_SEQ;
+        htrans                = `AHB_BFM_TRANS_SEQ;
       end
     end
 end
@@ -168,7 +171,7 @@ begin
   begin
 
     // Whilst writing, offset the output data by a cycle, else make X
-    if (we & hready)
+    if (we & hready_int)
       wdata_phase             <= dataout;
     else
       wdata_phase             <= {DATAWIDTH{1'bx}};
@@ -184,10 +187,22 @@ begin
       if (~rd_active)
         burstaddr             <= haddr + 4;
       else
-        if (hready)
+        if (hready_int)
           burstaddr           <= burstaddr + 4;
     end
   end
+end
+
+// For verilator, sample the inputs on the negative edge of the clock.
+// All othersimulators pass straight through.
+`ifdef VERILATOR
+always @(negedge hclk)
+`else
+always @(*)
+`endif
+begin
+  hrdata_int                  <= hrdata;
+  hready_int                  <= hready;
 end
 
 // -----------------------------------------

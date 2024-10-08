@@ -62,6 +62,7 @@ CFLAGS             = $(USRFLAGS)                           \
                      -I$(MEMMODELDIR)/src                  \
                      $(SIMINCLUDEFLAG)                     \
                      -DINCL_VLOG_MEM_MODEL                 \
+                     -DMEM_ZERO_NEW_PAGES                  \
                      -DMEM_MODEL_DEFAULT_ENDIAN=1          \
                      -Wno-incompatible-pointer-types       \
                      $(HDLFLAG)
@@ -75,6 +76,11 @@ ifeq ("$(BUSTYPE)", "AXI")
   SIM_TOP          = testaxi
   SIMDEFS          = -DVPROC_BYTE_ENABLE -DMEM_EN_TX_BYTEENABLE -DVPROC_BURST_IF
   HDLFLAG          += -DAXI
+else ifeq ("$(BUSTYPE)", "AHB")
+  FILELIST         = test_ahb.vc
+  SIM_TOP          = testahb
+  SIMDEFS          = -DVPROC_BYTE_ENABLE -DMEM_EN_TX_BYTEENABLE -DVPROC_BURST_IF
+  HDLFLAG          += -DAHB
 else               
   FILELIST         = test_av.vc
   SIMDEFS          = -DVPROC_BYTE_ENABLE
@@ -108,7 +114,7 @@ $(MEMMODELDIR):
 
 # Let simulator decide what's changed in the HDL
 hdl: $(VPROC_PLI)
-	@iverilog $(SIMDEFS) -I../../ -Ptest.VCD_DUMP=1 -o sim $(VHDLFILES)
+	@iverilog $(SIMDEFS) -I../ -I../../ -Ptestahb.VCD_DUMP=1 -o sim $(VHDLFILES)
 
 #------------------------------------------------------
 # EXECUTION RULES
@@ -118,7 +124,7 @@ sim: all
 	@vvp -s -m $(VPROC_PLI) sim
 
 run: all
-	@vvp -n -m $(VPROC_PLI) sim
+	vvp -n -m $(VPROC_PLI) sim
 
 rungui: all
 	@vvp -n -m $(VPROC_PLI) sim
@@ -139,7 +145,7 @@ help:
 	@$(info make clean         clean previous build artefacts)
 	@$(info $(SPACE))
 	@$(info Command line options:)
-	@$(info $(SPACE)  BUSTYPE=[AVALON|AXI])
+	@$(info $(SPACE)  BUSTYPE=[AVALON|AHB|AXI])
 	@$(info $(SPACE))
 
 #------------------------------------------------------
@@ -147,4 +153,9 @@ help:
 #------------------------------------------------------
 
 clean:
+	@make --no-print-directory             \
+          -C $(VPROCDIR)/test              \
+          -f makefile.ica                  \
+          TESTDIR=$(TESTDIR)               \
+          clean
 	@rm -rf $(VPROC_PLI) libvproc.a obj sim *.vcd

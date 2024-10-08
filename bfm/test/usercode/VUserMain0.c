@@ -164,35 +164,35 @@ void VUserMain0()
     avwritebe(testaddr[2] | wordoffset(testbe[2]), 0x55555555, testbe[2]);
     avwritebe(testaddr[3] | wordoffset(testbe[3]), 0xaaaaaaaa, testbe[3]);
 
-    data = avread(testaddr[0]); printf("read 0x%08x from 0x%08x\n", data, testaddr[0]);
+    data = avread(testaddr[0]); VPrint("read 0x%08x from 0x%08x\n", data, testaddr[0]);
     if (data != 0x5678)
     {
         error++;
-        printf("***ERROR: bad read from address 0x%08x. Got 0x%08x, expected 0x%08x\n", testaddr[0], data, 0x5678);
+        VPrint("***ERROR: bad read from address 0x%08x. Got 0x%08x, expected 0x%08x\n", testaddr[0], data, 0x5678);
     }
     
-    data = avread(testaddr[1]); printf("read 0x%08x from 0x%08x\n", data, testaddr[1]);
+    data = avread(testaddr[1]); VPrint("read 0x%08x from 0x%08x\n", data, testaddr[1]);
     if (data != 0x87650000)
     {
         error++;
-        printf("***ERROR: bad read from address 0x%08x. Got 0x%08x, expected 0x%08x\n", testaddr[1], data, 0x87650000);
+        VPrint("***ERROR: bad read from address 0x%08x. Got 0x%08x, expected 0x%08x\n", testaddr[1], data, 0x87650000);
     }
     
-    data = avread(testaddr[2]); printf("read 0x%08x from 0x%08x\n", data, testaddr[2]);
+    data = avread(testaddr[2]); VPrint("read 0x%08x from 0x%08x\n", data, testaddr[2]);
     if (data != 0x00005500)
     {
         error++;
-        printf("***ERROR: bad read from address 0x%08x. Got 0x%08x, expected 0x%08x\n", testaddr[2], data, 0x00005500);
+        VPrint("***ERROR: bad read from address 0x%08x. Got 0x%08x, expected 0x%08x\n", testaddr[2], data, 0x00005500);
     }
     
-    data = avread(testaddr[3]); printf("read 0x%08x from 0x%08x\n\n", data, testaddr[3]);
+    data = avread(testaddr[3]); VPrint("read 0x%08x from 0x%08x\n\n", data, testaddr[3]);
     if (data != 0xaa000000)
     {
         error++;
-        printf("***ERROR: bad read from address 0x%08x. Got 0x%08x, expected 0x%08x\n", testaddr[3], data, 0xaa000000);
+        VPrint("***ERROR: bad read from address 0x%08x. Got 0x%08x, expected 0x%08x\n", testaddr[3], data, 0xaa000000);
     }
 
-#ifdef AXI
+#if defined(AXI) || defined(AHB)
 
     avwriteburst(0x00001002, (uint32_t*)(&((uint8_t*)burstwdata)[1]), 10);
     avreadburst (0x00001000, burstrdata, 12);
@@ -202,12 +202,12 @@ void VUserMain0()
          if ((burstrdata[idx] & burstmaskdata[idx]) != burstexpdata[idx])
          {
              error++;
-             printf("***ERROR: bad read from address 0x%08x. Got 0x%08x, expected 0x%08x\n",
+             VPrint("***ERROR: bad read from address 0x%08x. Got 0x%08x, expected 0x%08x\n",
                     0x00001000 + idx*4, burstrdata[idx] & burstmaskdata[idx], burstexpdata[idx]);
          }
          else
          {
-             printf("read 0x%08x from 0x%08x\n", burstrdata[idx], 0x00001000 + idx*4);
+             VPrint("read 0x%08x from 0x%08x\n", burstrdata[idx], 0x00001000 + idx*4);
          }
          
     }
@@ -216,11 +216,11 @@ void VUserMain0()
 
    if (error)
    {
-       printf("\n*** Finished with errors. ***\n");
+       VPrint("\n*** Finished with errors. ***\n");
    }
    else
    {
-       printf("\nFinished with no errors.\n");
+       VPrint("\nFinished with no errors.\n");
    }
 
     SLEEPFOREVER;

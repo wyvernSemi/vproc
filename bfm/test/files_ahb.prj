@@ -1,0 +1,6 @@
+sv      work ../../f_VProc.sv
+verilog work ../ahbbfm.v
+verilog work ../../../mem_model/mem_model_q.v
+sv      work ../../../mem_model/mem_model.sv
+sv      work ../../../mem_model/mem_model_ahb.sv
+verilog work ./testahb.v

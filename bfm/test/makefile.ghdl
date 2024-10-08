@@ -75,6 +75,10 @@ ifeq ("$(BUSTYPE)", "AXI")
   FILELIST       = files_axi_ghdl.tcl
   SIM_TOP        = testaxi
   HDLFLAG        += -DAXI
+else ifeq ("$(BUSTYPE)", "AHB")
+  FILELIST       = files_ahb_ghdl.tcl
+  SIM_TOP        = testahb
+  HDLFLAG        = -DAHB
 else
   FILELIST       = files_av_ghdl.tcl
   SIM_TOP        = testavm
@@ -143,7 +147,7 @@ help:
 	@$(info make clean         clean previous build artefacts)
 	@$(info $(SPACE))
 	@$(info Command line options:)
-	@$(info $(SPACE)  BUSTYPE=[AVALON|AXI])
+	@$(info $(SPACE)  BUSTYPE=[AVALON|AHB|AXI])
 	@$(info $(SPACE))
 
 #------------------------------------------------------
@@ -151,4 +155,9 @@ help:
 #------------------------------------------------------
 
 clean:
+	@make --no-print-directory             \
+          -C $(VPROCDIR)/test              \
+          -f makefile.ghdl                 \
+          TESTDIR=$(TESTDIR)               \
+          clean
 	@rm -rf $(VPROC_PLI) $(VLIB) $(VOBJDIR) *.o *.exe $(VPROC_TOP) $(WAVEFILE) work

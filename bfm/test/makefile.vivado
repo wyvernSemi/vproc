@@ -75,7 +75,12 @@ ifeq ("$(BUSTYPE)", "AXI")
   FILELIST       = files_axi.prj
   SIM_TOP        = testaxi
   BURSTFLAG      = --define VPROC_BURST_IF --define MEM_EN_TX_BYTEENABLE
-  HDLFLAG        = -DAXI
+  HDLFLAG        += -DAXI
+else ifeq ("$(BUSTYPE)", "AHB")
+  FILELIST       = files_ahb.prj
+  SIM_TOP        = testahb
+  BURSTFLAG      = --define VPROC_BURST_IF --define MEM_EN_TX_BYTEENABLE
+  HDLFLAG        += -DAHB
 else
   FILELIST       = files_av.prj
   SIM_TOP        = testavm
@@ -140,7 +145,7 @@ help:
 	@$(info make clean         clean previous build artefacts)
 	@$(info $(SPACE))
 	@$(info Command line options:)
-	@$(info $(SPACE)  BUSTYPE=[AVALON|AXI])
+	@$(info $(SPACE)  BUSTYPE=[AVALON|AHB|AXI])
 	@$(info $(SPACE))
 
 #------------------------------------------------------
@@ -148,4 +153,9 @@ help:
 #------------------------------------------------------
 
 clean:
+	@make --no-print-directory             \
+          -C $(VPROCDIR)/test              \
+          -f makefile.vivado               \
+          TESTDIR=$(TESTDIR)               \
+          clean
 	@rm -rf $(VPROC_PLI) $(VLIB) $(VOBJDIR) xsim* vivado* *.wdb xelab.* xvlog.* .Xil

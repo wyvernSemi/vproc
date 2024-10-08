@@ -58,6 +58,7 @@ else
   SIMINCLUDEFLAG   = -I/mingw64/include/iverilog
 endif
 
+
 CFLAGS             = $(USRFLAGS)                           \
                      -I$(MEMMODELDIR)/src                  \
                      $(SIMINCLUDEFLAG)                     \
@@ -76,6 +77,11 @@ ifeq ("$(BUSTYPE)", "AXI")
   SIM_TOP          = testaxi
   SIMDEFS          = +define+VPROC_BYTE_ENABLE +define+MEM_EN_TX_BYTEENABLE +define+VPROC_BURST_IF
   HDLFLAG          += -DAXI
+else ifeq ("$(BUSTYPE)", "AHB")
+  FILELIST         = files_ahb_verilator.tcl
+  SIMDEFS          = +define+VPROC_BYTE_ENABLE +define+MEM_EN_TX_BYTEENABLE +define+VPROC_BURST_IF
+  SIM_TOP          = testahb
+  HDLFLAG          += -DAHB
 else
   FILELIST         = files_av_verilator.tcl
   SIM_TOP          = testavm
@@ -176,7 +182,7 @@ help:
 	@$(info make clean         clean previous build artefacts)
 	@$(info $(SPACE))
 	@$(info Command line options:)
-	@$(info $(SPACE)  BUSTYPE=[AVALON|AXI])
+	@$(info $(SPACE)  BUSTYPE=[AVALON|AHB|AXI])
 	@$(info $(SPACE))
 
 #------------------------------------------------------
@@ -184,4 +190,9 @@ help:
 #------------------------------------------------------
 
 clean:
+	@make --no-print-directory             \
+          -C $(VPROCDIR)/test              \
+          -f makefile.verilator            \
+          TESTDIR=$(TESTDIR)               \
+          clean
 	@rm -rf $(VLIB) $(VOBJDIR) waves.fst work $(WAVEFILE)

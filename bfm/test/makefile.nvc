@@ -74,6 +74,10 @@ ifeq ("$(BUSTYPE)", "AXI")
   FILELIST       = files_axi_nvc.tcl
   SIM_TOP        = testaxi
   HDLFLAG        += -DAXI
+else ifeq ("$(BUSTYPE)", "AHB")
+  FILELIST       = files_ahb_nvc.tcl
+  SIM_TOP        = testahb
+  HDLFLAG        = -DAHB
 else
   FILELIST       = files_av_nvc.tcl
   SIM_TOP        = testavm
@@ -136,7 +140,7 @@ help:
 	@$(info make clean         clean previous build artefacts)
 	@$(info $(SPACE))
 	@$(info Command line options:)
-	@$(info $(SPACE)  BUSTYPE=[AVALON|AXI])
+	@$(info $(SPACE)  BUSTYPE=[AVALON|AHB|AXI])
 	@$(info $(SPACE))
 
 #------------------------------------------------------
@@ -144,4 +148,9 @@ help:
 #------------------------------------------------------
 
 clean:
+	@make --no-print-directory             \
+          -C $(VPROCDIR)/test              \
+          -f makefile.nvc                  \
+          TESTDIR=$(TESTDIR)               \
+          clean          
 	@rm -rf $(VPROC_PLI) $(VLIB) $(VOBJDIR) *.fst work
