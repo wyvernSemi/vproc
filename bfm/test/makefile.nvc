@@ -77,11 +77,16 @@ ifeq ("$(BUSTYPE)", "AXI")
 else ifeq ("$(BUSTYPE)", "AHB")
   FILELIST       = files_ahb_nvc.tcl
   SIM_TOP        = testahb
-  HDLFLAG        = -DAHB
+  HDLFLAG        += -DAHB
+else ifeq ("$(BUSTYPE)", "APB")
+  FILELIST       = files_apb_nvc.tcl
+  SIM_TOP        = testapb
 else
   FILELIST       = files_av_nvc.tcl
   SIM_TOP        = testavm
 endif
+
+WAVEFILE         = testapb.fst
 
 SIMFLAGS         = --ieee-warnings=off                    \
                    --format=fst --wave=$(WAVEFILE)        \
@@ -140,7 +145,7 @@ help:
 	@$(info make clean         clean previous build artefacts)
 	@$(info $(SPACE))
 	@$(info Command line options:)
-	@$(info $(SPACE)  BUSTYPE=[AVALON|AHB|AXI])
+	@$(info $(SPACE)  BUSTYPE=[AVALON|APB|AHB|AXI])
 	@$(info $(SPACE))
 
 #------------------------------------------------------

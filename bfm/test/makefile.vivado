@@ -81,6 +81,10 @@ else ifeq ("$(BUSTYPE)", "AHB")
   SIM_TOP        = testahb
   BURSTFLAG      = --define VPROC_BURST_IF --define MEM_EN_TX_BYTEENABLE
   HDLFLAG        += -DAHB
+else ifeq ("$(BUSTYPE)", "APB")
+  FILELIST       = files_apb.prj
+  SIM_TOP        = testapb
+  BURSTFLAG      = --define MEM_EN_TX_BYTEENABLE
 else
   FILELIST       = files_av.prj
   SIM_TOP        = testavm
@@ -145,7 +149,7 @@ help:
 	@$(info make clean         clean previous build artefacts)
 	@$(info $(SPACE))
 	@$(info Command line options:)
-	@$(info $(SPACE)  BUSTYPE=[AVALON|AHB|AXI])
+	@$(info $(SPACE)  BUSTYPE=[AVALON|APB|AHB|AXI])
 	@$(info $(SPACE))
 
 #------------------------------------------------------

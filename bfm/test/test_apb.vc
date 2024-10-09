@@ -1,0 +1,6 @@
+../../f_VProc.v
+../apbbfm.v
+../../../mem_model/mem_model_q.v
+../../../mem_model/mem_model.v
+../../../mem_model/mem_model_apb.v
+testapb.v

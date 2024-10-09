@@ -78,7 +78,10 @@ ifeq ("$(BUSTYPE)", "AXI")
 else ifeq ("$(BUSTYPE)", "AHB")
   FILELIST       = files_ahb_ghdl.tcl
   SIM_TOP        = testahb
-  HDLFLAG        = -DAHB
+  HDLFLAG        += -DAHB
+else ifeq ("$(BUSTYPE)", "APB")
+  FILELIST       = files_apb_ghdl.tcl
+  SIM_TOP        = testapb
 else
   FILELIST       = files_av_ghdl.tcl
   SIM_TOP        = testavm
@@ -130,7 +133,7 @@ run: hdl
 	@ghdl --elab-run $(SIMFLAGS) $(SIM_TOP) --ieee-asserts=disable
 
 rungui: hdl
-	@ghdl --elab-run $(SIMFLAGS) $(SIM_TOP) --wave=$(WAVEFILE)
+	@ghdl --elab-run $(SIMFLAGS) $(SIM_TOP) --ieee-asserts=disable --wave=$(WAVEFILE)
 	@if [ -e $(WAVESAVEFILE) ]; then                       \
 	    gtkwave -A $(WAVEFILE);                            \
 	else                                                   \
@@ -147,7 +150,7 @@ help:
 	@$(info make clean         clean previous build artefacts)
 	@$(info $(SPACE))
 	@$(info Command line options:)
-	@$(info $(SPACE)  BUSTYPE=[AVALON|AHB|AXI])
+	@$(info $(SPACE)  BUSTYPE=[AVALON|APB|AHB|AXI])
 	@$(info $(SPACE))
 
 #------------------------------------------------------

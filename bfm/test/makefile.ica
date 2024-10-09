@@ -81,6 +81,10 @@ else ifeq ("$(BUSTYPE)", "AHB")
   SIM_TOP          = testahb
   SIMDEFS          = -DVPROC_BYTE_ENABLE -DMEM_EN_TX_BYTEENABLE -DVPROC_BURST_IF
   HDLFLAG          += -DAHB
+else ifeq ("$(BUSTYPE)", "APB")
+  FILELIST         = test_apb.vc
+  SIM_TOP          = testapb
+  SIMDEFS          = -DVPROC_BYTE_ENABLE -DMEM_EN_TX_BYTEENABLE
 else               
   FILELIST         = test_av.vc
   SIMDEFS          = -DVPROC_BYTE_ENABLE
@@ -114,7 +118,7 @@ $(MEMMODELDIR):
 
 # Let simulator decide what's changed in the HDL
 hdl: $(VPROC_PLI)
-	@iverilog $(SIMDEFS) -I../ -I../../ -Ptestahb.VCD_DUMP=1 -o sim $(VHDLFILES)
+	@iverilog $(SIMDEFS) -I../ -I../../ -P$(SIM_TOP).VCD_DUMP=1 -o sim $(VHDLFILES)
 
 #------------------------------------------------------
 # EXECUTION RULES
@@ -145,7 +149,7 @@ help:
 	@$(info make clean         clean previous build artefacts)
 	@$(info $(SPACE))
 	@$(info Command line options:)
-	@$(info $(SPACE)  BUSTYPE=[AVALON|AHB|AXI])
+	@$(info $(SPACE)  BUSTYPE=[AVALON|APB|AHB|AXI])
 	@$(info $(SPACE))
 
 #------------------------------------------------------

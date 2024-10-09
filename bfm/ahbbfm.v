@@ -194,7 +194,7 @@ begin
 end
 
 // For verilator, sample the inputs on the negative edge of the clock.
-// All othersimulators pass straight through.
+// All other simulators pass straight through.
 `ifdef VERILATOR
 always @(negedge hclk)
 `else

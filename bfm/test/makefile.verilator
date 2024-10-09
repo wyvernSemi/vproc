@@ -82,6 +82,10 @@ else ifeq ("$(BUSTYPE)", "AHB")
   SIMDEFS          = +define+VPROC_BYTE_ENABLE +define+MEM_EN_TX_BYTEENABLE +define+VPROC_BURST_IF
   SIM_TOP          = testahb
   HDLFLAG          += -DAHB
+else ifeq ("$(BUSTYPE)", "APB")
+  FILELIST         = files_apb_verilator.tcl
+  SIMDEFS          = +define+VPROC_BYTE_ENABLE +define+MEM_EN_TX_BYTEENABLE
+  SIM_TOP          = testapb
 else
   FILELIST         = files_av_verilator.tcl
   SIM_TOP          = testavm
@@ -182,7 +186,7 @@ help:
 	@$(info make clean         clean previous build artefacts)
 	@$(info $(SPACE))
 	@$(info Command line options:)
-	@$(info $(SPACE)  BUSTYPE=[AVALON|AHB|AXI])
+	@$(info $(SPACE)  BUSTYPE=[AVALON|APB|AHB|AXI])
 	@$(info $(SPACE))
 
 #------------------------------------------------------

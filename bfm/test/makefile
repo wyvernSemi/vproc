@@ -70,7 +70,8 @@ CFLAGS             = $(USRFLAGS)                           \
 # Simulation configuration
 
 HDLFLAG            =
-SIMDEFS            = 
+SIMDEFS            =
+
 ifeq ("$(HDL)", "VHDL")
   ifeq ("$(BUSTYPE)", "AXI")
     FILELIST       = files.tcl
@@ -80,6 +81,9 @@ ifeq ("$(HDL)", "VHDL")
     FILELIST       = files_ahb.tcl
     SIM_TOP        = testahb
     HDLFLAG        += -DAHB
+  else ifeq ("$(BUSTYPE)", "APB")
+    FILELIST       = files_apb.tcl
+    SIM_TOP        = testapb
   else
     FILELIST       = files_av.tcl
     SIM_TOP        = testavm
@@ -93,18 +97,21 @@ else
     FILELIST       = test.vc
     SIM_TOP        = testaxi
     HDLFLAG        += -DAXI
+    SIMDEFS        = +define+VPROC_BURST_IF
   else ifeq ("$(BUSTYPE)", "AHB")
     FILELIST       = test_ahb.vc
-    SIMDEFS        = +define+VPROC_BYTE_ENABLE
     SIM_TOP        = testahb
     HDLFLAG        += -DAHB
+    SIMDEFS        = +define+VPROC_BURST_IF
+  else ifeq ("$(BUSTYPE)", "APB")
+    FILELIST       = test_apb.vc
+    SIM_TOP        = testapb
   else
     FILELIST       = test_av.vc
-    SIMDEFS        = +define+VPROC_BYTE_ENABLE
     SIM_TOP        = testavm
   endif
   PLIVERSION       = -DVPROC_PLI_VPI
-  HDLCMD           = vlog -quiet $(SIMDEFS) +define+MEM_EN_TX_BYTEENABLE +define+VPROC_BURST_IF +define+VPROC_BYTE_ENABLE \
+  HDLCMD           = vlog -quiet $(SIMDEFS) +define+MEM_EN_TX_BYTEENABLE +define+VPROC_BYTE_ENABLE \
                      +incdir+../ +incdir+../../ -f $(FILELIST)
   VSIMFLAGS        = -pli $(VPROC_PLI) $(USRSIMFLAGS) $(SIM_TOP)
   VERIUSER         = $(VOBJDIR)/veriuser.o
@@ -164,7 +171,7 @@ help:
 	@$(info make clean         clean previous build artefacts)
 	@$(info $(SPACE))
 	@$(info Command line options:)
-	@$(info $(SPACE)  HDL=[VERILOG|VHDL] BUSTYPE=[AVALON|AHB|AXI])
+	@$(info $(SPACE)  HDL=[VERILOG|VHDL] BUSTYPE=[AVALON|APB|AHB|AXI])
 	@$(info $(SPACE))
 
 #------------------------------------------------------
