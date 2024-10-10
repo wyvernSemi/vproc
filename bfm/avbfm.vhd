@@ -97,7 +97,7 @@ begin
   begin
     if clk'event and clk = '1' then
       -- VProc's rd strobe delayed by a cycle
-      rdlast               <= rd;
+      rdlast               <= rd and not rdack;
     end if;
   end process;
 

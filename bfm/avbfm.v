@@ -102,7 +102,7 @@ end
 always @(posedge clk)
 begin
   // VProc's rd strobe delayed by a cycle
-  rdlast                      <= rd;
+  rdlast                      <= rd & ~rdack;
 end
 
 // ---------------------------------------
