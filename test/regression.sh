@@ -29,7 +29,7 @@ rm -rf $LOGFILE
 OSTYPE=`uname`
 
 MKFILEBASE="makefile makefile.ica makefile.nvc makefile.ghdl"
-FILTERSTR="EIO|, Warnings:|Note"
+FILTERSTR="EIO|, Warnings:|Note|Finished with no"
 
 # Vivado not installed on Linux in local setup. Add makefile.vivado
 # unconditionally if it is installed.
@@ -75,10 +75,31 @@ make -f makefile.verilator                              \
 echo "" | tee -a $LOGFILE
 
 #
+# BFM C/C+ regression tests
+#
+
+cd $REGRESSDIR/bfm/test
+echo "============ BFM regression tests ============" $'\n' | tee -a $LOGFILE
+for usrcode in usercode 
+do
+  for bustype in AVALON APB AHB AXI
+  do
+    for mkfile in $MKFILEBASE "makefile HDL=VHDL" makefile.verilator
+    do
+     echo "Running $mkfile BUSTYPE=$bustype with $usrcode/ ..." | tee -a $LOGFILE
+     make -f $mkfile clean
+     make -f $mkfile BUSTYPE=$bustype USRCDIR=$usrcode run 2>&1 | egrep -i "error|fatal"  | egrep -v "$FILTERSTR" | tee -a $LOGFILE
+     make -f $mkfile clean
+     echo "" | tee -a $LOGFILE
+    done
+  done
+done
+
+#
 # Python regression tests
 #
 # Python tests
-cd ../python/test
+cd $REGRESSDIR/python/test
 
 echo "=========== python regression tests ============" $'\n' | tee -a $LOGFILE
 for usrcode in usercode
