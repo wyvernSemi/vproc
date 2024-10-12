@@ -24,7 +24,7 @@
 # MODEL_TECH environment variable must be set
 
 # User C/C++ overridable flags
-PLIVERSION         =
+PLIVERSION         = -DVPROC_PLI_VPI
 USRFLAGS           =
 USER_C             = VUserMain0.c
 USRCDIR            = usercode
