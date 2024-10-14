@@ -5,9 +5,8 @@ Allows native C/C++ programs or Python scripts to co-simulate with Verilog, Syst
 
 Currently supported simulators:
 
- * ModelSim : Verilog with PLI or VPI, VHDL with FLI
- * Questa : Verilog with PLI or VPI, VHDL with FLI
- * Icarus : Verilog with PLI or VPI
+ * Questa : Verilog with VPI, VHDL with FLI
+ * Icarus : Verilog with VPI
  * Vivado Xsim : SystemVerilog with DPI-C
  * Verilator : SystemVerilog with DPI-C
  * NVC : VHDL with VHPIDIRECT
