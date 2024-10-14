@@ -140,7 +140,7 @@ static void setVhpiParams(const struct vhpiCbDataS* cb, int args[], int start_of
 
 #endif
 
-// If not VHDL FLI, VHDL VHPI or PLI TF, define VPI specific instructions
+// If not VHDL FLI, VHDL VHPI or SystemVerilog DPI define VPI specific instructions
 #if !defined (VPROC_VHDL) && !defined(VPROC_VHDL_VHPI) && !defined(VPROC_SV)
 
 #ifndef MEM_MODEL_VPI_TBL
@@ -238,7 +238,8 @@ int updateArgs (vpiHandle taskHdl, int value[])
 }
 
 #else
-
+// Questa complains if there is no PLI or VPI start up routine or table,
+// so for non-VPI builds define an empty one.
 void (*vlog_startup_routines[])() =
 {
     0
