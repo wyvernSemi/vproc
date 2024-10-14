@@ -35,10 +35,8 @@
 #    OPTFLAG            : Optimisation/debug flag (-g for debugging and -O<n> for optimisations)
 #    USRFLAGS           : Optional user compile flags
 #    MAX_NUM_VPROC      : Maximum number of VProc instantiations (must be between 1 and 64)
-#    PLIVERSION         : Flag for PLI type when Verilog compilation. Blank for PLI 1.0 or -DVPROC_PLI_VPI for VPI.
 #    HDLLANGUAGE        : Target HDL language. Blank for Verilog, -DVPROC_VHDL for VHDL or -DVPROC_SV for SystemVerilog
 #    SIMULATOR          : Target logic simulator. One of MODELSIM (same for Questa), NVC, GHDL, VERILATOR or blank for Vivado XSIM
-#    VERIUSEROBJ        : Name of veriuser object file (with path) for ModelSIM and Questa, else blank
 #    SIMFLAGSSO         : Simulator specific flags for shared object compliation/linking (e.g. for library inclusion)
 #    POSTVPROCSOFLAGS   : Simulator specific flags for shared object compliation/linking post vproc library flag
 
@@ -48,7 +46,7 @@ VLIB                = $(TESTDIR)/libvproc.a
 
 # VPROC C source code
 VPROC_C             = VSched.c VUser.c
-       
+
 # Separate C and C++ source files
 USER_CPP_BASE       = $(notdir $(filter %cpp, $(USER_C)))
 USER_C_BASE         = $(notdir $(filter %c,   $(USER_C)))
@@ -62,7 +60,7 @@ VOBJS               = $(addprefix $(VOBJDIR)/,            \
                           $(VPROC_C:%.c=%.o)              \
                           $(MEM_C_BASE:%.c=%.o)           \
                           $(MEM_CPP_BASE:%.cpp=%.o))
-                      
+
 # Set OS specific variables between Linux and Windows (MinGW)
 ifeq ($(OSTYPE), Linux)
   FLAGSOS           = -shared -lpthread -lrt -rdynamic
@@ -77,13 +75,13 @@ INCLUDEDIRS = -I$(SRCDIR) -I$(USRCDIR) $(SIMINCLUDEFLAG)
 CFLAGS              = $(OPTFLAG) $(ARCHFLAG)              \
                       $(USRFLAGS)                         \
                       -DVP_MAX_NODES=$(MAX_NUM_VPROC)     \
-                      $(PLIVERSION) $(HDLLANGUAGE)        \
+                      $(HDLLANGUAGE)                      \
                       $(SIMULATOR)                        \
                       $(INCLUDEDIRS)
 
 # Flags for compiling/linking shared object
 CFLAGS_SO           = $(ARCHFLAG)                         \
-                      $(FLAGSOS) $(VERIUSEROBJ) -lpthread \
+                      $(FLAGSOS) -lpthread                \
                       -Wl,-whole-archive                  \
                       $(SIMFLAGSSO)                       \
                       -L$(TESTDIR) -lvproc                \
@@ -132,6 +130,6 @@ $(VOBJS): | $(VOBJDIR)
 $(VOBJDIR):
 	@mkdir $(VOBJDIR)
 
-# Rule to build VProc shared object          
-$(VPROC_PLI): $(VLIB) $(VERIUSEROBJ)
+# Rule to build VProc shared object
+$(VPROC_PLI): $(VLIB)
 	@$(C++) $(CFLAGS_SO) -o $@

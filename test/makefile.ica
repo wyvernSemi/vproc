@@ -51,9 +51,7 @@ ARCHFLAG           = -m64
 OPTFLAG            = -g
 HDLLANGUAGE        =
 SIMULATOR          = -DICARUS
-PLIVERSION         = -DVPROC_PLI_VPI
-VERIUSEROBJ        = $(VOBJDIR)/veriuser.o
-SIMFLAGSSO         = -lveriuser -lvpi
+SIMFLAGSSO         = -lvpi
 
 # Get OS type
 OSTYPE:=$(shell uname)

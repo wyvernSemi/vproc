@@ -78,7 +78,7 @@ echo "" | tee -a $LOGFILE
 # BFM C/C+ regression tests
 #
 
-cd $REGRESSDIR/bfm/test
+cd $REGRESSDIR/../bfm/test
 echo "============ BFM regression tests ============" $'\n' | tee -a $LOGFILE
 for usrcode in usercode 
 do
@@ -99,7 +99,7 @@ done
 # Python regression tests
 #
 # Python tests
-cd $REGRESSDIR/python/test
+cd $REGRESSDIR/../python/test
 
 echo "=========== python regression tests ============" $'\n' | tee -a $LOGFILE
 for usrcode in usercode

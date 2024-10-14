@@ -52,11 +52,7 @@
 
 // Define a string of the configured programming interface
 #if !defined(VPROC_VHDL) && !defined(VPROC_SV)
-# ifndef VPROC_PLI_VPI
-#  define PLI_STRING "PLI TF"
-# else
 #  define PLI_STRING "VPI"
-# endif
 #else
 # ifdef VPROC_VHDL_VHPI
 #  define PLI_STRING "VHPI"
@@ -74,7 +70,6 @@
 #endif
 
 #if !defined(VPROC_NO_PLI)
-#include "veriuser.h"
 #include "vpi_user.h"
 #endif
 
@@ -83,9 +78,6 @@
 #endif
 
 # if defined(VPROC_VHDL) || defined (VPROC_SV)
-
-#define VPROC_TF_TBL_SIZE  0
-#define VPROC_TF_TBL       {0}
 
 #  ifdef VPROC_VHDL_VHPI
 
@@ -137,41 +129,17 @@
 
 # else
 
-#  ifndef VPROC_PLI_VPI
 #  ifdef DEBUG
-#  define debug_io_printf io_printf
+#   define debug_io_printf vpi_printf
 #  else
-#  define debug_io_printf //
+#   define debug_io_printf //
 #  endif
 
-#define VPROC_TF_TBL \
-    {usertask, 0, NULL, 0, VInit,     NULL,  "$vinit",     1}, \
-    {usertask, 0, NULL, 0, VSched,    NULL,  "$vsched",    1}, \
-    {usertask, 0, NULL, 0, VAccess,   NULL,  "$vaccess",   1}, \
-    {usertask, 0, NULL, 0, VProcUser, NULL,  "$vprocuser", 1}, \
-    {usertask, 0, NULL, 0, VIrq,      NULL,  "$virq",      1}
-
-#define VPROC_TF_TBL_SIZE 5
-
-#define VINIT_PARAMS      void
-#define VSCHED_PARAMS     void
-#define VPROCUSER_PARAMS  void
-#define VIRQ_PARAMS       void
-#define VACCESS_PARAMS    void
-#define VHALT_PARAMS      int data, int reason
-
-#define VPROC_RTN_TYPE    int
-
-#  else
-
-#  ifdef DEBUG
-#  define debug_io_printf vpi_printf
-#  else
-#  define debug_io_printf //
-#  endif
-
-#define VPROC_TF_TBL_SIZE  1
-#define VPROC_TF_TBL       {0}
+#define VPROC_VPI_TBL {vpiSysTask, 0, "$vinit",     VInit,     0, 0, 0}, \
+                      {vpiSysTask, 0, "$vsched",    VSched,    0, 0, 0}, \
+                      {vpiSysTask, 0, "$vaccess",   VAccess,   0, 0, 0}, \
+                      {vpiSysTask, 0, "$vprocuser", VProcUser, 0, 0, 0}, \
+                      {vpiSysTask, 0, "$virq",      VIrq,      0, 0, 0},
 
 #define VINIT_PARAMS      char* userdata
 #define VSCHED_PARAMS     char* userdata
@@ -182,7 +150,9 @@
 
 #define VPROC_RTN_TYPE    int
 
-#  endif
+extern int getArgs    (vpiHandle taskHdl, int value[]);
+extern int updateArgs (vpiHandle taskHdl, int value[]);
+
 # endif
 
 extern VPROC_RTN_TYPE VInit     (VINIT_PARAMS);

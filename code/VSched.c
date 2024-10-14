@@ -24,11 +24,11 @@
 // Simulator VProc C interface routines for scheduling
 // access to user processes
 //
-// Configurable to use PLI, VPI, FLI, VHPIDIRECT, VHPI (experimental)
+// Configurable to use VPI, FLI, VHPIDIRECT, VHPI (experimental)
 // DPI-C. By default, VProc compiles for Verilog + PLI. By defining
 // the following, it can be altered for other HDLs/PLIs.
 //
-//   VPROC_PLI_VPI                  : Verilog VPI
+//   <default>                      : Verilog VPI
 //   VPROC_VHDL                     : VHDL and FLI
 //   VPROC_VHDL && VPROC_VHDL_VHPI  : VHDL and VHPI (experimental)
 //   VPROC_VHDL && VPROC_NO_PLI     : VHDL and VHPIDIRECT
@@ -61,11 +61,7 @@ pSchedState_t ns[VP_MAX_NODES];
 static VPROC_RTN_TYPE reg_foreign_procs() {
     int idx;
     vhpiForeignDataT foreignDataArray[] = {
-        {vhpiProcF, (char*)"VProc", (char*)"VInit",           NULL, VInit},
-        {vhpiProcF, (char*)"VProc", (char*)"VSched",          NULL, VSched},
-        {vhpiProcF, (char*)"VProc", (char*)"VProcUser",       NULL, VProcUser},
-        {vhpiProcF, (char*)"VProc", (char*)"VIrq",            NULL, VIrq},
-        {vhpiProcF, (char*)"VProc", (char*)"VAccess",         NULL, VAccess},
+         VPROC_VPI_TBL
         {0}
     };
 
@@ -145,11 +141,15 @@ static void setVhpiParams(const struct vhpiCbDataS* cb, int args[], int start_of
 #endif
 
 // If not VHDL FLI, VHDL VHPI or PLI TF, define VPI specific instructions
-#if !defined (VPROC_VHDL) && !defined(VPROC_VHDL_VHPI) && defined(VPROC_PLI_VPI)
+#if !defined (VPROC_VHDL) && !defined(VPROC_VHDL_VHPI) && !defined(VPROC_SV)
 
 #ifndef MEM_MODEL_VPI_TBL
 #define MEM_MODEL_VPI_TBL
 #endif
+
+// Use internal VPI task registration unless explicitly told that
+// an external table will be used.
+# if !defined(EXTERN_VPI_TABLE)
 
 // -------------------------------------------------------------------------
 // register_vpi_tasks()
@@ -160,11 +160,7 @@ static void setVhpiParams(const struct vhpiCbDataS* cb, int args[], int start_of
 static void register_vpi_tasks()
 {
     s_vpi_systf_data data[] =
-      {{vpiSysTask, 0, "$vinit",     VInit,     0, 0, 0},
-       {vpiSysTask, 0, "$vsched",    VSched,    0, 0, 0},
-       {vpiSysTask, 0, "$vaccess",   VAccess,   0, 0, 0},
-       {vpiSysTask, 0, "$vprocuser", VProcUser, 0, 0, 0},
-       {vpiSysTask, 0, "$virq",      VIrq,      0, 0, 0},
+      {VPROC_VPI_TBL
        MEM_MODEL_VPI_TBL
       };
 
@@ -187,13 +183,15 @@ void (*vlog_startup_routines[])() =
     0
 };
 
+# endif
+
 // -------------------------------------------------------------------------
 // getArgs()
 //
 // Get task arguments using VPI calls
 // -------------------------------------------------------------------------
 
-static int getArgs (vpiHandle taskHdl, int value[])
+int getArgs (vpiHandle taskHdl, int value[])
 {
   int                  idx = 0;
   struct t_vpi_value   argval;
@@ -220,7 +218,7 @@ static int getArgs (vpiHandle taskHdl, int value[])
 // Update task arguments using VPI calls
 // -------------------------------------------------------------------------
 
-static int updateArgs (vpiHandle taskHdl, int value[])
+int updateArgs (vpiHandle taskHdl, int value[])
 {
   int                 idx = 0;
   struct t_vpi_value  argval;
@@ -238,6 +236,13 @@ static int updateArgs (vpiHandle taskHdl, int value[])
 
   return idx;
 }
+
+#else
+
+void (*vlog_startup_routines[])() =
+{
+    0
+};
 
 #endif
 
@@ -264,11 +269,6 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
     // Verilog
     int node;
 
-# ifndef VPROC_PLI_VPI
-    // PLI 1.0
-    // Get single argument value of $vinit call
-    node = tf_getp(VPNODENUM_ARG);
-# else
     // VPI
     vpiHandle          taskHdl;
 
@@ -279,7 +279,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 
     // Get single argument value of $vinit call
     node = args[VPNODENUM_ARG];
-# endif
+
 #else
     // VHDL + VHPI
 # ifdef VPROC_VHDL_VHPI
@@ -355,19 +355,13 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 #if !defined(VPROC_VHDL) && !defined(VPROC_SV)
     int node;
     int Interrupt, VPDataIn;
-# ifndef VPROC_PLI_VPI
-    // Get the input argument values of $vsched
-    node         = tf_getp (VPNODENUM_ARG);
-    Interrupt    = tf_getp (VPINTERRUPT_ARG);
-    VPDataIn     = tf_getp (VPDATAIN_ARG);
-# else
+
     vpiHandle    taskHdl;
 
     // Obtain a handle to the argument list
     taskHdl      = vpi_handle(vpiSysTfCall, NULL);
 
     getArgs(taskHdl, &args[1]);
-# endif
 #else
 # ifdef VPROC_VHDL_VHPI
     int node;
@@ -379,7 +373,7 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 
     // When VHDL with VHPI, or Verilog with VPI, extract input values from argument array
 #if ( defined(VPROC_VHDL) &&  defined(VPROC_VHDL_VHPI)) || \
-    (!defined(VPROC_VHDL) && !defined(VPROC_SV) && defined(VPROC_PLI_VPI))
+    (!defined(VPROC_VHDL) && !defined(VPROC_SV))
 
     // Get argument value of $vsched call
     node         = args[VPNODENUM_ARG];
@@ -445,7 +439,7 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 
     // When VHDL with VHPI, or Verilog with VPI, use argument array
 #if (defined(VPROC_VHDL)  &&  defined(VPROC_VHDL_VHPI)) || \
-    (!defined(VPROC_VHDL) && !defined(VPROC_SV)  && defined(VPROC_PLI_VPI))
+    (!defined(VPROC_VHDL) && !defined(VPROC_SV))
     args[VPDATAOUT_ARG] = VPDataOut_int;
     args[VPADDR_ARG]    = VPAddr_int;
     args[VPRW_ARG]      = VPRw_int;
@@ -464,16 +458,10 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     setVhpiParams(cb, &args[1], VPDATAOUT_ARG-1, VSCHED_NUM_ARGS);
 # endif
 #else
-# ifndef VPROC_PLI_VPI
-    // Update verilog PLI task ($vsched) output values with returned update data
-    tf_putp (VPDATAOUT_ARG, VPDataOut_int);
-    tf_putp (VPADDR_ARG,    VPAddr_int);
-    tf_putp (VPRW_ARG,      VPRw_int);
-    tf_putp (VPTICKS_ARG,   VPTicks_int);
-# else
+
     // Update VPI task outputs from argument array
     updateArgs(taskHdl, &args[1]);
-# endif
+
     return 0;
 #endif
 
@@ -496,12 +484,6 @@ VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 
     int node, value;
 
-# ifndef VPROC_PLI_VPI
-
-    node      = tf_getp (VPNODENUM_ARG);
-    value     = tf_getp (VPINTERRUPT_ARG);
-
-# else
     vpiHandle taskHdl;
 
     // Obtain a handle to the argument list
@@ -513,7 +495,6 @@ VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
     node      = args[VPNODENUM_ARG];
     value     = args[VPINTERRUPT_ARG];
 
-# endif
 #else
 # ifdef VPROC_VHDL_VHPI
     int       node, value;
@@ -553,10 +534,6 @@ VPROC_RTN_TYPE VIrq(VIRQ_PARAMS)
 
     int node, value;
 
-# ifndef VPROC_PLI_VPI
-    node      = tf_getp (VPNODENUM_ARG);
-    value     = tf_getp (VPINTERRUPT_ARG);
-# else
     vpiHandle taskHdl;
 
     // Obtain a handle to the argument list
@@ -567,7 +544,7 @@ VPROC_RTN_TYPE VIrq(VIRQ_PARAMS)
     // Get argument values of $vprocuser call
     node      = args[VPNODENUM_ARG];
     value     = args[VPINTERRUPT_ARG];
-# endif
+
 #else
 # ifdef VPROC_VHDL_VHPI
     int       node, value;;
@@ -627,14 +604,6 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
 #else
    int node, idx;
 
-# ifndef VPROC_PLI_VPI
-    node      = tf_getp (VPNODENUM_ARG);
-    idx       = tf_getp (VPINDEX_ARG);
-
-    tf_putp (VPDATAOUT_ARG, ((int *) ns[node]->send_buf.data_p)[idx]);
-    ((int *) ns[node]->send_buf.data_p)[idx] = tf_getp (VPDATAIN_ARG);
-
-# else
     vpiHandle taskHdl;
 
     // Obtain a handle to the argument list
@@ -650,7 +619,6 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
     ((int *) ns[node]->send_buf.data_p)[idx] = args[VPDATAIN_ARG];
 
     updateArgs(taskHdl, &args[1]);
-# endif
 
     return 0;
 #endif

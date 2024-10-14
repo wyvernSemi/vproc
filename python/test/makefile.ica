@@ -69,7 +69,6 @@ USER_C             = VUserMainPy.c
 
 VOBJS              = ${addprefix ${VOBJDIR}/, ${USER_C:%.c=%.o} ${USER_CPP_BASE:%.cpp=%.o} ${VPROC_C:%.c=%.o}}
 
-PLIFLAG            = -DVPROC_PLI_VPI
 VLOGFLAGS          = -DVPROC_BURST_IF -Ptest.VCD_DUMP=1 -I../..
 VLOGDEBUGFLAGS     = -Ptest.DEBUG_STOP=1
 VLOGFILES          = test.v ../../f_VProc.v
@@ -97,7 +96,6 @@ C++                = g++
 CPPSTD             = -std=c++11
 CFLAGS             = -fPIC                                 \
                      ${ARCHFLAG}                           \
-                     ${PLIFLAG}                            \
                      -g                                    \
                      -D_GNU_SOURCE                         \
                      ${USRFLAGS}                           \
@@ -155,10 +153,10 @@ ${PYVRPOC_PLI}: ${PYSRCDIR}/${PYTHON_C}
            -o $@
 
 verilog: ${VLOGFILES}
-	@iverilog ${VLOGFLAGS} ${PLIFLAG} -o sim ${VLOGFILES}
+	@iverilog ${VLOGFLAGS} -o sim ${VLOGFILES}
 
 verilog_debug: ${VLOGFILES}
-	@iverilog ${VLOGDEBUGFLAGS} ${VLOGFLAGS} ${PLIFLAG} -o sim ${VLOGFILES}
+	@iverilog ${VLOGDEBUGFLAGS} ${VLOGFLAGS} -o sim ${VLOGFILES}
 
 #------------------------------------------------------
 # EXECUTION RULES

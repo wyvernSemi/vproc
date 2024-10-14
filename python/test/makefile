@@ -90,11 +90,9 @@ PYVRPOC_PLI        = $(TESTDIR)/PyVProc.so
 ifeq ("$(HDL)", "VHDL")
   HDLLANGUAGE      = -DVPROC_VHDL
   HDLCMD           = vcom -quiet -2008 -work work -f files.tcl
-  PLIVERSION       =
 else
   HDLLANGUAGE      =
   HDLCMD           = vlog $(VLOGFLAGS) -f test.vc
-  PLIVERSION       = -DVPROC_PLI_VPI
 endif
 
 VPROC_TOP          = test
@@ -111,7 +109,6 @@ C++                = g++
 CPPSTD             = -std=c++11
 CFLAGS             = -fPIC                                 \
                      $(ARCHFLAG)                           \
-                     $(PLIVERSION)                         \
                      $(OPTFLAGS)                           \
                      -D_GNU_SOURCE                         \
                      $(USRFLAGS)                           \
@@ -181,7 +178,7 @@ hdl: $(VPROC_PLI)
 	    vlib work;                                         \
 	fi
 	@$(HDLCMD)
-    
+
 
 #------------------------------------------------------
 # EXECUTION RULES

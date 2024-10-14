@@ -41,8 +41,6 @@ ARCHFLAG           = -m64
 OPTFLAG            = -g
 HDLLANGUAGE        = -DVPROC_VHDL
 SIMULATOR          = -DNVC
-PLIVERSION         = 
-VERIUSEROBJ        = 
 SIMINCLUDEFLAG     = 
 SIMFLAGSSO         =
 

@@ -58,18 +58,15 @@ VOBJDIR            = $(TESTDIR)/obj
 # Settings specific to target simulator
 
 SIMULATOR          = -DMODELSIM
-VERIUSEROBJ        = $(VOBJDIR)/veriuser.o
 SIMINCLUDEFLAG     = -I$(MODEL_TECH)/../include
 SIMFLAGSSO         = -L$(MODEL_TECH) -lmtipli
 
 ifeq ("$(HDL)", "VHDL")
   HDLLANGUAGE      = -DVPROC_VHDL
   HDLCMD           = vcom -quiet -2008 -work work -f files.tcl
-  PLIVERSION       =
 else
   HDLLANGUAGE      =
   HDLCMD           = vlog +define+VPROC_BURST_IF +define+VPROC_BYTE_INTERFACE +incdir+../ -f test.vc
-  PLIVERSION       = -DVPROC_PLI_VPI
 endif
 
 # Common logic simulator flags

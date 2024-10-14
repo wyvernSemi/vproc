@@ -52,8 +52,6 @@ endif
 OPTFLAG            = -g
 HDLLANGUAGE        =
 SIMULATOR          = -DMODELSIM
-PLIVERSION         = -DVPROC_PLI_VPI
-VERIUSEROBJ        = $(VOBJDIR)/veriuser.o
 SIMINCLUDEFLAG     = -I$(MODEL_TECH)/../include -I./include
 SIMFLAGSSO         = -L$(MODEL_TECH) -lmtipli -L./lib -lrv32$(LIBOS)$(LIBARCH)
 POSTVPROCSOFLAGS   = $(WLIB)

@@ -24,7 +24,6 @@
 # MODEL_TECH environment variable must be set
 
 # User C/C++ overridable flags
-PLIVERSION         = -DVPROC_PLI_VPI
 USRFLAGS           =
 USER_C             = VUserMain0.c
 USRCDIR            = usercode
@@ -85,11 +84,11 @@ else ifeq ("$(BUSTYPE)", "APB")
   FILELIST         = test_apb.vc
   SIM_TOP          = testapb
   SIMDEFS          = -DVPROC_BYTE_ENABLE -DMEM_EN_TX_BYTEENABLE
-else               
+else
   FILELIST         = test_av.vc
   SIMDEFS          = -DVPROC_BYTE_ENABLE
   SIM_TOP          = testavm
-endif              
+endif
 
 VHDLFILES          = $(foreach vhdlfile, $(file < $(FILELIST)), $(vhdlfile))
 
@@ -110,7 +109,6 @@ $(VPROC_PLI):
           USER_C="$(USER_C)"               \
           MEMMODELDIR="$(MEMMODELDIR)/src" \
           MEM_C="$(MEM_C)"                 \
-          PLIVERSION=$(PLIVERSION)         \
           TESTDIR=$(TESTDIR)
 
 $(MEMMODELDIR):

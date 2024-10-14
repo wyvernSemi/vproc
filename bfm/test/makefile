@@ -24,7 +24,6 @@
 # MODEL_TECH environment variable must be set
 
 # User C/C++ overridable flags
-PLIVERSION         =
 USRFLAGS           =
 USER_C             = VUserMain0.c
 USRCDIR            = usercode
@@ -76,7 +75,7 @@ ifeq ("$(HDL)", "VHDL")
   ifeq ("$(BUSTYPE)", "AXI")
     FILELIST       = files.tcl
     SIM_TOP        = testaxi
-    HDLFLAG        += -DAXI 
+    HDLFLAG        += -DAXI
   else ifeq ("$(BUSTYPE)", "AHB")
     FILELIST       = files_ahb.tcl
     SIM_TOP        = testahb
@@ -110,7 +109,6 @@ else
     FILELIST       = test_av.vc
     SIM_TOP        = testavm
   endif
-  PLIVERSION       = -DVPROC_PLI_VPI
   HDLCMD           = vlog -quiet $(SIMDEFS) +define+MEM_EN_TX_BYTEENABLE +define+VPROC_BYTE_ENABLE \
                      +incdir+../ +incdir+../../ -f $(FILELIST)
   VSIMFLAGS        = -pli $(VPROC_PLI) $(USRSIMFLAGS) $(SIM_TOP)
@@ -131,7 +129,6 @@ $(VPROC_PLI):
           USER_C="$(USER_C)"               \
           MEMMODELDIR="$(MEMMODELDIR)/src" \
           MEM_C="$(MEM_C)"                 \
-          PLIVERSION=$(PLIVERSION)         \
           TESTDIR=$(TESTDIR)
 
 $(MEMMODELDIR):

@@ -24,7 +24,6 @@
 # MODEL_TECH environment variable must be set
 
 # User C/C++ overridable flags
-PLIVERSION         =
 USRFLAGS           =
 USER_C             = VUserMain0.c
 USRCDIR            = usercode
@@ -150,7 +149,6 @@ $(VLIB):
           USER_C="$(USER_C)"               \
           MEMMODELDIR="$(MEMMODELDIR)/src" \
           MEM_C="$(MEM_C)"                 \
-          PLIVERSION=$(PLIVERSION)         \
           TESTDIR=$(TESTDIR)               \
           $(VLIB)
 
