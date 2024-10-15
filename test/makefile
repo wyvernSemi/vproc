@@ -59,19 +59,19 @@ VOBJDIR            = $(TESTDIR)/obj
 
 SIMULATOR          = -DMODELSIM
 SIMINCLUDEFLAG     = -I$(MODEL_TECH)/../include
-SIMFLAGSSO         = -L$(MODEL_TECH) -lmtipli
 
 ifeq ("$(HDL)", "VHDL")
   HDLLANGUAGE      = -DVPROC_VHDL
   HDLCMD           = vcom -quiet -2008 -work work -f files.tcl
+  VSIMFLAGS        = $(VPROC_TOP)
 else
-  HDLLANGUAGE      =
+  SIMFLAGSSO       = -L$(MODEL_TECH) -lmtipli
   HDLCMD           = vlog +define+VPROC_BURST_IF +define+VPROC_BYTE_INTERFACE +incdir+../ -f test.vc
+  VSIMFLAGS        = -pli $(VPROC_PLI) $(VPROC_TOP)
 endif
 
 # Common logic simulator flags
 VPROC_TOP          = test
-VSIMFLAGS          = -pli $(VPROC_PLI) $(VPROC_TOP)
 
 #------------------------------------------------------
 # MODEL_TECH path

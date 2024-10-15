@@ -237,14 +237,6 @@ int updateArgs (vpiHandle taskHdl, int value[])
   return idx;
 }
 
-#else
-// Questa complains if there is no PLI or VPI start up routine or table,
-// so for non-VPI builds define an empty one.
-void (*vlog_startup_routines[])() =
-{
-    0
-};
-
 #endif
 
 // =========================================================================

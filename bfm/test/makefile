@@ -64,6 +64,7 @@ CFLAGS             = $(USRFLAGS)                           \
                      -I$(MEMMODELDIR)/src                  \
                      -DINCL_VLOG_MEM_MODEL                 \
                      -DMEM_MODEL_DEFAULT_ENDIAN=1          \
+                     -DMEM_ZERO_NEW_PAGES                  \
                      $(HDLFLAG)
 
 # Simulation configuration
