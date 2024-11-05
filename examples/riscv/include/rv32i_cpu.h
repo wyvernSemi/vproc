@@ -91,6 +91,19 @@ public:
     };
 
     // ------------------------------------------------
+    // Public type definitions
+    // ------------------------------------------------
+    enum class timing_index_e {
+        TIMING_LINEAR,
+        TIMING_JUMP,
+        TIMING_LOAD,
+        TIMING_STORE,
+        TIMING_TRAP,
+        TIMING_MUL_DIV,
+        TIMING_FLOAT
+    };
+
+    // ------------------------------------------------
     // Constructors/destructors
     // ------------------------------------------------
 
@@ -146,8 +159,60 @@ public:
     LIBRISCV32_API void          register_int_callback(p_rv32i_intcallback_t callback_func) { };
 
     // Return cycle count
-    inline uint64_t clk_cycles() {
+    LIBRISCV32_API inline uint64_t clk_cycles() {
         return cycle_count;
+    }
+
+    // Update timing model values
+    LIBRISCV32_API inline int update_timing (const timing_index_e idx, const uint32_t value)
+    {
+        int diff_default;
+        int error = 0;
+
+        switch (idx)
+        {
+        case timing_index_e::TIMING_LINEAR:
+            diff_default                    = value - RV32I_DEFAULT_INSTR_CYCLE_COUNT;
+            RV32I_DEFAULT_INSTR_CYCLE_COUNT = value;
+
+            // If default instruction timing changes, adjust all the relative timings
+            if (diff_default)
+            {
+                RV32I_JUMP_INSTR_EXTRA_CYCLES   -= diff_default;
+                RV32I_BRANCH_TAKEN_EXTRA_CYCLES -= diff_default;
+                RV32I_LOAD_EXTRA_CYCLES         -= diff_default;
+                RV32I_STORE_EXTRA_CYCLES        -= diff_default;
+                RV32I_TRAP_EXTRA_CYCLES         -= diff_default;
+                RV32I_MUL_DIV_EXTRA_CYCLES      -= diff_default;
+                RV32I_FLOAT_EXTRA_CYCLES        -= diff_default;
+            }
+
+          break;
+        case timing_index_e::TIMING_JUMP:
+            RV32I_JUMP_INSTR_EXTRA_CYCLES   = value - RV32I_DEFAULT_INSTR_CYCLE_COUNT;
+            RV32I_BRANCH_TAKEN_EXTRA_CYCLES = value - RV32I_DEFAULT_INSTR_CYCLE_COUNT;
+            break;
+        case timing_index_e::TIMING_LOAD:
+            RV32I_LOAD_EXTRA_CYCLES         = value - RV32I_DEFAULT_INSTR_CYCLE_COUNT;
+            break;
+        case timing_index_e::TIMING_STORE:
+            RV32I_STORE_EXTRA_CYCLES        = value - RV32I_DEFAULT_INSTR_CYCLE_COUNT;
+            break;
+        case timing_index_e::TIMING_TRAP:
+            RV32I_TRAP_EXTRA_CYCLES         = value - RV32I_DEFAULT_INSTR_CYCLE_COUNT;
+            break;
+        case timing_index_e::TIMING_MUL_DIV:
+            RV32I_MUL_DIV_EXTRA_CYCLES      = value - RV32I_DEFAULT_INSTR_CYCLE_COUNT;
+            break;
+        case timing_index_e::TIMING_FLOAT:
+            RV32I_FLOAT_EXTRA_CYCLES        = value - RV32I_DEFAULT_INSTR_CYCLE_COUNT;
+            break;
+        default:
+            error++;
+            break;
+        }
+
+        return error;
     }
 
     // ------------------------------------------------
@@ -185,6 +250,16 @@ protected:
     // Clock cycle count. Protected status so that rvcsr_cpu overriding of process_trap()
     // method can update it on exceptions.
     rv32i_time_t          cycle_count;
+
+    // Timing model definitions
+    int32_t RV32I_DEFAULT_INSTR_CYCLE_COUNT              = 1;
+    int32_t RV32I_JUMP_INSTR_EXTRA_CYCLES                = 3;
+    int32_t RV32I_BRANCH_TAKEN_EXTRA_CYCLES              = 3;
+    int32_t RV32I_TRAP_EXTRA_CYCLES                      = 3;
+    int32_t RV32I_LOAD_EXTRA_CYCLES                      = 2;
+    int32_t RV32I_STORE_EXTRA_CYCLES                     = 2;
+    int32_t RV32I_MUL_DIV_EXTRA_CYCLES                   = 33;
+    int32_t RV32I_FLOAT_EXTRA_CYCLES                     = 3;
 
     // ------------------------------------------------
     // Internal constant definitions

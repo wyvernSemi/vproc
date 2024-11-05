@@ -284,11 +284,6 @@ public:
     static const uint64_t RV32I_QNAND                                  = 0x7ff8000000000000UL;
     static const uint64_t RV32I_SNAND                                  = 0x7ff0000000000001UL;
 
-    // Timing model definitions
-    static const uint32_t RV32I_DEFAULT_INSTR_CYCLE_COUNT              = 1;
-    static const uint32_t RV32I_JUMP_INSTR_EXTRA_CYCLES                = 3;
-    static const uint32_t RV32I_BRANCH_TAKEN_EXTRA_CYCLES              = 3;
-    static const uint32_t RV32I_TRAP_EXTRA_CYCLES                      = 3;
 };
 
 // -------------------------------------------------------------------------
