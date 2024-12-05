@@ -64,6 +64,6 @@
                                                         1000000000000.0))
 
 extern void flushfst (void);
-extern void VerilatorSimCtrl(void);
+extern void VerilatorSimCtrl(const uint32_t node);
 
 #endif

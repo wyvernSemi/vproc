@@ -23,9 +23,6 @@
 #include "VProcClass.h"
 #include "VerilatorSimCtrl.h"
 
-// I'm node 0
-static const int node = 0;
-
 // ---------------------------------------------
 // advance_relative_cycles()
 // ---------------------------------------------
@@ -291,7 +288,7 @@ void rungtkwave (void)
 // function
 // ---------------------------------------------
 
-void VerilatorSimCtrl (void)
+void VerilatorSimCtrl (const uint32_t node)
 {
     uint32_t    clk_period_ps;
     uint32_t    cyc_count_now;

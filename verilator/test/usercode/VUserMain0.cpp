@@ -31,7 +31,7 @@ static const int node = 0;
 
 extern "C" void VUserMain0 (void)
 {
-    VerilatorSimCtrl();
+    VerilatorSimCtrl(node);
 
     SLEEPFOREVER;
 }
