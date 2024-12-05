@@ -57,6 +57,10 @@ endif
 MEM_C              =
 MEMMODELDIR        = .
 
+# Optional auxilary user code definitions
+AUX_C              =
+AUXDIR             = .
+
 #......................................................
 # Common logic simulator flags
 #.....................................................

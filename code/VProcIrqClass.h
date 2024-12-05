@@ -25,6 +25,9 @@
 
 #include "VProcClass.h"
 
+#ifndef _VPROCCLASS_IRQ_H_
+#define _VPROCCLASS_IRQ_H_
+
 class VProcIrqClass : public VProc
 {
 public:
@@ -204,3 +207,5 @@ private:
     uint32_t   edgeTriggered;      // Mark irq vector edge triggerd inputs
     pIntFunc_t isr[MAXINTERRUPTS]; // pointers to ISR functions
 };
+
+#endif

@@ -32,6 +32,8 @@
 #include <cmath>
 #include <regex>
 
+#include "VProcClass.h"
+
 #ifndef _VERILATORSIMCTRL_H_
 #define _VERILATORSIMCTRL_H_
 

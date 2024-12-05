@@ -23,6 +23,9 @@
 // C++ API class wrapper for VProc C API
 //=====================================================================
 
+#ifndef _VPROCCLASS_H_
+#define _VPROCCLASS_H_
+
 extern "C"
 {
 #include "VUser.h"
@@ -103,3 +106,5 @@ private:
         return bytelen/4 + ((diffoff < 0) ? 1 : 0) + ((bytelen%4) ? 1 : 0);
     };
 };
+
+#endif

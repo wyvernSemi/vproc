@@ -52,7 +52,8 @@ SIMDEFS            = -GDISABLE_SIM_CTRL=0
 WORKDIR            = work
 
 # set to -GVCD_DUMP=1 to generate VCD ouput, or blank for none
-VCDFLAG            = --trace-fst -GDISABLE_SIM_CTRL=1
+#VCDFLAG            = --trace-fst -GDISABLE_SIM_CTRL=1
+VCDFLAG            = --trace -GDISABLE_SIM_CTRL=1
 
 # Set to --timing for delta cycle support, or blank for no delta-cycle
 TIMINGFLAG         = --timing
@@ -66,10 +67,10 @@ SIMCFLAGS          = $(CPPSTD) -DVL_TIME_CONTEXT -Wno-attributes
 OSTYPE             := $(shell uname)
 
 ifeq ($(OSTYPE), Linux)
-  SIMFLAGSSO       = -Wl,-E -lrt -rdynamic
+  SIMFLAGSLD       = -Wl,-E -lrt -rdynamic
   SIMEXE           = $(WORKDIR)/V$(SIM_TOP)
 else
-  SIMFLAGSSO       = -Wl,-export-all-symbols
+  SIMFLAGSLD       = -Wl,-export-all-symbols
   SIMEXE             = $(WORKDIR)/V$(SIM_TOP).exe
 endif
 
@@ -86,13 +87,14 @@ SIMFLAGS           = --cc -sv -exe $(VERIMAIN)              \
                      --top $(SIM_TOP)                       \
                      -MAKEFLAGS "--quiet"                   \
                      -CFLAGS "$(SIMCFLAGS)"                 \
-                     -LDFLAGS "$(SIMFLAGSSO)                \
+                     -LDFLAGS "$(SIMFLAGSLD)                \
                      $(VSCCODE)                             \
                      -Wl,-whole-archive -L../ -lvproc -Wl,-no-whole-archive -ldl"
 
 
 
-WAVEFILE           = waves.fst
+#WAVEFILE           = waves.fst
+WAVEFILE           = waves.vcd
 WAVESAVEFILE       = wave.gtkw
 
 SPACE              =

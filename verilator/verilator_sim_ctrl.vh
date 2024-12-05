@@ -1,7 +1,8 @@
 // ====================================================================
-// VUserMain0.h                                        Date: 2024/12/03
 //
-// Copyright (c) 2024 Simon Southwell
+// SystemVerilog VProc Verilator simulation control module header
+//
+// Copyright (c) 2024 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -18,13 +19,8 @@
 // You should have received a copy of the GNU General Public License
 // along with VProc. If not, see <http://www.gnu.org/licenses/>.
 //
-// ===================================================================
+// ====================================================================
 
-#ifndef _VUSERMAIN0_CPP_
-#define _VUSERMAIN0_CPP_
-
-#include "VerilatorSimCtrl.h"
-
-#define SLEEPFOREVER {while(1) VTick(0x7fffffff, node);}
-
-#endif
+`define VSC_CYC_COUNT_ADDR   32'h0
+`define VSC_CLK_PERIOD_ADDR  32'h1
+`define VSC_FINISH_ADDR      32'h2

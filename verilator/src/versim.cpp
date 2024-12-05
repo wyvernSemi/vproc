@@ -20,12 +20,14 @@
 //
 // ====================================================================
 
-#include <verilated_fst_c.h>
+//#include <verilated_fst_c.h>
+#include <verilated_vcd_c.h>
 
 #include "verilated.h"
 #include "Vtest.h"
 
-static VerilatedFstC *trace_p  = new VerilatedFstC;
+//static VerilatedFstC *trace_p  = new VerilatedFstC;
+static VerilatedVcdC *trace_p  = new VerilatedVcdC;
 static bool           do_flush = true;
 
 //-----------------------------------------
@@ -62,7 +64,8 @@ int main(int argc, char** argv)
    test_p->trace(trace_p, 20);
    
    // Open a wave form file
-   trace_p->open("waves.fst");
+   //trace_p->open("waves.fst");
+   trace_p->open("waves.vcd");
 
    // Simulate until $finish or no events left to process
    while (!contextp->gotFinish())

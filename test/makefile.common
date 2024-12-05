@@ -26,8 +26,10 @@
 #    SRCDIR             : Location of VProc source files
 #    USRCDIR            : Location of user C/C++ source files
 #    MEMMODELDIR        : Location of optional memory model source files (set to . if unused)
+#    AUXDIR             : Location of optional auxilary user source files (set to . if unused)
 #    USER_C             : List of user C/C++ source files (no path)
 #    MEM_C              : Optional list of memory model C/C++ source files (no path)
+#    AUX_C              : Optional list of auxilary user C/C++ source files (no path)
 #    VOBJDIR            : Location of temporary directory for object files
 #    OSTYPE             : OS type. "Linux" for Linux else defaults to MSYS2/mingw64 on windows
 #    SIMINCLUDEFLAG     : Include flag (-I) for logic simulator's include path
@@ -52,6 +54,8 @@ USER_CPP_BASE       = $(notdir $(filter %cpp, $(USER_C)))
 USER_C_BASE         = $(notdir $(filter %c,   $(USER_C)))
 MEM_CPP_BASE        = $(notdir $(filter %cpp, $(MEM_C)))
 MEM_C_BASE          = $(notdir $(filter %c,   $(MEM_C)))
+AUX_CPP_BASE        = $(notdir $(filter %cpp, $(AUX_C)))
+AUX_C_BASE          = $(notdir $(filter %c,   $(AUX_C)))
 
 # Create list of object files (excluding any veriuser object)
 VOBJS               = $(addprefix $(VOBJDIR)/,            \
@@ -59,7 +63,9 @@ VOBJS               = $(addprefix $(VOBJDIR)/,            \
                           $(USER_CPP_BASE:%.cpp=%.o)      \
                           $(VPROC_C:%.c=%.o)              \
                           $(MEM_C_BASE:%.c=%.o)           \
-                          $(MEM_CPP_BASE:%.cpp=%.o))
+                          $(MEM_CPP_BASE:%.cpp=%.o)       \
+                          $(AUX_C_BASE:%.c=%.o)           \
+                          $(AUX_CPP_BASE:%.cpp=%.o))
 
 # Set OS specific variables between Linux and Windows (MinGW)
 ifeq ($(OSTYPE), Linux)
@@ -117,6 +123,14 @@ $(VOBJDIR)/%.o: $(MEMMODELDIR)/%.c $(MEMMODELDIR)/*.h
 
 # Rule to build (any) memory model C++ sources
 $(VOBJDIR)/%.o: $(MEMMODELDIR)/%.cpp $(MEMMODELDIR)/*.h
+	@$(C++) -c -fPIC $(CFLAGS) $< -o $@
+
+# Rule to build (any) auxilary C sources
+$(VOBJDIR)/%.o: $(AUXDIR)/%.c $(AUXDIR)/*.h
+	@$(CC) -c -fPIC $(CFLAGS) $< -o $@
+
+# Rule to build (any) memory model C++ sources
+$(VOBJDIR)/%.o: $(AUXDIR)/%.cpp $(AUXDIR)/*.h
 	@$(C++) -c -fPIC $(CFLAGS) $< -o $@
 
 # Rule to build VProc library

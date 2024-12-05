@@ -283,7 +283,7 @@ static int parse_command(const std::string &command, VProc *vp, uint32_t &cyc_co
 
 void rungtkwave (void)
 {
-    system("gtkwave -A waves.fst > gtkwave.log 2>&1");
+    system("gtkwave -A waves.vcd > gtkwave.log 2>&1");
 }
 
 // ---------------------------------------------
