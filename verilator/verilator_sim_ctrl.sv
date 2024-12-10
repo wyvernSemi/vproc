@@ -109,6 +109,17 @@ if (DISABLE_SIM_CTRL == 0) begin
       .DataIn                 (datain),
       .RD                     (rd),
       .RDAck                  (rd),
+      
+`ifdef VPROC_BYTE_ENABLE
+      .BE                     (),
+`endif
+
+`ifdef VPROC_BURST_IF
+    // Burst count
+    Burst                     (), 
+    BurstFirst                (),
+    BurstLast                 (),
+`endif
 
       // Interrupts
       .Interrupt              (0),
