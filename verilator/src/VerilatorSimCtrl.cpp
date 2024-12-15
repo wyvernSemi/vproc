@@ -278,9 +278,13 @@ static int parse_command(const std::string &command, VProc *vp, uint32_t &cyc_co
 // Function to run gtkwave in a thread
 // ---------------------------------------------
 
-void rungtkwave (void)
+void rungtkwave (const char* wavefnameprefix, const bool fst = false)
 {
-    system("gtkwave -A waves.vcd > gtkwave.log 2>&1");
+    char sbuf[256];
+    
+    sprintf(sbuf, "gtkwave -A %s.%s > gtkwave.log 2>&1", wavefnameprefix, fst ? "fst" : "vcd");
+
+    system(sbuf);
 }
 
 // ---------------------------------------------
@@ -288,7 +292,7 @@ void rungtkwave (void)
 // function
 // ---------------------------------------------
 
-void VerilatorSimCtrl (const uint32_t node)
+void VerilatorSimCtrl (const uint32_t node, const char* wavefnameprefix, const bool usefst)
 {
     uint32_t    clk_period_ps;
     uint32_t    cyc_count_now;
@@ -303,7 +307,7 @@ void VerilatorSimCtrl (const uint32_t node)
     vp->read(VSC_CLK_PERIOD_ADDR, &clk_period_ps); flushfst();
     vp->read(VSC_CYC_COUNT_ADDR,  &cyc_count_now); flushfst();
 
-    std::thread thread_obj(rungtkwave);
+    std::thread thread_obj(rungtkwave, wavefnameprefix, usefst);
 
     // Print initial prompt
     std::cout << std::fixed << std::showpoint << std::setprecision(3);

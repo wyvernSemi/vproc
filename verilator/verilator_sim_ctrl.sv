@@ -115,10 +115,10 @@ if (DISABLE_SIM_CTRL == 0) begin
 `endif
 
 `ifdef VPROC_BURST_IF
-    // Burst count
-    Burst                     (), 
-    BurstFirst                (),
-    BurstLast                 (),
+      // Burst count
+      .Burst                  (), 
+      .BurstFirst             (),
+      .BurstLast              (),
 `endif
 
       // Interrupts

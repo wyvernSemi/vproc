@@ -64,6 +64,6 @@
                                                         1000000000000.0))
 
 extern void flushfst (void);
-extern void VerilatorSimCtrl(const uint32_t node);
+extern void VerilatorSimCtrl(const uint32_t node, const char* wavefnameprefix = "waves", const bool usefst = false);
 
 #endif
