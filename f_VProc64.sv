@@ -1,9 +1,9 @@
 // ====================================================================
 //
-// SystemVerilog side Virtual Processor, for running host
+// SystemVerilog side Virtual Processor 64-bit, for running host
 // programs as control in simulation.
 //
-// Copyright (c) 2024 Simon Southwell.
+// Copyright (c) 2025 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -23,8 +23,13 @@
 // ====================================================================
 
 // The SystemVerilog VProc HDL is the same as the Verilog, 
-// with DPI definitions inluded here
+// with DPI definitions included here
 
 `define VPROC_SV
 
-`include "f_VProc.v"
+`ifndef VPROCDPI_INCLUDED
+`include "vprocdpi.vh"
+`endif
+`include "vprocdpi64.vh"
+
+`include "f_VProc64.v"

@@ -2,7 +2,7 @@
 //
 // VProc.h                                            Date: 2004/12/13 
 //
-// Copyright (c) 2004-2024 Simon Southwell.
+// Copyright (c) 2004-2025 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -35,7 +35,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define VERSION_STRING         "VProc version 1.12.2. Copyright (c) 2004-2024 Simon Southwell."
+#define VERSION_STRING         "VProc version 2.0.0. Copyright (c) 2004-2025 Simon Southwell."
 
 #ifndef VP_MAX_NODES
 #define VP_MAX_NODES            64
@@ -62,7 +62,16 @@
 #define VPADDR_ARG              5
 #define VPRW_ARG                6
 #define VPTICKS_ARG             7
-#define VPRESTORE_ARG           8
+
+#define VPDATAINLO_ARG64        3
+#define VPDATAINHI_ARG64        4
+#define VPDATAOUTLO_ARG64       5
+#define VPDATAOUTHI_ARG64       6
+#define VPADDRLO_ARG64          7
+#define VPADDRHI_ARG64          9
+#define VPRW_ARG64              9
+#define VPTICKS_ARG64           10
+
 
 // A default string buffer size
 #define DEFAULT_STR_BUF_SIZE    32
@@ -81,25 +90,28 @@ typedef struct {
     uint32_t write    : 1;
     uint32_t read     : 1;
     uint32_t burstlen : 12;
-    uint32_t fbe      : 4;
-    uint32_t lbe      : 4;
-    uint32_t rsvd     : 10;
+    uint32_t fbe      : 8;
+    uint32_t lbe      : 8;
+    uint32_t rsvd     : 2;
 } rw_t;
 
 
 // User thread to simulation exchange structure
 typedef struct {
-    unsigned int        addr;
-    unsigned int        data_out;
-    unsigned int        rw;
+    uint32_t            addr;
+    uint32_t            addr_hi;
+    uint32_t            data_out;
+    uint32_t            data_out_hi;
+    uint32_t            rw;
     void                *data_p;
     int                 ticks;
 } send_buf_t, *psend_buf_t;
 
 // Simulation to user thread exchange structure
 typedef struct {
-    unsigned int        data_in;
-    unsigned int        interrupt;
+    uint32_t           data_in;
+    uint32_t           data_in_hi;
+    uint32_t           interrupt;
 } rcv_buf_t, *prcv_buf_t;
 
 // Shared object handle typedef

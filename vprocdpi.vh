@@ -24,6 +24,8 @@
 
 // Import DPI-C fuctions
 
+`define VPROCDPI_INCLUDED
+
 import "DPI-C" function void VInit     (input  int node);
 
 import "DPI-C" function void VSched    (input  int node, 

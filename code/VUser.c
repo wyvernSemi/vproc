@@ -2,7 +2,7 @@
 //
 // VUser.c                                            Date: 2004/12/13
 //
-// Copyright (c) 2004-2024 Simon Southwell.
+// Copyright (c) 2004-2025 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -44,7 +44,7 @@ static void VUserInit (const unsigned node);
 // calling VUserInit().
 // -------------------------------------------------------------------------
 
-int VUser (const unsigned node)
+int VUser (const uint32_t node)
 {
     pthread_t thread;
     int       status;
@@ -83,7 +83,7 @@ int VUser (const unsigned node)
 // simulation before calling user procedure.
 // -------------------------------------------------------------------------
 
-static void VUserInit (const unsigned node)
+static void VUserInit (const uint32_t node)
 {
     handle_t     hdl;
     pVUserMain_t VUserMain_func;
@@ -138,7 +138,7 @@ static void VUserInit (const unsigned node)
 // the original IO message reply is waited for again.
 // -------------------------------------------------------------------------
 
-static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
+static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const uint32_t node)
 {
     int status;
     // Send message to simulator
@@ -208,7 +208,7 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
 // Invokes a write message exchange
 // -------------------------------------------------------------------------
 
-int VWrite (const unsigned addr, const unsigned data, const int delta, const unsigned node)
+int VWrite (const uint32_t addr, const uint32_t data, const int delta, const uint32_t node)
 {
     return VWriteBE(addr, data, 0xf, delta, node);
 }
@@ -219,7 +219,7 @@ int VWrite (const unsigned addr, const unsigned data, const int delta, const uns
 // Invokes a write message exchange with byte enables
 // -------------------------------------------------------------------------
 
-int VWriteBE (const unsigned addr, const unsigned data, const unsigned be, const int delta, const unsigned node)
+int VWriteBE (const uint32_t addr, const uint32_t data, const uint32_t be, const int delta, const uint32_t node)
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
@@ -244,7 +244,7 @@ int VWriteBE (const unsigned addr, const unsigned data, const unsigned be, const
 // Invokes a read message exchange
 // -------------------------------------------------------------------------
 
-int VRead (const unsigned addr, unsigned *rdata, const int delta, const unsigned node)
+int VRead (const uint32_t addr, uint32_t *rdata, const int delta, const uint32_t node)
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
@@ -271,7 +271,7 @@ int VRead (const unsigned addr, unsigned *rdata, const int delta, const unsigned
 // Invokes a burst write message exchange
 // -------------------------------------------------------------------------
 
-int VBurstWrite (const unsigned addr, void *data, const unsigned wordlen, const unsigned node)
+int VBurstWrite (const uint32_t addr, void *data, const uint32_t wordlen, const uint32_t node)
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
@@ -299,7 +299,7 @@ int VBurstWrite (const unsigned addr, void *data, const unsigned wordlen, const 
 // Invokes a burst write message exchange with byte enables
 // -------------------------------------------------------------------------
 
-int VBurstWriteBE (const unsigned addr, void *data, const unsigned wordlen, const unsigned fbe, const unsigned lbe, const unsigned node)
+int VBurstWriteBE (const uint32_t addr, void *data, const uint32_t wordlen, const uint32_t fbe, const uint32_t lbe, const uint32_t node)
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
@@ -327,7 +327,7 @@ int VBurstWriteBE (const unsigned addr, void *data, const unsigned wordlen, cons
 // Invokes a burst read message exchange
 // -------------------------------------------------------------------------
 
-int VBurstRead (const unsigned int addr, void *data, const unsigned wordlen, const unsigned node)
+int VBurstRead (const uint32_t addr, void *data, const uint32_t wordlen, const uint32_t node)
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
@@ -348,6 +348,164 @@ int VBurstRead (const unsigned int addr, void *data, const unsigned wordlen, con
 
     return 0;
 }
+
+// -------------------------------------------------------------------------
+// VWrite
+//
+// Invokes a 64-bit write message exchange
+// -------------------------------------------------------------------------
+
+int VWrite64 (const uint64_t addr, const uint64_t data, const int delta, const uint32_t node)
+{
+    return VWriteBE64(addr, data, 0xff, delta, node);
+}
+
+// -------------------------------------------------------------------------
+// VWriteBE64
+//
+// Invokes a 64-bit write message exchange with byte enables
+// -------------------------------------------------------------------------
+
+int VWriteBE64 (const uint64_t addr, const uint64_t data, const uint32_t be, const int delta, const uint32_t node)
+{
+    rcv_buf_t  rbuf;
+    send_buf_t sbuf;
+    rw_t*      p_rw  = (rw_t*)&sbuf.rw;
+
+    sbuf.addr        = (uint32_t)(addr & 0xffffffffULL);
+    sbuf.addr_hi     = (uint32_t)((addr >> 32) & 0xffffffffULL);
+    sbuf.data_out    = (uint32_t)(data & 0xffffffffULL);
+    sbuf.data_out_hi = (uint32_t)((data >> 32) & 0xffffffffULL);
+    sbuf.ticks       = delta ? DELTA_CYCLE : 0;
+
+    sbuf.rw          = 0;  // clear RW fields
+    p_rw->write      = 1;
+    p_rw->fbe        = be & 0xf;
+
+    VExch(&sbuf, &rbuf, node);
+
+    return rbuf.data_in ;
+}
+
+// -------------------------------------------------------------------------
+// VRead64
+//
+// Invokes a 64-bit read message exchange
+// -------------------------------------------------------------------------
+
+int VRead64 (const uint64_t addr, uint64_t *rdata, const int delta, const uint32_t node)
+{
+    rcv_buf_t  rbuf;
+    send_buf_t sbuf;
+    rw_t*      p_rw  = (rw_t*)&sbuf.rw;
+
+    sbuf.addr        = (uint32_t)(addr & 0xffffffffULL);
+    sbuf.addr_hi     = (uint32_t)((addr >> 32) & 0xffffffffULL);
+    sbuf.data_out    = 0;
+    sbuf.data_out_hi = 0;
+    sbuf.ticks       = delta ? DELTA_CYCLE : 0;
+
+    sbuf.rw          = 0;  // clear RW fields
+    p_rw->read       = 1;
+    p_rw->fbe        = 0xff;
+
+    VExch(&sbuf, &rbuf, node);
+
+    *rdata           = ((uint64_t)rbuf.data_in) | (((uint64_t)rbuf.data_in_hi) << 32);
+
+    return 0;
+}
+
+// -------------------------------------------------------------------------
+// VBurstWrite64
+//
+// Invokes a 64-bit burst write message exchange
+// -------------------------------------------------------------------------
+
+int VBurstWrite64 (const uint64_t addr, void *data, const uint32_t wordlen, const uint32_t node)
+{
+    rcv_buf_t  rbuf;
+    send_buf_t sbuf;
+    rw_t*      p_rw   = (rw_t*)&sbuf.rw;
+
+    sbuf.addr        = (uint32_t)(addr & 0xffffffffULL);
+    sbuf.addr_hi     = (uint32_t)((addr >> 32) & 0xffffffffULL);
+    sbuf.data_out    = 0;
+    sbuf.data_out_hi = 0;
+    sbuf.data_p      = data;
+    sbuf.ticks       = 0;
+
+    sbuf.rw          = 0;  // clear RW fields
+    p_rw->write      = 1;
+    p_rw->burstlen   = wordlen & 0xfff;
+    p_rw->fbe        = 0xff;
+    p_rw->lbe        = 0xff;
+
+    VExch(&sbuf, &rbuf, node);
+
+    return 0;
+}
+
+// -------------------------------------------------------------------------
+// VBurstWriteBE64()
+//
+// Invokes a burst write message exchange with byte enables
+// -------------------------------------------------------------------------
+
+int VBurstWriteBE64 (const uint64_t addr, void *data, const uint32_t wordlen, const uint32_t fbe, const uint32_t lbe, const uint32_t node)
+{
+    rcv_buf_t  rbuf;
+    send_buf_t sbuf;
+    rw_t*      p_rw = (rw_t*)&sbuf.rw;
+
+    sbuf.addr        = (uint32_t)(addr & 0xffffffffULL);
+    sbuf.addr_hi     = (uint32_t)((addr >> 32) & 0xffffffffULL);
+    sbuf.data_out    = 0;
+    sbuf.data_out_hi = 0;
+    sbuf.data_p      = data;
+    sbuf.ticks       = 0;
+
+    sbuf.rw          = 0;  // clear RW fields
+    p_rw->write      = 1;
+    p_rw->burstlen   = wordlen & 0xfff;
+    p_rw->fbe        = fbe & 0xff;
+    p_rw->lbe        = lbe & 0xff;
+
+    VExch(&sbuf, &rbuf, node);
+
+    return 0;
+}
+
+// -------------------------------------------------------------------------
+// VBurstRead64()
+//
+// Invokes a burst read message exchange
+// -------------------------------------------------------------------------
+
+int VBurstRead64 (const uint64_t addr, void *data, const uint32_t wordlen, const uint32_t node)
+{
+    rcv_buf_t  rbuf;
+    send_buf_t sbuf;
+    rw_t*      p_rw = (rw_t*)&sbuf.rw;
+
+    sbuf.addr        = (uint32_t)(addr & 0xffffffffULL);
+    sbuf.addr_hi     = (uint32_t)((addr >> 32) & 0xffffffffULL);
+    sbuf.data_out    = 0;
+    sbuf.data_out_hi = 0;
+    sbuf.data_p      = data;
+    sbuf.ticks       = 0;
+
+    sbuf.rw          = 0;  // clear RW fields
+    p_rw->read       = 1;
+    p_rw->burstlen   = wordlen & 0xfff;
+    p_rw->fbe        = 0xff;
+    p_rw->lbe        = 0xff;
+
+    VExch(&sbuf, &rbuf, node);
+
+    return 0;
+}
+
 
 // -------------------------------------------------------------------------
 // VTick()

@@ -2,11 +2,10 @@
 --
 -- VHDL AXI bus functional model (BFM) wrapper for VProc.
 --
--- Copyright (c) 2024 Simon Southwell.
+-- Copyright (c) 2024 - 2025 Simon Southwell.
 --
--- Implements minimal compliant manager interface at 32-bits wide.
--- Also has a 32-bit vectored irq input. Does not (yet) utilise
--- VProc's burst capabilities.
+-- Implements minimal compliant manager interface at 32-bits or 
+-- 64-bts wide. Also has a 32-bit vectored irq input.
 --
 -- This file is part of VProc.
 --
@@ -30,10 +29,10 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity axi4bfm is
-  generic    (ADDRWIDTH           : integer :=  32;       -- For future proofing. Do not change
-              DATAWIDTH           : integer :=  32;       -- For future proofing. Do not change
-              IRQWIDTH            : integer :=  32;       -- Valid ranges => 1 to 32
-              BURST_ADDR_INCR     : integer :=  4;        -- Valid values => 1, 2, 4
+  generic    (ADDRWIDTH           : integer :=  32;              -- For future proofing. Do not change
+              DATAWIDTH           : integer :=  ADDRWIDTH;       -- For future proofing. Do not change
+              IRQWIDTH            : integer :=  32;              -- Valid ranges => 1 to 32
+              BURST_ADDR_INCR     : integer :=  4;               -- Valid values => 1, 2, 4, 8 (if ADDRWIDTH = 64)
               NODE                : integer :=  0
   );
   port (
@@ -83,13 +82,13 @@ architecture bfm of axi4bfm is
 -- ---------------------------------------------------------
 
 -- Virtual processor memory mapped address port signals
-signal vpdataout                  : std_logic_vector (31 downto 0);
-signal vpaddr                     : std_logic_vector (31 downto 0);
+signal vpdataout                  : std_logic_vector (DATAWIDTH-1 downto 0);
+signal vpaddr                     : std_logic_vector (DATAWIDTH-1 downto 0);
 signal vpwe                       : std_logic;
 signal vprd                       : std_logic;
 signal vpwrack                    : std_logic;
 signal vprdack                    : std_logic;
-signal vpbyteenable               : std_logic_vector (3 downto 0);
+signal vpbyteenable               : std_logic_vector (DATAWIDTH/8-1 downto 0);
 signal vpburst                    : std_logic_vector (11 downto 0);
 signal vpbursteq0                 : std_logic;
 signal vplast                     : std_logic;
@@ -208,35 +207,73 @@ end process;
 -- Virtual Processor
 -- ---------------------------------------------------------
 
-  vp : entity work.VProc
-  generic map (
-    INT_WIDTH                 => IRQWIDTH,
-    BURST_ADDR_INCR           => BURST_ADDR_INCR
-  )                           
-  port map (                  
-    Clk                       => clk,
-                              
-    Addr                      => vpaddr,
-                              
-    DataOut                   => vpdataout,
-    WE                        => vpwe,
-    WRAck                     => vpwrack,
-                              
-    BE                        => vpbyteenable,
-                              
-    DataIn                    => rdata,
-    RD                        => vprd,
-    RDAck                     => vprdack,
-                              
-    Burst                     => vpburst,     
-    BurstFirst                => open,
-    BurstLast                 => vplast,
-                              
-    Interrupt                 => irq,
-                              
-    Update                    => update,
-    UpdateResponse            => updateresponse,
-    Node                      => std_logic_vector(to_unsigned(NODE, 4))
-  );
+  g_VPROC_64: if ADDRWIDTH = 64 generate
+
+    vp : entity work.VProc64
+    generic map (
+      NODE                      => NODE,
+      INT_WIDTH                 => IRQWIDTH,
+      BURST_ADDR_INCR           => BURST_ADDR_INCR
+    )                           
+    port map (                  
+      Clk                       => clk,
+                                
+      Addr                      => vpaddr,
+                                
+      DataOut                   => vpdataout,
+      WE                        => vpwe,
+      WRAck                     => vpwrack,
+                                
+      BE                        => vpbyteenable,
+                                
+      DataIn                    => rdata,
+      RD                        => vprd,
+      RDAck                     => vprdack,
+                                
+      Burst                     => vpburst,     
+      BurstFirst                => open,
+      BurstLast                 => vplast,
+                                
+      Interrupt                 => irq,
+                                
+      Update                    => update,
+      UpdateResponse            => updateresponse
+    );
+
+  else generate
+
+    vp : entity work.VProc
+    generic map (
+      INT_WIDTH                 => IRQWIDTH,
+      BURST_ADDR_INCR           => BURST_ADDR_INCR
+    )                           
+    port map (                  
+      Clk                       => clk,
+                                
+      Addr                      => vpaddr,
+                                
+      DataOut                   => vpdataout,
+      WE                        => vpwe,
+      WRAck                     => vpwrack,
+                                
+      BE                        => vpbyteenable,
+                                
+      DataIn                    => rdata,
+      RD                        => vprd,
+      RDAck                     => vprdack,
+                                
+      Burst                     => vpburst,     
+      BurstFirst                => open,
+      BurstLast                 => vplast,
+                                
+      Interrupt                 => irq,
+                                
+      Update                    => update,
+      UpdateResponse            => updateresponse,
+
+      Node                      => std_logic_vector(to_unsigned(NODE, 4))
+    );
+
+  end generate;
 
 end bfm;

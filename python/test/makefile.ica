@@ -130,12 +130,11 @@ ${VOBJS}: | ${VOBJDIR}
 ${VOBJDIR}:
 	@mkdir ${VOBJDIR}
 
-${VPROC_PLI}: ${PYVRPOC_PLI} ${VLIB} ${VOBJDIR}/veriuser.o
+${VPROC_PLI}: ${PYVRPOC_PLI} ${VLIB}
 	@${C++} ${CPPSTD}                                      \
            ${CFLAGS_SO}                                    \
            -Wl,-whole-archive                              \
            ${CFLAGS}                                       \
-           ${VOBJDIR}/veriuser.o                           \
            -lpthread                                       \
            -lveriuser -lvpi                                \
            -L${TESTDIR} -lvproc -l:PyVProc.so              \

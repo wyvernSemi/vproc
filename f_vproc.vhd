@@ -67,8 +67,8 @@ constant      BLKHIBIT     : integer := 13;
 constant      BLKLOBIT     : integer := 2;
 constant      BEFIRSTLOBIT : integer := 14;
 constant      BEFIRSTHIBIT : integer := 17;
-constant      BELASTLOBIT  : integer := 18;
-constant      BELASTHIBIT  : integer := 21;
+constant      BELASTLOBIT  : integer := 22;
+constant      BELASTHIBIT  : integer := 25;
 constant      DeltaCycle   : integer := -1;
 
 signal        Initialised  : integer := 0;
@@ -116,7 +116,7 @@ begin
 
       -- Cleanly sample the inputs
       DataInSamp                := to_integer(signed(DataIn));
-      IntSamp                   := to_integer(signed("0" & Interrupt));
+      IntSamp                   := to_integer(unsigned(Interrupt));
       RdAckSamp                 := RDAck;
       WRAckSamp                 := WRAck;
       VPTicks                   := DeltaCycle;

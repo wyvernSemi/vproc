@@ -2,11 +2,11 @@
 //
 // Verilog Avalon bus functional model (BFM) wrapper for VProc.
 //
-// Copyright (c) 2024 Simon Southwell.
+// Copyright (c) 2024 - 2025 Simon Southwell.
 //
-// Implements minimal compliant manager interface at 32-bits wide.
-// Also has a vectored irq input. Does not (yet) utilise VProc's burst
-// capabilities.
+// Implements minimal compliant manager interface at 32-bits or
+// 64-bits wide. Also has a vectored irq input. Does not (yet) utilise
+// VProc's burst capabilities.
 //
 // This file is part of VProc.
 //
@@ -28,9 +28,9 @@
 
 module avbfm
 # (parameter
-    ADDRWIDTH                 = 32, // For future proofing. Do not change.
-    DATAWIDTH                 = 32, // For future proofing. Do not change.
-    IRQWIDTH                  = 32, // Range 1 to 32
+    ADDRWIDTH                 = 32,        // For future proofing. Do not change.
+    DATAWIDTH                 = ADDRWIDTH, // For future proofing. Do not change.
+    IRQWIDTH                  = 32,        // Range 1 to 32
     NODE                      = 0
 )
 (
@@ -108,32 +108,67 @@ end
 // ---------------------------------------
 //  VProc instantiation
 // ---------------------------------------
-
-  VProc
-    #(
-      .INT_WIDTH              (IRQWIDTH)
-    ) vp
-    (
-      .Clk                    (clk),
-      
-      // Bus
-      .Addr                   (addr),
-      .BE                     (be),
-      .DataOut                (dataout),
-      .WE                     (we),
-      .WRAck                  (we),
-      .DataIn                 (datain),
-      .RD                     (rd),
-      .RDAck                  (rdack),
-      
-      // Interrupts
-      .Interrupt              (irq),
-      
-      // Delta cycle control
-      .Update                 (update),
-      .UpdateResponse         (updateresp),
-      
-      .Node                   (NODE[3:0])
-  );
+generate
+  if (ADDRWIDTH == 64)
+  
+    VProc64
+      #(
+        .NODE                   (NODE),
+        .BURST_ADDR_INCR        (8),
+        .INT_WIDTH              (IRQWIDTH)
+      ) vp
+      (
+        .Clk                    (clk),
+  
+        // Bus
+        .Addr                   (addr),
+        .BE                     (be),
+        .DataOut                (dataout),
+        .WE                     (we),
+        .WRAck                  (we),
+        .DataIn                 (datain),
+        .RD                     (rd),
+        .RDAck                  (rdack),
+  
+        .Burst                  (),
+        .BurstFirst             (),
+        .BurstLast              (),
+  
+        // Interrupts
+        .Interrupt              (irq),
+  
+        // Delta cycle control
+        .Update                 (update),
+        .UpdateResponse         (updateresp)
+    );
+    
+  else
+    VProc
+      #(
+        .INT_WIDTH              (IRQWIDTH)
+      ) vp
+      (
+        .Clk                    (clk),
+        
+        // Bus
+        .Addr                   (addr),
+        .BE                     (be),
+        .DataOut                (dataout),
+        .WE                     (we),
+        .WRAck                  (we),
+        .DataIn                 (datain),
+        .RD                     (rd),
+        .RDAck                  (rdack),
+        
+        // Interrupts
+        .Interrupt              (irq),
+        
+        // Delta cycle control
+        .Update                 (update),
+        .UpdateResponse         (updateresp),
+        
+        .Node                   (NODE[3:0])
+    );
+  endgenerate
 
 endmodule 

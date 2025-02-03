@@ -2,10 +2,10 @@
 --
 -- VHDL APB bus functional model (BFM) wrapper for VProc.
 --
--- Copyright (c) 2024 Simon Southwell.
+-- Copyright (c) 2024 - 2025 Simon Southwell.
 --
--- Implements minimal compliant initiator interface at 32-bits wide.
--- Also has a vectored irq input.
+-- Implements minimal compliant initiator interface at 32-bits or
+-- 64-bits wide. Also has a vectored irq input.
 --
 -- This file is part of VProc.
 --
@@ -30,9 +30,9 @@ use ieee.numeric_std.all;
 
 entity apbbfm is
 generic (
-    ADDRWIDTH                 : integer := 32; -- For future proofing. Do not change.
-    DATAWIDTH                 : integer := 32; -- For future proofing. Do not change.
-    IRQWIDTH                  : integer := 32; -- Range 1 to 32
+    ADDRWIDTH                 : integer := 32;        -- For future proofing. Do not change.
+    DATAWIDTH                 : integer := ADDRWIDTH; -- For future proofing. Do not change.
+    IRQWIDTH                  : integer := 32;        -- Range 1 to 32
     REGDLY                    : time    := 1 ns;
     NODE                      : integer := 0
 );
@@ -141,32 +141,65 @@ end process;
 --  VProc instantiation
 -- -----------------------------------------
 
-  vp : entity work.VProc
-    generic map(
-      BURST_ADDR_INCR         => 4,
-      INT_WIDTH               => IRQWIDTH
-    )
-    port map (
-      Clk                     => pclk,
+  g_VPROC_64: if ADDRWIDTH = 64 generate
 
-      -- Bus
-      Addr                    => addr,
-      DataOut                 => dataout,
-      WE                      => we,
-      BE                      => be,
-      WRAck                   => wrack,
-      DataIn                  => datain,
-      RD                      => rd,
-      RDAck                   => rdack,
+    vp : entity work.VProc64
+      generic map(
+        NODE                    => NODE,
+        BURST_ADDR_INCR         => 8,
+        INT_WIDTH               => IRQWIDTH
+      )
+      port map (
+        Clk                     => pclk,
+  
+        -- Bus
+        Addr                    => addr,
+        DataOut                 => dataout,
+        WE                      => we,
+        BE                      => be,
+        WRAck                   => wrack,
+        DataIn                  => datain,
+        RD                      => rd,
+        RDAck                   => rdack,
+  
+        -- Interrupts
+        Interrupt               => irq,
+  
+        -- Delta cycle control
+        Update                  => update,
+        UpdateResponse          => updateresp
+    );
 
-      -- Interrupts
-      Interrupt               => irq,
-
-      -- Delta cycle control
-      Update                  => update,
-      UpdateResponse          => updateresp,
-
-      Node                    =>std_logic_vector(to_unsigned(NODE, 4))
-  );
+  else generate
+  
+    vp : entity work.VProc
+      generic map(
+        BURST_ADDR_INCR         => 4,
+        INT_WIDTH               => IRQWIDTH
+      )
+      port map (
+        Clk                     => pclk,
+  
+        -- Bus
+        Addr                    => addr,
+        DataOut                 => dataout,
+        WE                      => we,
+        BE                      => be,
+        WRAck                   => wrack,
+        DataIn                  => datain,
+        RD                      => rd,
+        RDAck                   => rdack,
+  
+        -- Interrupts
+        Interrupt               => irq,
+  
+        -- Delta cycle control
+        Update                  => update,
+        UpdateResponse          => updateresp,
+  
+        Node                    =>std_logic_vector(to_unsigned(NODE, 4))
+    );
+    
+  end generate;
 
 end bfm;

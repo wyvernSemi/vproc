@@ -2,7 +2,7 @@
 //
 // VSched_pli.h                                       Date: 2004/12/13
 //
-// Copyright (c) 2004-2024 Simon Southwell.
+// Copyright (c) 2004-2025 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -91,6 +91,7 @@
 
 #define VINIT_PARAMS       const struct vhpiCbDataS* cb
 #define VSCHED_PARAMS      const struct vhpiCbDataS* cb
+#define VSCHED64_PARAMS    const struct vhpiCbDataS* cb
 #define VPROCUSER_PARAMS   const struct vhpiCbDataS* cb
 #define VIRQ_PARAMS        const struct vhpiCbDataS* cb
 #define VACCESS_PARAMS     const struct vhpiCbDataS* cb
@@ -98,6 +99,7 @@
 
 #define VINIT_NUM_ARGS     1
 #define VSCHED_NUM_ARGS    7
+#define VSCHED64_NUM_ARGS  10
 #define VPROCUSER_NUM_ARGS 2
 #define VIRQ_NUM_ARGS      2
 #define VACCESS_NUM_ARGS   4
@@ -117,10 +119,11 @@
 #   endif
 
 #define VINIT_PARAMS       int  node
-#define VSCHED_PARAMS      int  node, int Interrupt, int VPDataIn, int* VPDataOut, int* VPAddr, int* VPRw, int* VPTicks
+#define VSCHED_PARAMS      int  node, int Interrupt, int VPDataIn,   int* VPDataOut, int* VPAddr, int* VPRw, int* VPTicks
+#define VSCHED64_PARAMS    int  node, int Interrupt, int VPDataInLo, int VPDataInHi, int* VPDataOutLo, int* VPDataOutHi, int* VPAddrLo, int* VPAddrHi, int* VPRw, int* VPTicks
 #define VPROCUSER_PARAMS   int  node, int value
 #define VIRQ_PARAMS        int  node, int value
-#define VACCESS_PARAMS     int  node, int idx, int VPDataIn, int* VPDataOut
+#define VACCESS_PARAMS     int  node, int idx, int VPDataIn,   int* VPDataOut
 #define VHALT_PARAMS       int, int
 
 #define VPROC_RTN_TYPE     void
@@ -137,12 +140,14 @@
 
 #define VPROC_VPI_TBL {vpiSysTask, 0, "$vinit",     VInit,     0, 0, 0}, \
                       {vpiSysTask, 0, "$vsched",    VSched,    0, 0, 0}, \
+                      {vpiSysTask, 0, "$vsched64",  VSched64,  0, 0, 0}, \
                       {vpiSysTask, 0, "$vaccess",   VAccess,   0, 0, 0}, \
                       {vpiSysTask, 0, "$vprocuser", VProcUser, 0, 0, 0}, \
                       {vpiSysTask, 0, "$virq",      VIrq,      0, 0, 0},
 
 #define VINIT_PARAMS      char* userdata
 #define VSCHED_PARAMS     char* userdata
+#define VSCHED64_PARAMS   char* userdata
 #define VPROCUSER_PARAMS  char* userdata
 #define VIRQ_PARAMS       char* userdata
 #define VACCESS_PARAMS    char* userdata
@@ -157,6 +162,7 @@ extern int updateArgs (vpiHandle taskHdl, int value[]);
 
 extern VPROC_RTN_TYPE VInit     (VINIT_PARAMS);
 extern VPROC_RTN_TYPE VSched    (VSCHED_PARAMS);
+extern VPROC_RTN_TYPE VSched64  (VSCHED64_PARAMS);
 extern VPROC_RTN_TYPE VProcUser (VPROCUSER_PARAMS);
 extern VPROC_RTN_TYPE VIrq      (VIRQ_PARAMS);
 extern VPROC_RTN_TYPE VAccess   (VACCESS_PARAMS);

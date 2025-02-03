@@ -2,10 +2,10 @@
 --
 -- VHDL AHB bus functional model (BFM) wrapper for VProc.
 --
--- Copyright (c) 2024 Simon Southwell.
+-- Copyright (c) 2024 - 2025 Simon Southwell.
 --
--- Implements minimal compliant manager interface at 32-bits wide.
--- Also has a vectored irq input.
+-- Implements minimal compliant manager interface at 32-bits or
+-- 64-bits wide. Also has a vectored irq input.
 --
 -- This file is part of VProc.
 --
@@ -32,10 +32,10 @@ use work.ahbbfm_pkg.all;
 
 entity ahbbfm is
 generic (
-    ADDRWIDTH                 : integer := 32; -- For future proofing. Do not change.
-    DATAWIDTH                 : integer := 32; -- For future proofing. Do not change.
-    IRQWIDTH                  : integer := 32; -- Range 1 to 32
-    NODE                      : integer := 0   -- range 0 to 15
+    ADDRWIDTH                 : integer := 32;        -- For future proofing. Do not change.
+    DATAWIDTH                 : integer := ADDRWIDTH; -- For future proofing. Do not change.
+    IRQWIDTH                  : integer := 32;        -- Range 1 to 32
+    NODE                      : integer := 0          -- range 0 to 15
 );
 port (
     hclk                      : in  std_logic;
@@ -204,36 +204,73 @@ end process;
 --  VProc instantiation
 -- ---------------------------------------
 
-    vp : entity work.VProc
-    generic map (
-      BURST_ADDR_INCR         => 4,
-      INT_WIDTH               => IRQWIDTH
-    )
-    port map (
-      Clk                     => hclk,
-
-      -- Bus
-      Addr                    => addr,
-      DataOut                 => dataout,
-      BE                      => be,
-      WE                      => we,
-      WRAck                   => wrack,
-      DataIn                  => datain,
-      RD                      => rd,
-      RDAck                   => rdack,
-
-      Burst                   => burst,
-      BurstFirst              => burstfirst,
-      BurstLast               => burstlast,
-
-      -- Interrupts
-      Interrupt               => irq,
-
-      -- Delta cycle control
-      Update                  => update,
-      UpdateResponse          => updateresp,
-
-      Node                    => std_logic_vector(to_unsigned(NODE, 4))
-  );
+  g_VPROC_64: if ADDRWIDTH = 64 generate
+  
+      vp : entity work.VProc64
+      generic map (
+        NODE                    => NODE,
+        BURST_ADDR_INCR         => 8,
+        INT_WIDTH               => IRQWIDTH
+      )
+      port map (
+        Clk                     => hclk,
+  
+        -- Bus
+        Addr                    => addr,
+        DataOut                 => dataout,
+        BE                      => be,
+        WE                      => we,
+        WRAck                   => wrack,
+        DataIn                  => datain,
+        RD                      => rd,
+        RDAck                   => rdack,
+  
+        Burst                   => burst,
+        BurstFirst              => burstfirst,
+        BurstLast               => burstlast,
+  
+        -- Interrupts
+        Interrupt               => irq,
+  
+        -- Delta cycle control
+        Update                  => update,
+        UpdateResponse          => updateresp
+    );
+  
+  else generate
+  
+      vp : entity work.VProc
+      generic map (
+        BURST_ADDR_INCR         => 4,
+        INT_WIDTH               => IRQWIDTH
+      )
+      port map (
+        Clk                     => hclk,
+  
+        -- Bus
+        Addr                    => addr,
+        DataOut                 => dataout,
+        BE                      => be,
+        WE                      => we,
+        WRAck                   => wrack,
+        DataIn                  => datain,
+        RD                      => rd,
+        RDAck                   => rdack,
+  
+        Burst                   => burst,
+        BurstFirst              => burstfirst,
+        BurstLast               => burstlast,
+  
+        -- Interrupts
+        Interrupt               => irq,
+  
+        -- Delta cycle control
+        Update                  => update,
+        UpdateResponse          => updateresp,
+  
+        Node                    => std_logic_vector(to_unsigned(NODE, 4))
+    );
+  
+  end generate;
 
 end bfm;

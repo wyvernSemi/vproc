@@ -2,7 +2,7 @@
 //
 // VSched.c                                           Date: 2004/12/13
 //
-// Copyright (c) 2004-2024 Simon Southwell.
+// Copyright (c) 2004-2025 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -43,7 +43,7 @@
 #include "VUser.h"
 #include "VSched_pli.h"
 
-#define ARGS_ARRAY_SIZE     10
+#define ARGS_ARRAY_SIZE     20
 
 // Pointers to state for each node (up to VP_MAX_NODES)
 pSchedState_t ns[VP_MAX_NODES];
@@ -449,6 +449,147 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 # else
     // Update VHPI procedure outputs from argument array
     setVhpiParams(cb, &args[1], VPDATAOUT_ARG-1, VSCHED_NUM_ARGS);
+# endif
+#else
+
+    // Update VPI task outputs from argument array
+    updateArgs(taskHdl, &args[1]);
+
+    return 0;
+#endif
+
+}
+
+// -------------------------------------------------------------------------
+// VSched64()
+//
+// Main routine called whenever $vsched64 task invoked, on
+// clock edge of scheduled cycle.
+// -------------------------------------------------------------------------
+
+VPROC_RTN_TYPE VSched64 (VSCHED64_PARAMS)
+{
+    int VPDataOutLo_int, VPDataOutHi_int;
+    int VPAddrLo_int, VPAddrHi_int;
+    int VPRw_int, VPTicks_int;
+    int args[ARGS_ARRAY_SIZE];
+
+    //----------------------------------------------
+    // Get input arguments
+    //----------------------------------------------
+
+#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
+    int node;
+    int Interrupt, VPDataInLo, VPDataInHi;
+
+    vpiHandle    taskHdl;
+
+    // Obtain a handle to the argument list
+    taskHdl      = vpi_handle(vpiSysTfCall, NULL);
+
+    getArgs(taskHdl, &args[1]);
+#else
+# ifdef VPROC_VHDL_VHPI
+    int node;
+    int Interrupt, VPDataInLo, VPDataInHi;
+
+    getVhpiParams(cb, &args[1], VSCHED64_NUM_ARGS);
+# endif
+#endif
+
+    // When VHDL with VHPI, or Verilog with VPI, extract input values from argument array
+#if ( defined(VPROC_VHDL) &&  defined(VPROC_VHDL_VHPI)) || \
+    (!defined(VPROC_VHDL) && !defined(VPROC_SV))
+
+    // Get argument value of $vsched call
+    node         = args[VPNODENUM_ARG];
+    Interrupt    = args[VPINTERRUPT_ARG];
+    VPDataInLo   = args[VPDATAINLO_ARG64];
+    VPDataInLo   = args[VPDATAINLO_ARG64];
+#endif
+
+    // Sample inputs and update node state
+    ns[node]->rcv_buf.data_in    = VPDataInLo;
+    ns[node]->rcv_buf.data_in_hi = VPDataInHi;
+    ns[node]->rcv_buf.interrupt  = Interrupt;
+
+    //----------------------------------------------
+    // Discard any level interrupt when vectored
+    // IRQ enabled
+    //----------------------------------------------
+
+    // If call to VSched is for interrupt and vector IRQ enabled (with C or Python callback registered)
+    // don't process here with the level interrupt code and just return.
+    if (Interrupt && (ns[node]->VUserIrqCB != NULL || ns[node]->PyIrqCB != NULL))
+    {
+#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
+        return 0;
+#else
+# ifndef VPROC_VHDL_VHPI
+        // Since not processing make a delta cycle on return
+        *VPTicks   = DELTA_CYCLE;
+# endif
+        return;
+#endif
+    }
+
+    //----------------------------------------------
+    // Send inputs to user thread
+    //----------------------------------------------
+
+    // Send message to VUser with VPDataIn value
+    debug_io_printf("VSched(): setting rcv[%d] semaphore\n", node);
+    sem_post(&(ns[node]->rcv));
+
+    //----------------------------------------------
+    // Get get updates from user thread
+    //----------------------------------------------
+
+    // Wait for a message from VUser process with output data
+    debug_io_printf("VSched(): waiting for snd[%d] semaphore\n", node);
+    sem_wait(&(ns[node]->snd));
+
+    // Update outputs of $vsched task
+    if (ns[node]->send_buf.ticks >= DELTA_CYCLE)
+    {
+        VPDataOutLo_int   = ns[node]->send_buf.data_out;
+        VPDataOutHi_int   = ns[node]->send_buf.data_out_hi;
+        VPAddrLo_int      = ns[node]->send_buf.addr;
+        VPAddrHi_int      = ns[node]->send_buf.addr_hi;
+        VPRw_int          = ns[node]->send_buf.rw;
+        VPTicks_int       = ns[node]->send_buf.ticks;
+        debug_io_printf("VSched(): VPTicks=%08x\n", VPTicks_int);
+    }
+
+    debug_io_printf("VSched(): returning to simulation from node %d\n\n", node);
+
+    //----------------------------------------------
+    // Update outputs in simulation
+    //----------------------------------------------
+
+    // When VHDL with VHPI, or Verilog with VPI, use argument array
+#if (defined(VPROC_VHDL)  &&  defined(VPROC_VHDL_VHPI)) || \
+    (!defined(VPROC_VHDL) && !defined(VPROC_SV))
+    args[VPDATAOUTLO_ARG64] = VPDataOutLo_int;
+    args[VPDATAOUTHI_ARG64] = VPDataOutHi_int;
+    args[VPADDRLO_ARG64]    = VPAddrLo_int;
+    args[VPADDRHI_ARG64]    = VPAddrHi_int;
+    args[VPRW_ARG64]        = VPRw_int;
+    args[VPTICKS_ARG64]     = VPTicks_int;
+#endif
+
+#if defined(VPROC_VHDL) || defined(VPROC_SV)
+# ifndef VPROC_VHDL_VHPI
+    // Export outputs directly to function arguments
+    *VPDataOutLo        = VPDataOutLo_int;
+    *VPDataOutHi        = VPDataOutHi_int;
+    *VPAddrLo           = VPAddrLo_int;
+    *VPAddrHi           = VPAddrHi_int;
+    *VPRw               = VPRw_int;
+    *VPTicks            = VPTicks_int;
+# else
+    // Update VHPI procedure outputs from argument array
+    setVhpiParams(cb, &args[1], VPDATAOUTLO_ARG64-1, VSCHED64_NUM_ARGS);
 # endif
 #else
 

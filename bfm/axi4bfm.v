@@ -4,8 +4,8 @@
 //
 // Copyright (c) 2024 Simon Southwell.
 //
-// Implements minimal compliant manager interface at 32-bits wide.
-// Also has a 32-bit vectored irq input.
+// Implements minimal compliant manager interface at 32-bits or
+// 64-bits wide. Also has a 32-bit vectored irq input.
 //
 // This file is part of VProc.
 //
@@ -31,10 +31,10 @@
 `include "vprocdefs.vh"
 
 module axi4bfm
-#(parameter ADDRWIDTH         = 32,       // For future proofing. Do not change
-            DATAWIDTH         = 32,       // For future proofing. Do not change
-            IRQWIDTH          = 32,       // Valid ranges => 1 to 32
-            BURST_ADDR_INCR   = 1,        // Valid values => 1, 2, 4
+#(parameter ADDRWIDTH         = 32,              // For future proofing. Do not change
+            DATAWIDTH         = ADDRWIDTH,       // For future proofing. Do not change
+            IRQWIDTH          = 32,              // Valid ranges => 1 to 32
+            BURST_ADDR_INCR   = 1,               // Valid values => 1, 2, 4 or 8 (if ADDRWIDTH = 64)
             NODE              = 0
 )
 (
@@ -52,7 +52,7 @@ module axi4bfm
   output                      wvalid,
   input                       wready,
   output                      wlast,
-  output               [3:0]  wstrb,
+  output   [DATAWIDTH/8-1:0]  wstrb,
 
   // Write response channel
   input                       bvalid,
@@ -87,13 +87,13 @@ wire                          rvalid_int;
 wire                          rready_int;
 
 // Virtual processor memory mapped address port signals
-wire                   [31:0] vpdataout;
-wire                   [31:0] vpaddr;
+wire          [DATAWIDTH-1:0] vpdataout;
+wire          [ADDRWIDTH-1:0] vpaddr;
 wire                          vpwe;
 wire                          vprd;
 wire                          vpwrack;
 wire                          vprdack;
-wire                    [3:0] vpbyteenable;
+wire        [DATAWIDTH/8-1:0] vpbyteenable;
 wire                   [11:0] vpburst;
 wire                          vpbursteq0;
 wire                          vplast;
@@ -235,13 +235,13 @@ begin
 
   // Write data channel
   wacked                      <= (wacked  | (vpwe & wready_int))  & ~vpwrack;
-  
+
   // If a new burst count, set the counter to the burst length
   if (arvalid == 1'b1 && burstcount == 0)
   begin
     burstcount                <= vpburst;
   end
-  
+
   // If the counter is not zero, decrement the count when a word is received
   if (burstcount > 0 && rvalid == 1'b1 && rready  == 1'b1)
   begin
@@ -265,34 +265,74 @@ end
 // Virtual Processor
 // ---------------------------------------------------------
 
-  VProc #(
-           .INT_WIDTH         (IRQWIDTH),
-           .BURST_ADDR_INCR   (BURST_ADDR_INCR)
-         ) vp
-         (
-           .Clk               (clk),
-                              
-           .Addr              (vpaddr),
-                              
-           .DataOut           (vpdataout),
-           .WE                (vpwe),
-           .WRAck             (vpwrack),
-                              
-           .BE                (vpbyteenable),
-                              
-           .DataIn            (rdata_int),
-           .RD                (vprd),
-           .RDAck             (vprdack),
-                              
-           .Burst             (vpburst),
-           .BurstFirst        (),
-           .BurstLast         (vplast),
-                              
-           .Interrupt         (irq),
-                              
-           .Update            (update),
-           .UpdateResponse    (updateresponse),
-           .Node              (NODE[3:0])
-         );
+generate
+  if (ADDRWIDTH == 64)
+
+    VProc64
+      #(
+        .NODE                   (NODE),
+        .BURST_ADDR_INCR        (8),
+        .INT_WIDTH              (IRQWIDTH)
+      ) vp
+      (
+        .Clk                    (clk),
+
+        // Bus
+        .Addr                   (vpaddr),
+        
+        .DataOut                (vpdataout),
+        .WE                     (vpwe),
+        .WRAck                  (vpwrack),
+        
+        .BE                     (vpbyteenable),
+        
+        .DataIn                 (rdata_int),
+        .RD                     (vprd),
+        .RDAck                  (vprdack),
+
+        .Burst                  (vpburst),
+        .BurstFirst             (),
+        .BurstLast              (vplast),
+
+        // Interrupts
+        .Interrupt              (irq),
+
+        // Delta cycle control
+        .Update                 (update),
+        .UpdateResponse         (updateresponse)
+    );
+
+  else
+
+    VProc #(
+             .INT_WIDTH         (IRQWIDTH),
+             .BURST_ADDR_INCR   (BURST_ADDR_INCR)
+           ) vp
+           (
+             .Clk               (clk),
+
+             .Addr              (vpaddr),
+
+             .DataOut           (vpdataout),
+             .WE                (vpwe),
+             .WRAck             (vpwrack),
+
+             .BE                (vpbyteenable),
+
+             .DataIn            (rdata_int),
+             .RD                (vprd),
+             .RDAck             (vprdack),
+
+             .Burst             (vpburst),
+             .BurstFirst        (),
+             .BurstLast         (vplast),
+
+             .Interrupt         (irq),
+
+             .Update            (update),
+             .UpdateResponse    (updateresponse),
+             .Node              (NODE[3:0])
+           );
+  endgenerate
 
 endmodule

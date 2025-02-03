@@ -1,5 +1,6 @@
 testaxi.v
 ../../f_VProc.v
+../../f_VProc64.v
 ../../../mem_model/mem_model_q.v
 ../../../mem_model/mem_model.v
 ../../../mem_model/mem_model_axi.v

@@ -1,4 +1,5 @@
 sv      work ../../f_VProc.sv
+sv      work ../../f_VProc64.sv
 verilog work ../apbbfm.v
 verilog work ../../../mem_model/mem_model_q.v
 sv      work ../../../mem_model/mem_model.sv

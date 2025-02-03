@@ -2,10 +2,10 @@
 //
 // Verilog APB bus functional model (BFM) wrapper for VProc.
 //
-// Copyright (c) 2024 Simon Southwell.
+// Copyright (c) 2024 -2025 Simon Southwell.
 //
-// Implements minimal compliant initiator interface at 32-bits wide.
-// Also has a vectored irq input.
+// Implements minimal compliant initiator interface at 32-bits
+// or 64-bits wide. Also has a vectored irq input.
 //
 // This file is part of VProc.
 //
@@ -27,9 +27,9 @@
 
 module apbbfm
 # (parameter
-    ADDRWIDTH                 = 32, // For future proofing. Do not change.
-    DATAWIDTH                 = 32, // For future proofing. Do not change.
-    IRQWIDTH                  = 32, // Range 1 to 32
+    ADDRWIDTH                 = 32,        // For future proofing. Do not change.
+    DATAWIDTH                 = ADDRWIDTH, // For future proofing. Do not change.
+    IRQWIDTH                  = 32,        // Range 1 to 32
     NODE                      = 0
 )
 (
@@ -122,7 +122,7 @@ begin
   end
   else
   begin
-    // Data phase is set on PSEL if no PREADY (address phase), 
+    // Data phase is set on PSEL if no PREADY (address phase),
     // and cleared again when PREADY asserted (data phase and data returned).
     data_phase                <= (data_phase | pselx) & ~(pselx & pready_int);
   end
@@ -153,33 +153,68 @@ end
 // -----------------------------------------
 //  VProc instantiation
 // -----------------------------------------
+generate
+  if (ADDRWIDTH == 64)
 
-  VProc
-    #(
-      .BURST_ADDR_INCR        (4),
-      .INT_WIDTH              (IRQWIDTH)
-    ) vp
-    (
-      .Clk                    (pclk),
+    VProc64
+      #(
+        .NODE                   (NODE),
+        .BURST_ADDR_INCR        (8),
+        .INT_WIDTH              (IRQWIDTH)
+      ) vp
+      (
+        .Clk                    (pclk),
 
-      // Bus
-      .Addr                   (addr),
-      .DataOut                (dataout),
-      .WE                     (we),
-      .BE                     (be),
-      .WRAck                  (wrack),
-      .DataIn                 (datain),
-      .RD                     (rd),
-      .RDAck                  (rdack),
+        // Bus
+        .Addr                   (addr),
+        .DataOut                (dataout),
+        .WE                     (we),
+        .BE                     (be),
+        .WRAck                  (wrack),
+        .DataIn                 (datain),
+        .RD                     (rd),
+        .RDAck                  (rdack),
 
-      // Interrupts
-      .Interrupt              (irq),
+        .Burst                  (),
+        .BurstFirst             (),
+        .BurstLast              (),
 
-      // Delta cycle control
-      .Update                 (update),
-      .UpdateResponse         (updateresp),
+        // Interrupts
+        .Interrupt              (irq),
 
-      .Node                   (NODE[3:0])
-  );
+        // Delta cycle control
+        .Update                 (update),
+        .UpdateResponse         (updateresp)
+    );
+
+  else
+    VProc
+      #(
+        .BURST_ADDR_INCR        (4),
+        .INT_WIDTH              (IRQWIDTH)
+      ) vp
+      (
+        .Clk                    (pclk),
+
+        // Bus
+        .Addr                   (addr),
+        .DataOut                (dataout),
+        .WE                     (we),
+        .BE                     (be),
+        .WRAck                  (wrack),
+        .DataIn                 (datain),
+        .RD                     (rd),
+        .RDAck                  (rdack),
+
+        // Interrupts
+        .Interrupt              (irq),
+
+        // Delta cycle control
+        .Update                 (update),
+        .UpdateResponse         (updateresp),
+
+        .Node                   (NODE[3:0])
+    );
+  endgenerate
 
 endmodule

@@ -30,7 +30,10 @@
 `define RDBIT                   1
 `define BLKBITS                 13:2
 `define BEBITS                  17:14
-`define LBEBITS                 21:18
+`define LBEBITS                 25:22
+
+`define BEBITS64                21:14
+`define LBEBITS64               29:22
 
 `define DELTACYCLE              -1
 `define DONTCARE                 0
@@ -51,6 +54,7 @@
 `define VAccess                  VAccess
 `define VInit                    VInit
 `define VSched                   VSched
+`define VSched64                 VSched64
 `define VIrq                     VIrq
 `define VProcUser                VProcUser
 
@@ -60,6 +64,7 @@
 `define VAccess                  $vaccess
 `define VInit                    $vinit
 `define VSched                   $vsched
+`define VSched64                 $vsched64
 `define VIrq                     $virq
 `define VProcUser                $vprocuser
 

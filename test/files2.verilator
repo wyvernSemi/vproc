@@ -1,2 +1,3 @@
 ../f_VProc.sv
+../f_VProc64.sv
 testVerilator.v
