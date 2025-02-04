@@ -25,7 +25,6 @@
 // Import DPI-C fuctions
 
 import "DPI-C" function void VSched64  (input  int node,
-                                        input  int Interrupt,
                                         input  int VPDataInLo,
                                         input  int VPDataInHi,
                                         output int VPDataOutLo,

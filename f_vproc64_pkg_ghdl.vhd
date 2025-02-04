@@ -31,7 +31,6 @@ package vproc64_pkg is
 
   procedure VSched64 (
     node          : in  integer;
-    Interrupt     : in  integer;
     VPDataInLo    : in  integer;
     VPDataInHi    : in  integer;
     VPDataOutLo   : out integer;
@@ -76,7 +75,6 @@ package body vproc64_pkg is
 
   procedure VSched64 (
     node          : in  integer;
-    Interrupt     : in  integer;
     VPDataInLo    : in  integer;
     VPDataInHi    : in  integer;
     VPDataOutLo   : out integer;

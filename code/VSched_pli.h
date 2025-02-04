@@ -98,8 +98,8 @@
 #define VHALT_PARAMS       int, int
 
 #define VINIT_NUM_ARGS     1
-#define VSCHED_NUM_ARGS    7
-#define VSCHED64_NUM_ARGS  10
+#define VSCHED_NUM_ARGS    6
+#define VSCHED64_NUM_ARGS  9
 #define VPROCUSER_NUM_ARGS 2
 #define VIRQ_NUM_ARGS      2
 #define VACCESS_NUM_ARGS   4
@@ -119,8 +119,8 @@
 #   endif
 
 #define VINIT_PARAMS       int  node
-#define VSCHED_PARAMS      int  node, int Interrupt, int VPDataIn,   int* VPDataOut, int* VPAddr, int* VPRw, int* VPTicks
-#define VSCHED64_PARAMS    int  node, int Interrupt, int VPDataInLo, int VPDataInHi, int* VPDataOutLo, int* VPDataOutHi, int* VPAddrLo, int* VPAddrHi, int* VPRw, int* VPTicks
+#define VSCHED_PARAMS      int  node, int VPDataIn,   int* VPDataOut,  int* VPAddr, int* VPRw, int* VPTicks
+#define VSCHED64_PARAMS    int  node, int VPDataInLo, int  VPDataInHi, int* VPDataOutLo, int* VPDataOutHi, int* VPAddrLo, int* VPAddrHi, int* VPRw, int* VPTicks
 #define VPROCUSER_PARAMS   int  node, int value
 #define VIRQ_PARAMS        int  node, int value
 #define VACCESS_PARAMS     int  node, int idx, int VPDataIn,   int* VPDataOut

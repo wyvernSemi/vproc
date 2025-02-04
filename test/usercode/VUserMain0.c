@@ -17,8 +17,9 @@ static int node = 0;
 
 static int Reset = 0;
 
+
 // ------------------------------------------------------------
-// Interrupt callback function for level 1
+// ISR for level 1
 // ------------------------------------------------------------
 
 static int VInterrupt_1(void)
@@ -27,8 +28,7 @@ static int VInterrupt_1(void)
     return 0;
 }
 
-// ------------------------------------------------------------
-// Interrupt callback function for level 4
+// ISR for level 4
 // ------------------------------------------------------------
 
 static int VInterrupt_4(void)
@@ -36,6 +36,26 @@ static int VInterrupt_4(void)
     VPrint("Node %d: VInterrupt_4()\n", node);
     Reset = 1;
     return 1;
+}
+
+// ------------------------------------------------------------
+// Interrupt callback
+// ------------------------------------------------------------
+
+static int VIrqCB (int irq)
+{
+    uint32_t irq_level = irq;
+    
+    if (irq_level == 1)
+    {
+        VInterrupt_1();
+    }
+    else if (irq_level == 4)
+    {
+        VInterrupt_4();
+    }
+    
+    return 0;
 }
 
 // ------------------------------------------------------------
@@ -51,9 +71,8 @@ void VUserMain0()
 
     VPrint("VUserMain0(): node=%d\n", node);
 
-    // Register functions as interrupt levels 1 and 4 routines
-    VRegInterrupt(1, VInterrupt_1, node);
-    VRegInterrupt(4, VInterrupt_4, node);
+    // Register IRQ callback function
+    VRegIrq(VIrqCB, node);
 
     do
     {

@@ -43,7 +43,7 @@ extern "C" void VUserMain1()
 {
     VProc vp1(node);
 
-    unsigned int num, data, addr;
+    uint32_t num, addr;
 
     VPrint("VUserMain1(): node=%d\n", node);
 
@@ -55,142 +55,142 @@ extern "C" void VUserMain1()
     // -------------------------------------------
     // Write words to memory
 
-    addr = 0xa0000000;
-    data = 0x12345678;
-    vp1.write(addr, data, 0);
-    VPrint("Node %d: wrote data %08x to addr %08x\n", node, data, addr);
+    addr            = 0xa0000000;
+    uint32_t data32 = 0x12345678;
+    vp1.write(addr, data32, 0);
+    VPrint("Node %d: wrote data %08x to addr %08x\n", node, data32, addr);
 
     // Pause for a few ticks
     vp1.tick(10);
 
-    addr = 0xa0000010;
-    data = 0xfedcba98;
-    vp1.writeWord(addr, data, 0);
-    VPrint("Node %d: wrote data %08x to addr %08x\n", node, data, addr);
+    addr   = 0xa0000010;
+    data32 = 0xfedcba98;
+    vp1.writeWord(addr, data32, 0);
+    VPrint("Node %d: wrote data %08x to addr %08x\n", node, data32, addr);
 
     // Pause for a few ticks
     vp1.tick(10);
 
     // Read data back
-    addr = 0xa0000000;
-    data = 0xa3957571;
-    vp1.read(addr, &data, 0);
+    addr   = 0xa0000000;
+    data32 = 0xa3957571;
+    vp1.read(addr, &data32, 0);
 
     // Check data
-    if (data != 0x12345678)
+    if (data32 != 0x12345678)
     {
-        VPrint("***Error: data miscompare in node %d (%08x)\n", node, data);
+        VPrint("***Error: data miscompare in node %d (%08x)\n", node, data32);
         SLEEP;
     }
     else
     {
-        VPrint("Node %d: read back data %08x from addr %08x\n", node, data, addr);
+        VPrint("Node %d: read back data %08x from addr %08x\n", node, data32, addr);
     }
 
     vp1.tick(10);
 
     // Read data back
-    addr = 0xa0000010;
-    data = 0;
-    vp1.read(addr, &data, 0);
+    addr   = 0xa0000010;
+    data32 = 0;
+    vp1.read(addr, &data32, 0);
 
     // Check data
-    if (data != 0xfedcba98)
+    if (data32 != 0xfedcba98)
     {
-        VPrint("***Error: data miscompare in node %d (%08x)\n", node, data);
+        VPrint("***Error: data miscompare in node %d (%08x)\n", node, data32);
         SLEEP;
     }
     else
     {
-        VPrint("Node %d: read back data %08x from addr %08x\n", node, data, addr);
+        VPrint("Node %d: read back data %08x from addr %08x\n", node, data32, addr);
     }
 
     // -------------------------------------------
     // Write half words to memory
 
     addr = 0xa0005022;
-    data = 0x8fe4;
+    uint16_t data16 = 0x8fe4;
 
-    vp1.writeHword(addr, data);
+    vp1.writeHword(addr, data16);
 
     addr += 2;
-    data = 0x7e0a;
-    vp1.writeHword(addr, data);
+    data16 = 0x7e0a;
+    vp1.writeHword(addr, data16);
 
     addr -= 2;
 
     vp1.tick(2);
 
-    vp1.readHword(addr, &data);
-    if (data != 0x8fe4)
+    vp1.readHword(addr, &data16);
+    if (data16 != 0x8fe4)
     {
-        VPrint("***Error: halfword data miscompare in node %d (%08x)\n", node, data);
+        VPrint("***Error: halfword data miscompare in node %d (%08x)\n", node, data16);
         SLEEP;
     }
     else
     {
-        VPrint("Node %d: read back data %08x from addr %08x\n", node, data, addr);
+        VPrint("Node %d: read back data %08x from addr %08x\n", node, data16, addr);
     }
 
     addr += 2;
 
     vp1.tick(2);
 
-    vp1.readHword(addr, &data);
+    vp1.readHword(addr, &data16);
 
-    if (data != 0x7e0a)
+    if (data16 != 0x7e0a)
     {
-        VPrint("***Error: halfword data miscompare in node %d (%08x)\n", node, data);
+        VPrint("***Error: halfword data miscompare in node %d (%08x)\n", node, data16);
         SLEEP;
     }
     else
     {
-        VPrint("Node %d: read back data %08x from addr %08x\n", node, data, addr);
+        VPrint("Node %d: read back data %08x from addr %08x\n", node, data16, addr);
     }
 
     // -------------------------------------------
     // Write bytes to memory
 
-    addr = 0xa0005033;
-    data = 0x99;
+    addr         = 0xa0005033;
+    uint8_t data8 = 0x99;
 
-    vp1.writeByte(addr, data);
+    vp1.writeByte(addr, data8);
 
     vp1.tick(1);
 
-    addr += 1;
-    data = 0x2f;
-    vp1.writeByte(addr, data);
+    addr  += 1;
+    data8 = 0x2f;
+    vp1.writeByte(addr, data8);
 
     addr -= 1;
 
     vp1.tick(2);
 
-    vp1.readByte(addr, &data);
-    if (data != 0x99)
+    vp1.readByte(addr, &data8);
+    if (data8 != 0x99)
     {
-        VPrint("***Error: byhte data miscompare in node %d (%08x)\n", node, data);
+        VPrint("***Error: byhte data miscompare in node %d (%08x)\n", node, data8);
         SLEEP;
     }
     else
     {
-        VPrint("Node %d: read back data %08x from addr %08x\n", node, data, addr);
+        VPrint("Node %d: read back data %08x from addr %08x\n", node, data8, addr);
     }
 
     addr += 1;
 
     vp1.tick(1);
 
-    vp1.readByte(addr, &data);
+    vp1.readByte(addr, &data8);
 
-    if (data != 0x2f)
+    if (data8 != 0x2f)
     {
-        VPrint("***Error: byte data miscompare in node %d (%08x)\n", node, data);
+        VPrint("***Error: byte data miscompare in node %d (%08x)\n", node, data8);
         SLEEP;
     }
     else
     {
-        VPrint("Node %d: read back data %08x from addr %08x\n", node, data, addr);
+        VPrint("Node %d: read back data %08x from addr %08x\n", node, data8, addr);
     }
 
     // -------------------------------------------

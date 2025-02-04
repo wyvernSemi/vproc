@@ -52,12 +52,6 @@ int VUser (const uint32_t node)
 
     debug_io_printf("VUser(): node %d\n", node);
 
-    // Level interrupt callback table initialisation
-    for (jdx = 0; jdx < 8; jdx++)
-    {
-        ns[node]->VInt_table[jdx] = NULL;
-    }
-
     // Callback intialisation
     ns[node]->VUserIrqCB = NULL;
     ns[node]->VUserCB    = NULL;
@@ -152,50 +146,13 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const uint32_t node)
         exit(1);
     }
 
-    do
-    {
-        // Wait for response message from simulator
-        debug_io_printf("VExch(): waiting for rcv[%d] semaphore\n", node);
-        sem_wait(&(ns[node]->rcv));
+    // Wait for response message from simulator
+    debug_io_printf("VExch(): waiting for rcv[%d] semaphore\n", node);
+    sem_wait(&(ns[node]->rcv));
 
-        *prbuf = ns[node]->rcv_buf;
-
-        // Check if this is an interrupt
-        if (prbuf->interrupt > 0)
-        {
-            debug_io_printf("VExch(): node %d processing interrupt (%d)\n", node, prbuf->interrupt);
-
-            if (prbuf->interrupt > MAX_INTERRUPT_LEVEL)
-            {
-                VPrint("***Error: invalid interrupt level %d (VExch)\n", prbuf->interrupt);
-                exit(1);
-            }
-
-            if (ns[node]->VInt_table[prbuf->interrupt] != NULL)
-            {
-                // Call user registered interrupt function
-                psbuf->ticks       = (*(ns[node]->VInt_table[prbuf->interrupt]))();
-                ns[node]->send_buf = *psbuf;
-
-                debug_io_printf("VExch(): interrupt send_buf[node].ticks = %d\n", ns[node]->send_buf.ticks);
-            }
-
-            // Send new message to simulation
-            debug_io_printf("VExch(): setting snd[%d] semaphore (interrupt)\n", node);
-
-            if ((status = sem_post(&(ns[node]->snd))) == -1)
-            {
-                VPrint("***Error: bad sem_post status (%d) on node %d (VExch)\n", status, node);
-                exit(1);
-            }
-        }
-    // If the response was an interrupt, go back and wait for IO message response.
-    // (This could be in the same cycle as the interrupt)
-    }
-    while (prbuf->interrupt > 0);
+    *prbuf = ns[node]->rcv_buf;
 
     debug_io_printf("VExch(): returning to user code from node %d\n", node);
-
 }
 
 // =========================================================================
@@ -223,15 +180,15 @@ int VWriteBE (const uint32_t addr, const uint32_t data, const uint32_t be, const
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
-    rw_t*      p_rw = (rw_t*)&sbuf.rw;
+    rw_t*      p_rw     = (rw_t*)&sbuf.rw;
 
-    sbuf.addr     = addr;
-    sbuf.data_out = data;
-    sbuf.ticks    = delta ? DELTA_CYCLE : 0;
+    sbuf.addr           = addr;
+    sbuf.data_out       = data;
+    sbuf.ticks          = delta ? DELTA_CYCLE : 0;
 
-    sbuf.rw       = 0;  // clear RW fields
-    p_rw->write   = 1;
-    p_rw->fbe     = be & 0xf;
+    sbuf.rw             = 0;  // clear RW fields
+    p_rw->write         = 1;
+    p_rw->fbe           = be & 0xf;
 
     VExch(&sbuf, &rbuf, node);
 
@@ -248,19 +205,19 @@ int VRead (const uint32_t addr, uint32_t *rdata, const int delta, const uint32_t
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
-    rw_t*      p_rw = (rw_t*)&sbuf.rw;
+    rw_t*      p_rw     = (rw_t*)&sbuf.rw;
 
-    sbuf.addr     = addr;
-    sbuf.data_out = 0;
-    sbuf.ticks    = delta ? DELTA_CYCLE : 0;
+    sbuf.addr           = addr;
+    sbuf.data_out       = 0;
+    sbuf.ticks          = delta ? DELTA_CYCLE : 0;
 
-    sbuf.rw       = 0;  // clear RW fields
-    p_rw->read    = 1;
-    p_rw->fbe     = 0xf;
+    sbuf.rw             = 0;  // clear RW fields
+    p_rw->read          = 1;
+    p_rw->fbe           = 0xf;
 
     VExch(&sbuf, &rbuf, node);
 
-    *rdata        = rbuf.data_in;
+    *rdata              = rbuf.data_in;
 
     return 0;
 }
@@ -275,18 +232,18 @@ int VBurstWrite (const uint32_t addr, void *data, const uint32_t wordlen, const 
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
-    rw_t*      p_rw = (rw_t*)&sbuf.rw;
+    rw_t*      p_rw     = (rw_t*)&sbuf.rw;
 
-    sbuf.addr      = addr;
-    sbuf.data_out  = 0;
-    sbuf.data_p    = data;
-    sbuf.ticks     = 0;
+    sbuf.addr           = addr;
+    sbuf.data_out       = 0;
+    sbuf.data_p         = data;
+    sbuf.ticks          = 0;
 
-    sbuf.rw        = 0;  // clear RW fields
-    p_rw->write    = 1;
-    p_rw->burstlen = wordlen & 0xfff;
-    p_rw->fbe      = 0xf;
-    p_rw->lbe      = 0xf;
+    sbuf.rw             = 0;  // clear RW fields
+    p_rw->write         = 1;
+    p_rw->burstlen      = wordlen & 0xfff;
+    p_rw->fbe           = 0xf;
+    p_rw->lbe           = 0xf;
 
     VExch(&sbuf, &rbuf, node);
 
@@ -303,18 +260,18 @@ int VBurstWriteBE (const uint32_t addr, void *data, const uint32_t wordlen, cons
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
-    rw_t*      p_rw = (rw_t*)&sbuf.rw;
+    rw_t*      p_rw     = (rw_t*)&sbuf.rw;
 
-    sbuf.addr      = addr;
-    sbuf.data_out  = 0;
-    sbuf.data_p    = data;
-    sbuf.ticks     = 0;
+    sbuf.addr           = addr;
+    sbuf.data_out       = 0;
+    sbuf.data_p         = data;
+    sbuf.ticks          = 0;
 
-    sbuf.rw        = 0;  // clear RW fields
-    p_rw->write    = 1;
-    p_rw->burstlen = wordlen & 0xfff;
-    p_rw->fbe      = fbe & 0xf;
-    p_rw->lbe      = lbe & 0xf;
+    sbuf.rw             = 0;  // clear RW fields
+    p_rw->write         = 1;
+    p_rw->burstlen      = wordlen & 0xfff;
+    p_rw->fbe           = fbe & 0xf;
+    p_rw->lbe           = lbe & 0xf;
 
     VExch(&sbuf, &rbuf, node);
 
@@ -331,18 +288,18 @@ int VBurstRead (const uint32_t addr, void *data, const uint32_t wordlen, const u
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
-    rw_t*      p_rw = (rw_t*)&sbuf.rw;
+    rw_t*      p_rw     = (rw_t*)&sbuf.rw;
 
-    sbuf.addr      = addr;
-    sbuf.data_out  = 0;
-    sbuf.data_p    = data;
-    sbuf.ticks     = 0;
+    sbuf.addr           = addr;
+    sbuf.data_out       = 0;
+    sbuf.data_p         = data;
+    sbuf.ticks          = 0;
 
-    sbuf.rw        = 0;  // clear RW fields
-    p_rw->read     = 1;
-    p_rw->burstlen = wordlen & 0xfff;
-    p_rw->fbe      = 0xf;
-    p_rw->lbe      = 0xf;
+    sbuf.rw             = 0;  // clear RW fields
+    p_rw->read          = 1;
+    p_rw->burstlen      = wordlen & 0xfff;
+    p_rw->fbe           = 0xf;
+    p_rw->lbe           = 0xf;
 
     VExch(&sbuf, &rbuf, node);
 
@@ -370,17 +327,17 @@ int VWriteBE64 (const uint64_t addr, const uint64_t data, const uint32_t be, con
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
-    rw_t*      p_rw  = (rw_t*)&sbuf.rw;
+    rw_t*      p_rw     = (rw_t*)&sbuf.rw;
 
-    sbuf.addr        = (uint32_t)(addr & 0xffffffffULL);
-    sbuf.addr_hi     = (uint32_t)((addr >> 32) & 0xffffffffULL);
-    sbuf.data_out    = (uint32_t)(data & 0xffffffffULL);
-    sbuf.data_out_hi = (uint32_t)((data >> 32) & 0xffffffffULL);
-    sbuf.ticks       = delta ? DELTA_CYCLE : 0;
+    sbuf.addr           = (uint32_t)(addr & 0xffffffffULL);
+    sbuf.addr_hi        = (uint32_t)((addr >> 32) & 0xffffffffULL);
+    sbuf.data_out       = (uint32_t)(data & 0xffffffffULL);
+    sbuf.data_out_hi    = (uint32_t)((data >> 32) & 0xffffffffULL);
+    sbuf.ticks          = delta ? DELTA_CYCLE : 0;
 
-    sbuf.rw          = 0;  // clear RW fields
-    p_rw->write      = 1;
-    p_rw->fbe        = be & 0xf;
+    sbuf.rw             = 0;  // clear RW fields
+    p_rw->write         = 1;
+    p_rw->fbe           = be & 0xff;
 
     VExch(&sbuf, &rbuf, node);
 
@@ -397,21 +354,21 @@ int VRead64 (const uint64_t addr, uint64_t *rdata, const int delta, const uint32
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
-    rw_t*      p_rw  = (rw_t*)&sbuf.rw;
+    rw_t*      p_rw     = (rw_t*)&sbuf.rw;
 
-    sbuf.addr        = (uint32_t)(addr & 0xffffffffULL);
-    sbuf.addr_hi     = (uint32_t)((addr >> 32) & 0xffffffffULL);
-    sbuf.data_out    = 0;
-    sbuf.data_out_hi = 0;
-    sbuf.ticks       = delta ? DELTA_CYCLE : 0;
+    sbuf.addr           = (uint32_t)(addr & 0xffffffffULL);
+    sbuf.addr_hi        = (uint32_t)((addr >> 32) & 0xffffffffULL);
+    sbuf.data_out       = 0;
+    sbuf.data_out_hi    = 0;
+    sbuf.ticks          = delta ? DELTA_CYCLE : 0;
 
-    sbuf.rw          = 0;  // clear RW fields
-    p_rw->read       = 1;
-    p_rw->fbe        = 0xff;
+    sbuf.rw             = 0;  // clear RW fields
+    p_rw->read          = 1;
+    p_rw->fbe           = 0xff;
 
     VExch(&sbuf, &rbuf, node);
 
-    *rdata           = ((uint64_t)rbuf.data_in) | (((uint64_t)rbuf.data_in_hi) << 32);
+    *rdata              = ((uint64_t)rbuf.data_in) | (((uint64_t)rbuf.data_in_hi) << 32);
 
     return 0;
 }
@@ -426,20 +383,20 @@ int VBurstWrite64 (const uint64_t addr, void *data, const uint32_t wordlen, cons
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
-    rw_t*      p_rw   = (rw_t*)&sbuf.rw;
+    rw_t*      p_rw     = (rw_t*)&sbuf.rw;
 
-    sbuf.addr        = (uint32_t)(addr & 0xffffffffULL);
-    sbuf.addr_hi     = (uint32_t)((addr >> 32) & 0xffffffffULL);
-    sbuf.data_out    = 0;
-    sbuf.data_out_hi = 0;
-    sbuf.data_p      = data;
-    sbuf.ticks       = 0;
+    sbuf.addr           = (uint32_t)(addr & 0xffffffffULL);
+    sbuf.addr_hi        = (uint32_t)((addr >> 32) & 0xffffffffULL);
+    sbuf.data_out       = 0;
+    sbuf.data_out_hi    = 0;
+    sbuf.data_p         = data;
+    sbuf.ticks          = 0;
 
-    sbuf.rw          = 0;  // clear RW fields
-    p_rw->write      = 1;
-    p_rw->burstlen   = wordlen & 0xfff;
-    p_rw->fbe        = 0xff;
-    p_rw->lbe        = 0xff;
+    sbuf.rw             = 0;  // clear RW fields
+    p_rw->write         = 1;
+    p_rw->burstlen      = wordlen & 0xfff;
+    p_rw->fbe           = 0xff;
+    p_rw->lbe           = 0xff;
 
     VExch(&sbuf, &rbuf, node);
 
@@ -456,20 +413,20 @@ int VBurstWriteBE64 (const uint64_t addr, void *data, const uint32_t wordlen, co
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
-    rw_t*      p_rw = (rw_t*)&sbuf.rw;
+    rw_t*      p_rw     = (rw_t*)&sbuf.rw;
 
-    sbuf.addr        = (uint32_t)(addr & 0xffffffffULL);
-    sbuf.addr_hi     = (uint32_t)((addr >> 32) & 0xffffffffULL);
-    sbuf.data_out    = 0;
-    sbuf.data_out_hi = 0;
-    sbuf.data_p      = data;
-    sbuf.ticks       = 0;
+    sbuf.addr           = (uint32_t)(addr & 0xffffffffULL);
+    sbuf.addr_hi        = (uint32_t)((addr >> 32) & 0xffffffffULL);
+    sbuf.data_out       = 0;
+    sbuf.data_out_hi    = 0;
+    sbuf.data_p         = data;
+    sbuf.ticks          = 0;
 
-    sbuf.rw          = 0;  // clear RW fields
-    p_rw->write      = 1;
-    p_rw->burstlen   = wordlen & 0xfff;
-    p_rw->fbe        = fbe & 0xff;
-    p_rw->lbe        = lbe & 0xff;
+    sbuf.rw             = 0;  // clear RW fields
+    p_rw->write         = 1;
+    p_rw->burstlen      = wordlen & 0xfff;
+    p_rw->fbe           = fbe & 0xff;
+    p_rw->lbe           = lbe & 0xff;
 
     VExch(&sbuf, &rbuf, node);
 
@@ -486,26 +443,25 @@ int VBurstRead64 (const uint64_t addr, void *data, const uint32_t wordlen, const
 {
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
-    rw_t*      p_rw = (rw_t*)&sbuf.rw;
+    rw_t*      p_rw     = (rw_t*)&sbuf.rw;
 
-    sbuf.addr        = (uint32_t)(addr & 0xffffffffULL);
-    sbuf.addr_hi     = (uint32_t)((addr >> 32) & 0xffffffffULL);
-    sbuf.data_out    = 0;
-    sbuf.data_out_hi = 0;
-    sbuf.data_p      = data;
-    sbuf.ticks       = 0;
+    sbuf.addr           = (uint32_t)(addr & 0xffffffffULL);
+    sbuf.addr_hi        = (uint32_t)((addr >> 32) & 0xffffffffULL);
+    sbuf.data_out       = 0;
+    sbuf.data_out_hi    = 0;
+    sbuf.data_p         = data;
+    sbuf.ticks          = 0;
 
-    sbuf.rw          = 0;  // clear RW fields
-    p_rw->read       = 1;
-    p_rw->burstlen   = wordlen & 0xfff;
-    p_rw->fbe        = 0xff;
-    p_rw->lbe        = 0xff;
+    sbuf.rw             = 0;  // clear RW fields
+    p_rw->read          = 1;
+    p_rw->burstlen      = wordlen & 0xfff;
+    p_rw->fbe           = 0xff;
+    p_rw->lbe           = 0xff;
 
     VExch(&sbuf, &rbuf, node);
 
     return 0;
 }
-
 
 // -------------------------------------------------------------------------
 // VTick()
@@ -518,34 +474,14 @@ int VTick (const unsigned ticks, const unsigned node)
     rcv_buf_t  rbuf;
     send_buf_t sbuf;
 
-    sbuf.addr     = 0;
-    sbuf.data_out = 0;
-    sbuf.rw       = V_IDLE;
-    sbuf.ticks    = ticks;
+    sbuf.addr           = 0;
+    sbuf.data_out       = 0;
+    sbuf.rw             = V_IDLE;
+    sbuf.ticks          = ticks;
 
     VExch(&sbuf, &rbuf, node);
 
     return 0;
-}
-
-// -------------------------------------------------------------------------
-// VRegInterrupt()
-//
-// Registers a user function as an level interrupt callback. Deprecated in
-// favour f vectored interrupts. Kept for backwards compatibility.
-// -------------------------------------------------------------------------
-
-void VRegInterrupt (const int level, const pVUserInt_t func, const unsigned node)
-{
-    debug_io_printf("VRegInterrupt(): at node %d, registering interrupt level %d\n", node, level);
-
-    if (level < MIN_INTERRUPT_LEVEL || level >= MAX_INTERRUPT_LEVEL)
-    {
-        VPrint("***Error: attempt to register an out of range interrupt level (VRegInterrupt)\n");
-        exit(1);
-    }
-
-    ns[node]->VInt_table[level] = func;
 }
 
 // -------------------------------------------------------------------------

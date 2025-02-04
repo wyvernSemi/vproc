@@ -70,7 +70,6 @@ public:
     int  burstRead       (const uint64_t   addr,           void    *data, const unsigned wordlen)    {return VBurstRead64    (addr,      data, wordlen, node);};
     int  tick            (const uint32_t   ticks)                                                    {return VTick           (ticks,                    node);};
     void regIrq          (const pVUserIrqCB_t func)                                                  {       VRegIrq         (func,                     node);};
-    void regInterrupt    (const int        level,  const pVUserInt_t func)                           {       VRegInterrupt   (level,     func,          node);};
     void regUser         (const pVUserCB_t func)                                                     {       VRegUser        (func,                     node);};
 
 

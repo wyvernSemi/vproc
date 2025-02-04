@@ -39,6 +39,26 @@ static int VInterrupt_4(void)
 }
 
 // ------------------------------------------------------------
+// Interrupt callback
+// ------------------------------------------------------------
+
+static int VIrqCB (int irq)
+{
+    uint32_t irq_level = irq;
+    
+    if (irq_level == 1)
+    {
+        VInterrupt_1();
+    }
+    else if (irq_level == 4)
+    {
+        VInterrupt_4();
+    }
+    
+    return 0;
+}
+
+// ------------------------------------------------------------
 // VuserMainX entry point for node 0
 // ------------------------------------------------------------
 
@@ -51,9 +71,8 @@ void VUserMain0()
 
     VPrint("VUserMain0(): node=%d\n", node);
 
-    // Register functions as interrupt levels 1 and 4 routines
-    VRegInterrupt(1, VInterrupt_1, node);
-    VRegInterrupt(4, VInterrupt_4, node);
+    // Register IRQ callback function
+    VRegIrq(VIrqCB, node);
 
     do
     {

@@ -1,6 +1,6 @@
 -- =============================================================
 --
---  Copyright (c) 2021-2023 Simon Southwell. All rights reserved.
+--  Copyright (c) 2021-2025 Simon Southwell. All rights reserved.
 --
 --  Date: 4th May 2021
 --
@@ -29,18 +29,18 @@ use ieee.numeric_std.all;
 use work.vproc_pkg.all;
 
 entity VProc is
-  generic (INT_WIDTH       : integer := 3;
-           NODE_WIDTH      : integer := 4;
-           BURST_ADDR_INCR : integer := 1;
-           DISABLE_DELTA   : integer := 0
+  generic (INT_WIDTH       : integer                       := 3;
+           NODE_WIDTH      : integer                       := 4;
+           BURST_ADDR_INCR : integer                       := 1;
+           DISABLE_DELTA   : integer                       := 0
   );
   port (
     Clk             : in  std_logic;
 
-    Addr            : out std_logic_vector(31 downto 0) := 32x"0";
-    BE              : out std_logic_vector( 3 downto 0) := 4x"F";
-    WE              : out std_logic := '0';
-    RD              : out std_logic := '0';
+    Addr            : out std_logic_vector(31 downto 0)    := 32x"0";
+    BE              : out std_logic_vector( 3 downto 0)    := 4x"F";
+    WE              : out std_logic                        := '0';
+    RD              : out std_logic                        := '0';
     DataOut         : out std_logic_vector(31 downto 0);
     DataIn          : in  std_logic_vector(31 downto 0);
     WRAck           : in  std_logic;
@@ -123,24 +123,6 @@ begin
 
       if Initialised = 1 then
 
-        if IntSamp > 0 then
-
-          -- If an interrupt active, call $vsched with interrupt value
-          VSched(to_integer(unsigned(Node)),
-                 IntSamp,
-                 DataInSamp,
-                 VPDataOut,
-                 VPAddr,
-                 VPRW,
-                 VPTicks);
-
-          -- If interrupt routine returns non-zero tick, then override
-          -- current tick value. Otherwise, leave at present value.
-          if VPTicks > 0 then
-            TickVal             := VPTicks;
-          end if;
-        end if;
-
         -- Call $virq when interrupt value changes, passing in
         -- new value
         if IntSamp /= IntSampLast then
@@ -158,8 +140,6 @@ begin
 
           -- Loop accessing new commands until VPTicks is not a delta cycle update
           while VPTicks < 0 loop
-            -- Clear any interrupt (already dealt with)
-            IntSamp             := 0;
 
             -- Sample the data in port
             DataInSamp          := to_integer(signed(DataIn));
@@ -179,16 +159,15 @@ begin
 
               -- Host process message scheduler called
               VSched(to_integer(unsigned(Node)),
-                     IntSamp,
                      DataInSamp,
                      VPDataOut,
                      VPAddr,
                      VPRW,
                      VPTicks);
 
-              Burst             <= std_logic_vector(to_unsigned(VPRW, 32)(BLKHIBIT downto BLKLOBIT));
+              Burst             <= std_logic_vector(to_unsigned(VPRW, 32)(BLKHIBIT     downto BLKLOBIT));
               BE                <= std_logic_vector(to_unsigned(VPRW, 32)(BEFIRSTHIBIT downto BEFIRSTLOBIT));
-              LBE               <= std_logic_vector(to_unsigned(VPRW, 32)(BELASTHIBIT downto BELASTLOBIT));
+              LBE               <= std_logic_vector(to_unsigned(VPRW, 32)(BELASTHIBIT  downto BELASTLOBIT));
               WE                <= to_unsigned(VPRW, 32)(WEbit);
               RD                <= to_unsigned(VPRW, 32)(RDbit);
               Addr              <= std_logic_vector(to_signed(VPAddr, 32));
@@ -198,14 +177,14 @@ begin
               -- If new BlkCount is non-zero, setup burst transfer
               if BlkCount /= 0 then
                 BurstFirst      <= '1';
-              
+
                 -- If a single word transfer, set the last flag
                 if BlkCount = 1 then
                   BurstLast      <= '1';
                 end if;
 
                 -- On writes, override VPDataOut to get from burst access task $VAccess at index 0
-                if to_unsigned(VPRW, 32)(WEbit)  = '1' then
+                if to_unsigned(VPRW, 32)(WEbit) = '1' then
                   AccIdx        := 0;
 
                   VAccess(to_integer(unsigned(Node)),

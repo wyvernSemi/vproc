@@ -3,7 +3,7 @@
 // SystemVerilog side Virtual Processor, for running host
 // programs as control in simulation.
 //
-// Copyright (c) 2024 Simon Southwell.
+// Copyright (c) 2024 - 2025 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -44,7 +44,7 @@ module VProc
 
     // Bus interface
     output reg [31:0]      Addr,
-    
+
 `ifdef VPROC_BYTE_ENABLE
     output reg  [3:0]      BE,
 `endif
@@ -168,18 +168,6 @@ begin
     // before starting accesses
     if (Initialised == 1'b1)
     begin
-        // If an interrupt active, call VSched with interrupt value
-        if (IntSamp > 0)
-        begin
-            `VSched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
-
-            // If interrupt routine returns non-zero tick, then override
-            // current tick value. Otherwise, leave at present value.
-            if (VPTicks > 0)
-            begin
-                TickCount               = VPTicks;
-            end
-        end
 
         // If vector IRQ enabled, call VIirq when interrupt value changes, passing in
         // new value
@@ -200,8 +188,6 @@ begin
             // Loop accessing new commands until VPTicks is not a delta cycle update
             while (VPTicks < 0)
             begin
-                // Clear any interrupt (already dealt with)
-                IntSamp                 = 0;
 
                 // Sample the data in port
                 DataInSamp              = DataIn;
@@ -214,11 +200,16 @@ begin
                     begin
                         AccIdx          = AccIdx + 1;
                         BlkCount        = 0;
-                        `vaccess(NodeI, AccIdx, DataInSamp, VPDataOut);
+                        `VAccess(NodeI, AccIdx, DataInSamp, VPDataOut);
                     end
 
                     // Get new access command
-                    `VSched(NodeI, IntSamp, DataInSamp, VPDataOut, VPAddr, VPRW, VPTicks);
+                    `VSched(NodeI,
+                            DataInSamp,
+                            VPDataOut,
+                            VPAddr,
+                            VPRW,
+                            VPTicks);
 
                     // Update the outputs
                     Burst               <= VPRW[`BLKBITS];
@@ -236,7 +227,7 @@ begin
 
                         // Initialise the burst block counter with count bits
                         BlkCount        = VPRW[`BLKBITS];
-                        
+
                         // If a single word transfer, set the last flag
                         if (BlkCount == 1)
                         begin
@@ -247,7 +238,7 @@ begin
                         if (VPRW[`WEBIT])
                         begin
                             AccIdx      = 0;
-                            `vaccess(NodeI, AccIdx, `DONTCARE, VPDataOut);
+                            `VAccess(NodeI, AccIdx, `DONTCARE, VPDataOut);
                         end
                         else
                         begin
@@ -263,7 +254,7 @@ begin
                 else
                 begin
                     AccIdx              = AccIdx + 1;
-                    `vaccess(NodeI, AccIdx, DataInSamp, VPDataOut);
+                    `VAccess(NodeI, AccIdx, DataInSamp, VPDataOut);
                     BlkCount            = BlkCount - 1;
 
                     if (BlkCount == 1)

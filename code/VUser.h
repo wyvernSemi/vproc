@@ -66,25 +66,22 @@ typedef void *(*pThreadFunc_t)(void *);
 // VUser function prototypes for API
 
 extern int  VWrite          (const uint32_t      addr,  const uint32_t  data, const int      delta,   const unsigned node);
-extern int  VWriteBE        (const uint32_t      addr,  const uint32_t  data, uint32_t       be,      const int      delta, uint32_t node);
-extern int  VRead           (const uint32_t      addr,        uint32_t *data, const int      delta,   uint32_t       node);
-extern int  VBurstWrite     (const uint32_t      addr,  void           *data, uint32_t       wordlen, uint32_t       node);
-extern int  VBurstWriteBE   (const uint32_t      addr,  void           *data, uint32_t       wordlen, uint32_t       fbe, uint32_t lbe, uint32_t node);
-extern int  VBurstRead      (const uint32_t      addr,  void           *data, uint32_t       wordlen, uint32_t       node);
+extern int  VWriteBE        (const uint32_t      addr,  const uint32_t  data, const uint32_t be,      const int      delta, const uint32_t node);
+extern int  VRead           (const uint32_t      addr,        uint32_t *data, const int      delta,   const uint32_t node);
+extern int  VBurstWrite     (const uint32_t      addr,  void           *data, const uint32_t wordlen, const uint32_t node);
+extern int  VBurstWriteBE   (const uint32_t      addr,  void           *data, const uint32_t wordlen, const uint32_t fbe,   const uint32_t lbe, const uint32_t node);
+extern int  VBurstRead      (const uint32_t      addr,  void           *data, const uint32_t wordlen, const uint32_t node);
 
 extern int  VWrite64        (const uint64_t      addr,  const uint64_t  data, const int      delta,   const unsigned node);
-extern int  VWriteBE64      (const uint64_t      addr,  const uint64_t  data, uint32_t       be,      const int      delta, uint32_t node);
-extern int  VRead64         (const uint64_t      addr,        uint64_t *data, const int      delta,   uint32_t       node);
-extern int  VBurstWrite64   (const uint64_t      addr,  void           *data, uint32_t       wordlen, uint32_t       node);
-extern int  VBurstWriteBE64 (const uint64_t      addr,  void           *data, uint32_t       wordlen, uint32_t       fbe, uint32_t lbe, uint32_t node);
-extern int  VBurstRead64    (const uint64_t      addr,  void           *data, uint32_t       wordlen, uint32_t       node);
+extern int  VWriteBE64      (const uint64_t      addr,  const uint64_t  data, uint32_t       be,      const int      delta, const uint32_t node);
+extern int  VRead64         (const uint64_t      addr,        uint64_t *data, const int      delta,   const uint32_t node);
+extern int  VBurstWrite64   (const uint64_t      addr,  void           *data, const uint32_t wordlen, const uint32_t node);
+extern int  VBurstWriteBE64 (const uint64_t      addr,  void           *data, const uint32_t wordlen, const uint32_t fbe,   const uint32_t lbe, const uint32_t node);
+extern int  VBurstRead64    (const uint64_t      addr,  void           *data, const uint32_t wordlen, const uint32_t node);
 
 extern int  VTick           (const uint32_t      ticks, const uint32_t  node);
 extern void VRegUser        (const pVUserCB_t    func,  const uint32_t  node);
 extern void VRegIrq         (const pVUserIrqCB_t func,  const uint32_t  node);
-
-// *** Deprecated in favour of VRegIrq ***/
-extern void VRegInterrupt   (const int           level, const pVUserInt_t  func, const uint32_t node);
 
 // Internal function for Python interface
 extern void VRegIrqPy       (const pPyIrqCB_t    func,  const uint32_t node);

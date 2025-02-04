@@ -145,8 +145,6 @@ begin
             // Loop accessing new commands until VPTicks is not a delta cycle update
             while (VPTicks < 0)
             begin
-                // Clear any interrupt (already dealt with)
-                IntSamp                 = 0;
 
                 // Sample the data in port
                 DataInLoSamp            = DataIn[31:0];
@@ -165,7 +163,12 @@ begin
                     end
 
                     // Get new access command
-                    `VSched64(NODE, IntSamp, DataInLoSamp, DataInHiSamp, VPDataOutLo, VPDataOutHi, VPAddrLo, VPAddrHi, VPRW, VPTicks);
+                    `VSched64(NODE,
+                              DataInLoSamp, DataInHiSamp,
+                              VPDataOutLo,  VPDataOutHi,
+                              VPAddrLo,     VPAddrHi,
+                              VPRW,
+                              VPTicks);
 
                     // Update the outputs
                     Burst               <= VPRW[`BLKBITS];
@@ -244,7 +247,7 @@ begin
                 // The `MINDELAY ensures it's not updated until other outputs
                 // are updated.
                 Update                  <= `MINDELAY ~Update;
-                
+
                 if (DISABLE_DELTA == 0)
                 begin
                     @(UpdateResponse);

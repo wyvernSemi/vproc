@@ -46,40 +46,41 @@
 #define V_WRITE                 1
 #define V_READ                  2
 
-#define BURSTLENLOBIT           2
-#define BEFIRSTLOBIT            14
-#define BELASTLOBIT             18
-
 // Error types
 #define VP_USER_ERR             1
 
-// Indexes for PLI function arguments
+// Indexes for PLI VSched function arguments
 #define VPNODENUM_ARG           1
+#define VPDATAIN_ARG            2
+#define VPDATAOUT_ARG           3
+#define VPADDR_ARG              4
+#define VPRW_ARG                5
+#define VPTICKS_ARG             6
+
+#define VPDATAINLO_ARG64        2
+#define VPDATAINHI_ARG64        3
+#define VPDATAOUTLO_ARG64       4
+#define VPDATAOUTHI_ARG64       5
+#define VPADDRLO_ARG64          6
+#define VPADDRHI_ARG64          7
+#define VPRW_ARG64              8
+#define VPTICKS_ARG64           9
+
+// Index for VIrq PLI function argument
 #define VPINTERRUPT_ARG         2
+
+// Indexes for VAccess PLI function arguments
 #define VPINDEX_ARG             2
-#define VPDATAIN_ARG            3
-#define VPDATAOUT_ARG           4
-#define VPADDR_ARG              5
-#define VPRW_ARG                6
-#define VPTICKS_ARG             7
+#define VPACCESSIN_ARG          3
+#define VPACCESSOUT_ARG         4
 
-#define VPDATAINLO_ARG64        3
-#define VPDATAINHI_ARG64        4
-#define VPDATAOUTLO_ARG64       5
-#define VPDATAOUTHI_ARG64       6
-#define VPADDRLO_ARG64          7
-#define VPADDRHI_ARG64          9
-#define VPRW_ARG64              9
-#define VPTICKS_ARG64           10
-
+// Indexes for VProcUser PLI function arguments
+#define VP_USER_ARG             2
 
 // A default string buffer size
 #define DEFAULT_STR_BUF_SIZE    32
 
-// Range of valid interrupt states
-#define MIN_INTERRUPT_LEVEL     1
-#define MAX_INTERRUPT_LEVEL     7
-
+// Python interface interrupt queue definitions
 #define NUM_IRQ_QUEUE_BITS      10
 #define MAX_QUEUED_VEC_IRQ      (1 << NUM_IRQ_QUEUE_BITS)
 #define IRQ_QUEUE_INDEX_MASK    (MAX_QUEUED_VEC_IRQ - 1)
@@ -111,18 +112,17 @@ typedef struct {
 typedef struct {
     uint32_t           data_in;
     uint32_t           data_in_hi;
-    uint32_t           interrupt;
 } rcv_buf_t, *prcv_buf_t;
 
 // Shared object handle typedef
 typedef void * handle_t;
 
 // Callback pointer types
-typedef int  (*pVUserInt_t)      (void);
 typedef int  (*pVUserIrqCB_t)    (int);
 typedef int  (*pPyIrqCB_t)       (int, int);
 typedef int  (*pVUserCB_t)       (int);
 
+// Python interface event queue structure
 typedef struct {
     uint32_t eventPtr;
     uint32_t eventPopPtr;
@@ -131,15 +131,21 @@ typedef struct {
 
 // Scheduler node state structure
 typedef struct {
+    // Send and receive semaphores
     sem_t               snd;
     sem_t               rcv;
+    
+    // Send and receive buffers
     send_buf_t          send_buf;
     rcv_buf_t           rcv_buf;
-    pVUserInt_t         VInt_table[MAX_INTERRUPT_LEVEL+1];
+    
+    // Callback function pointers
     pVUserIrqCB_t       VUserIrqCB;
     pPyIrqCB_t          PyIrqCB;
-    vecIrqState_t       irqState;
     pVUserCB_t          VUserCB;
+    
+    // Python IRQ event queue
+    vecIrqState_t       irqState;
 } SchedState_t, *pSchedState_t;
 
 // Reference to node state array

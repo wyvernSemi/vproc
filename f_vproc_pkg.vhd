@@ -1,6 +1,6 @@
 -- =============================================================
 --  
---  Copyright (c) 2021-2023 Simon Southwell. All rights reserved.
+--  Copyright (c) 2021-2025 Simon Southwell. All rights reserved.
 -- 
 --  Date: 4th May 2021
 -- 
@@ -32,7 +32,6 @@ package vproc_pkg is
 
   procedure VSched (
     node      : in  integer;
-    Interrupt : in  integer;
     VPDataIn  : in  integer;
     VPDataOut : out integer;
     VPAddr    : out integer;
@@ -78,7 +77,6 @@ package body vproc_pkg is
 
   procedure VSched (
     node      : in  integer;
-    Interrupt : in  integer;
     VPDataIn  : in  integer;
     VPDataOut : out integer;
     VPAddr    : out integer;

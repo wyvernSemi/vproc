@@ -35,41 +35,40 @@ class VProc
 {
 public:
          // Constructor
-         VProc        (const unsigned   nodeIn) : node(nodeIn) {};
+         VProc        (const uint32_t   nodeIn) : node(nodeIn) {};
 
     // API methods
-    int  write        (const unsigned   addr,     const unsigned    data, const int      delta=0)    {return VWrite        (addr,  data, delta,  node);};
-    int  read         (const unsigned   addr,           unsigned   *data, const int      delta=0)    {return VRead         (addr,  data, delta,  node);};
+    int  write        (const uint32_t   addr,     const uint32_t    data, const int      delta=0)    {return VWrite   (addr,  data, delta,  node);};
+    int  read         (const uint32_t   addr,           uint32_t   *data, const int      delta=0)    {return VRead    (addr,  data, delta,  node);};
 
-    int  writeByte    (const unsigned   byteaddr, const unsigned    data, const int      delta=0)    {return VWriteBE      (byteaddr & ~(0x3), data << (8*(byteaddr&0x3)), 0x1 << (byteaddr&0x3), delta, node);};
-    int  writeHword   (const unsigned   byteaddr, const unsigned    data, const int      delta=0)    {return VWriteBE      (byteaddr & ~(0x3), data << (8*(byteaddr&0x2)), 0x3 << (byteaddr&0x2), delta, node);};
-    int  writeWord    (const unsigned   byteaddr, const unsigned    data, const int      delta=0)    {return VWriteBE      (byteaddr & ~(0x3), data, 0xf, delta, node);};
+    int  writeByte    (const uint32_t   byteaddr, const uint8_t     data, const int      delta=0)    {return VWriteBE (byteaddr & ~(0x3), (uint32_t)data << (8*(byteaddr&0x3)), 0x1 << (byteaddr&0x3), delta, node);};
+    int  writeHword   (const uint32_t   byteaddr, const uint16_t    data, const int      delta=0)    {return VWriteBE (byteaddr & ~(0x3), (uint32_t)data << (8*(byteaddr&0x2)), 0x3 << (byteaddr&0x2), delta, node);};
+    int  writeWord    (const uint32_t   byteaddr, const uint32_t    data, const int      delta=0)    {return VWriteBE (byteaddr & ~(0x3),           data, 0xf, delta, node);};
 
-    int  readByte     (const unsigned   byteaddr,       unsigned   *data, const int      delta=0)    { int status; unsigned word;
+    int  readByte     (const uint32_t   byteaddr,       uint8_t    *data, const int      delta=0)    { int status; uint32_t word;
                                                                                                        status = VRead(byteaddr & ~(0x3), &word, delta, node);
-                                                                                                       *data  = (word >> (8*(byteaddr&0x3))) & 0xff;
+                                                                                                       *data  = (uint8_t)((word >> (8*(byteaddr&0x3))) & 0xff);
                                                                                                        return status;};
 
-    int  readHword    (const unsigned   byteaddr,       unsigned   *data, const int      delta=0)    { int status; unsigned word;
+    int  readHword    (const uint32_t   byteaddr,       uint16_t   *data, const int      delta=0)    { int status; uint32_t word;
                                                                                                        status = VRead(byteaddr & ~(0x3), &word, delta, node);
-                                                                                                       *data  = (word >> (8*(byteaddr&0x2))) & 0xffff;
+                                                                                                       *data  = (uint16_t)((word >> (8*(byteaddr&0x2))) & 0xffff);
                                                                                                        return status;};
 
-    int  readWord     (const unsigned   byteaddr,       unsigned   *data, const int      delta=0)    { int status; unsigned word;
+    int  readWord     (const uint32_t   byteaddr,       uint32_t   *data, const int      delta=0)    { int status; uint32_t word;
                                                                                                        status = VRead(byteaddr & ~(0x3), &word, delta, node);
                                                                                                        *data  = word;
                                                                                                        return status;};
 
-    int  burstWrite      (const unsigned   addr,           void    *data, const unsigned wordlen)    {return VBurstWrite     (addr,      data, wordlen, node);};
-    int  burstRead       (const unsigned   addr,           void    *data, const unsigned wordlen)    {return VBurstRead      (addr,      data, wordlen, node);};
-    int  tick            (const unsigned   ticks)                                                    {return VTick           (ticks,                    node);};
+    int  burstWrite      (const uint32_t   addr,           void    *data, const uint32_t wordlen)    {return VBurstWrite     (addr,      data, wordlen, node);};
+    int  burstRead       (const uint32_t   addr,           void    *data, const uint32_t wordlen)    {return VBurstRead      (addr,      data, wordlen, node);};
+    int  tick            (const uint32_t   ticks)                                                    {return VTick           (ticks,                    node);};
     void regIrq          (const pVUserIrqCB_t func)                                                  {       VRegIrq         (func,                     node);};
-    void regInterrupt    (const int        level,  const pVUserInt_t func)                           {       VRegInterrupt   (level,     func,          node);};
     void regUser         (const pVUserCB_t func)                                                     {       VRegUser        (func,                     node);};
 
 
-    int  burstWriteBytes (const unsigned   byteaddr,       void    *data, const unsigned bytelen) {unsigned foff, loff;
-                                                                                                   unsigned wlen = calcWordLen(byteaddr, bytelen, foff, loff);
+    int  burstWriteBytes (const uint32_t   byteaddr,       void    *data, const uint32_t bytelen) {uint32_t foff, loff;
+                                                                                                   uint32_t wlen = calcWordLen(byteaddr, bytelen, foff, loff);
                                                                                                    for (int idx  = 0; idx < bytelen; idx++)
                                                                                                        ((uint8_t*)bytebuf)[idx + (byteaddr&0x3)] = ((uint8_t*)data)[idx];
 
@@ -81,10 +80,10 @@ public:
                                                                                                                            node);
                                                                                                    };
 
-    int burstReadBytes   (const unsigned byteaddr,         void    *data, const unsigned bytelen) {unsigned foff, loff, wlen = calcWordLen(byteaddr, bytelen, foff, loff);
-                                                                                                   
+    int burstReadBytes   (const uint32_t byteaddr,         void    *data, const uint32_t bytelen) {uint32_t foff, loff, wlen = calcWordLen(byteaddr, bytelen, foff, loff);
+
                                                                                                    int status = VBurstRead ((byteaddr & ~(0x3)), bytebuf, wlen, node);
-                                                                                                   
+
                                                                                                    for (int idx  = 0; idx < bytelen; idx++)
                                                                                                        ((uint8_t*)data)[idx] = ((uint8_t*)bytebuf)[idx + (byteaddr & 0x3)];
                                                                                                    return status;
@@ -93,13 +92,13 @@ public:
 private:
 
     // VProc node number this object is accessing
-    unsigned node;
-    
+    uint32_t node;
+
     // Internal byte buffer
     uint32_t bytebuf [(MAXBURSTLEN+1) * 4];
 
     // Calculate the required word length, and first and last offsets, for given byte length with address offset
-    unsigned calcWordLen(const unsigned byteaddr, const unsigned bytelen, unsigned &foff, unsigned &loff) {
+    uint32_t calcWordLen(const uint32_t byteaddr, const uint32_t bytelen, uint32_t &foff, uint32_t &loff) {
                  loff    = (byteaddr + bytelen - 1) & 0x3;
                  foff    = byteaddr & 0x3;
         int      diffoff = loff - foff;

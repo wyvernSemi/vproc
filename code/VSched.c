@@ -42,11 +42,22 @@
 #include "VProc.h"
 #include "VUser.h"
 #include "VSched_pli.h"
+// -------------------------------------------------------------------------
+// LOCAL DEFINITIONS
+// -------------------------------------------------------------------------
 
 #define ARGS_ARRAY_SIZE     20
 
+// -------------------------------------------------------------------------
+// Node main state
+// -------------------------------------------------------------------------
+
 // Pointers to state for each node (up to VP_MAX_NODES)
 pSchedState_t ns[VP_MAX_NODES];
+
+// -------------------------------------------------------------------------
+// Programming interface helper functoins
+// -------------------------------------------------------------------------
 
 // VHPI specific functions
 #if defined(VPROC_VHDL_VHPI)
@@ -117,12 +128,12 @@ static void getVhpiParams(const struct vhpiCbDataS* cb, int args[], int args_siz
 
 static void setVhpiParams(const struct vhpiCbDataS* cb, int args[], int start_of_outputs, int args_size)
 {
-    int         idx      = 0;
+    int         idx          = 0;
     vhpiValueT  value;
 
     vhpiHandleT hParam;
-    vhpiHandleT hScope   = cb->obj;
-    vhpiHandleT hIter    = vhpi_iterator(vhpiParamDecls, hScope);
+    vhpiHandleT hScope       = cb->obj;
+    vhpiHandleT hIter        = vhpi_iterator(vhpiParamDecls, hScope);
 
     while ((hParam = vhpi_scan(hIter)) && idx < args_size)
     {
@@ -260,7 +271,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 
 #if !defined(VPROC_VHDL) && !defined(VPROC_SV)
     // Verilog
-    int node;
+    int                node;
 
     // VPI
     vpiHandle          taskHdl;
@@ -271,7 +282,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
     getArgs(taskHdl, &args[1]);
 
     // Get single argument value of $vinit call
-    node = args[VPNODENUM_ARG];
+    node               = args[VPNODENUM_ARG];
 
 #else
     // VHDL + VHPI
@@ -281,7 +292,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
     getVhpiParams(cb, &args[1], VINIT_NUM_ARGS);
 
     // Get single argument value of $vinit call
-    node = args[VPNODENUM_ARG];
+    node               = args[VPNODENUM_ARG];
 # endif
 #endif
 
@@ -300,7 +311,7 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
     //----------------------------------------------
 
     // Allocate some space for the node state and update pointer
-    ns[node] = (pSchedState_t) calloc(1, sizeof(SchedState_t));
+    ns[node]           = (pSchedState_t) calloc(1, sizeof(SchedState_t));
 
     // Set up semaphores for this node
     debug_io_printf("VInit(): initialising semaphores for node %d\n", node);
@@ -338,27 +349,27 @@ VPROC_RTN_TYPE VInit (VINIT_PARAMS)
 
 VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 {
-    int VPDataOut_int, VPAddr_int, VPRw_int, VPTicks_int;
-    int args[ARGS_ARRAY_SIZE];
+    int                 VPDataOut_int, VPAddr_int, VPRw_int, VPTicks_int;
+    int                 args[ARGS_ARRAY_SIZE];
 
     //----------------------------------------------
     // Get input arguments
     //----------------------------------------------
 
 #if !defined(VPROC_VHDL) && !defined(VPROC_SV)
-    int node;
-    int Interrupt, VPDataIn;
+    int                 node;
+    int                 VPDataIn;
 
-    vpiHandle    taskHdl;
+    vpiHandle           taskHdl;
 
     // Obtain a handle to the argument list
-    taskHdl      = vpi_handle(vpiSysTfCall, NULL);
+    taskHdl             = vpi_handle(vpiSysTfCall, NULL);
 
     getArgs(taskHdl, &args[1]);
 #else
 # ifdef VPROC_VHDL_VHPI
-    int node;
-    int Interrupt, VPDataIn;
+    int                 node;
+    int                 VPDataIn;
 
     getVhpiParams(cb, &args[1], VSCHED_NUM_ARGS);
 # endif
@@ -369,34 +380,12 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     (!defined(VPROC_VHDL) && !defined(VPROC_SV))
 
     // Get argument value of $vsched call
-    node         = args[VPNODENUM_ARG];
-    Interrupt    = args[VPINTERRUPT_ARG];
-    VPDataIn     = args[VPDATAIN_ARG];
+    node                = args[VPNODENUM_ARG];
+    VPDataIn            = args[VPDATAIN_ARG];
 #endif
 
     // Sample inputs and update node state
-    ns[node]->rcv_buf.data_in   = VPDataIn;
-    ns[node]->rcv_buf.interrupt = Interrupt;
-
-    //----------------------------------------------
-    // Discard any level interrupt when vectored
-    // IRQ enabled
-    //----------------------------------------------
-
-    // If call to VSched is for interrupt and vector IRQ enabled (with C or Python callback registered)
-    // don't process here with the level interrupt code and just return.
-    if (Interrupt && (ns[node]->VUserIrqCB != NULL || ns[node]->PyIrqCB != NULL))
-    {
-#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
-        return 0;
-#else
-# ifndef VPROC_VHDL_VHPI
-        // Since not processing make a delta cycle on return
-        *VPTicks   = DELTA_CYCLE;
-# endif
-        return;
-#endif
-    }
+    ns[node]->rcv_buf.data_in = VPDataIn;
 
     //----------------------------------------------
     // Send inputs to user thread
@@ -417,10 +406,10 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
     // Update outputs of $vsched task
     if (ns[node]->send_buf.ticks >= DELTA_CYCLE)
     {
-        VPDataOut_int = ns[node]->send_buf.data_out;
-        VPAddr_int    = ns[node]->send_buf.addr;
-        VPRw_int      = ns[node]->send_buf.rw;
-        VPTicks_int   = ns[node]->send_buf.ticks;
+        VPDataOut_int   = ns[node]->send_buf.data_out;
+        VPAddr_int      = ns[node]->send_buf.addr;
+        VPRw_int        = ns[node]->send_buf.rw;
+        VPTicks_int     = ns[node]->send_buf.ticks;
         debug_io_printf("VSched(): VPTicks=%08x\n", VPTicks_int);
     }
 
@@ -469,29 +458,29 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 
 VPROC_RTN_TYPE VSched64 (VSCHED64_PARAMS)
 {
-    int VPDataOutLo_int, VPDataOutHi_int;
-    int VPAddrLo_int, VPAddrHi_int;
-    int VPRw_int, VPTicks_int;
-    int args[ARGS_ARRAY_SIZE];
+    int                 VPDataOutLo_int, VPDataOutHi_int;
+    int                 VPAddrLo_int, VPAddrHi_int;
+    int                 VPRw_int, VPTicks_int;
+    int                 args[ARGS_ARRAY_SIZE];
 
     //----------------------------------------------
     // Get input arguments
     //----------------------------------------------
 
 #if !defined(VPROC_VHDL) && !defined(VPROC_SV)
-    int node;
-    int Interrupt, VPDataInLo, VPDataInHi;
+    int                 node;
+    int                 VPDataInLo, VPDataInHi;
 
-    vpiHandle    taskHdl;
+    vpiHandle           taskHdl;
 
     // Obtain a handle to the argument list
-    taskHdl      = vpi_handle(vpiSysTfCall, NULL);
+    taskHdl             = vpi_handle(vpiSysTfCall, NULL);
 
     getArgs(taskHdl, &args[1]);
 #else
 # ifdef VPROC_VHDL_VHPI
-    int node;
-    int Interrupt, VPDataInLo, VPDataInHi;
+    int                 node;
+    int                 VPDataInLo, VPDataInHi;
 
     getVhpiParams(cb, &args[1], VSCHED64_NUM_ARGS);
 # endif
@@ -502,36 +491,14 @@ VPROC_RTN_TYPE VSched64 (VSCHED64_PARAMS)
     (!defined(VPROC_VHDL) && !defined(VPROC_SV))
 
     // Get argument value of $vsched call
-    node         = args[VPNODENUM_ARG];
-    Interrupt    = args[VPINTERRUPT_ARG];
-    VPDataInLo   = args[VPDATAINLO_ARG64];
-    VPDataInLo   = args[VPDATAINLO_ARG64];
+    node                = args[VPNODENUM_ARG];;
+    VPDataInLo          = args[VPDATAINLO_ARG64];
+    VPDataInLo          = args[VPDATAINLO_ARG64];
 #endif
 
     // Sample inputs and update node state
     ns[node]->rcv_buf.data_in    = VPDataInLo;
     ns[node]->rcv_buf.data_in_hi = VPDataInHi;
-    ns[node]->rcv_buf.interrupt  = Interrupt;
-
-    //----------------------------------------------
-    // Discard any level interrupt when vectored
-    // IRQ enabled
-    //----------------------------------------------
-
-    // If call to VSched is for interrupt and vector IRQ enabled (with C or Python callback registered)
-    // don't process here with the level interrupt code and just return.
-    if (Interrupt && (ns[node]->VUserIrqCB != NULL || ns[node]->PyIrqCB != NULL))
-    {
-#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
-        return 0;
-#else
-# ifndef VPROC_VHDL_VHPI
-        // Since not processing make a delta cycle on return
-        *VPTicks   = DELTA_CYCLE;
-# endif
-        return;
-#endif
-    }
 
     //----------------------------------------------
     // Send inputs to user thread
@@ -552,12 +519,12 @@ VPROC_RTN_TYPE VSched64 (VSCHED64_PARAMS)
     // Update outputs of $vsched task
     if (ns[node]->send_buf.ticks >= DELTA_CYCLE)
     {
-        VPDataOutLo_int   = ns[node]->send_buf.data_out;
-        VPDataOutHi_int   = ns[node]->send_buf.data_out_hi;
-        VPAddrLo_int      = ns[node]->send_buf.addr;
-        VPAddrHi_int      = ns[node]->send_buf.addr_hi;
-        VPRw_int          = ns[node]->send_buf.rw;
-        VPTicks_int       = ns[node]->send_buf.ticks;
+        VPDataOutLo_int = ns[node]->send_buf.data_out;
+        VPDataOutHi_int = ns[node]->send_buf.data_out_hi;
+        VPAddrLo_int    = ns[node]->send_buf.addr;
+        VPAddrHi_int    = ns[node]->send_buf.addr_hi;
+        VPRw_int        = ns[node]->send_buf.rw;
+        VPTicks_int     = ns[node]->send_buf.ticks;
         debug_io_printf("VSched(): VPTicks=%08x\n", VPTicks_int);
     }
 
@@ -610,34 +577,34 @@ VPROC_RTN_TYPE VSched64 (VSCHED64_PARAMS)
 
 VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 {
-    int       args[ARGS_ARRAY_SIZE];
+    int                 args[ARGS_ARRAY_SIZE];
 
     // Get input argument values.
 
 #if !defined(VPROC_VHDL) && !defined(VPROC_SV)
 
-    int node, value;
+    int                 node, value;
 
-    vpiHandle taskHdl;
+    vpiHandle           taskHdl;
 
     // Obtain a handle to the argument list
-    taskHdl   = vpi_handle(vpiSysTfCall, NULL);
+    taskHdl             = vpi_handle(vpiSysTfCall, NULL);
 
     getArgs(taskHdl, &args[1]);
 
     // Get argument values of $vprocuser call
-    node      = args[VPNODENUM_ARG];
-    value     = args[VPINTERRUPT_ARG];
+    node                = args[VPNODENUM_ARG];
+    value               = args[VP_USER_ARG];
 
 #else
 # ifdef VPROC_VHDL_VHPI
-    int       node, value;
+    int                 node, value;
 
     getVhpiParams(cb, &args[1], VPROCUSER_NUM_ARGS);
 
     // Get argument values of VProcUser VHPI call
-    node      = args[VPNODENUM_ARG];
-    value     = args[VPINTERRUPT_ARG];
+    node                = args[VPNODENUM_ARG];
+    value               = args[VP_USER_ARG];
 
 # endif
 #endif
@@ -662,32 +629,32 @@ VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 
 VPROC_RTN_TYPE VIrq(VIRQ_PARAMS)
 {
-    int       args[ARGS_ARRAY_SIZE];
+    int                 args[ARGS_ARRAY_SIZE];
 
 #if !defined(VPROC_VHDL) && !defined(VPROC_SV)
 
-    int node, value;
+    int                 node, value;
 
-    vpiHandle taskHdl;
+    vpiHandle           taskHdl;
 
     // Obtain a handle to the argument list
-    taskHdl   = vpi_handle(vpiSysTfCall, NULL);
+    taskHdl             = vpi_handle(vpiSysTfCall, NULL);
 
     getArgs(taskHdl, &args[1]);
 
     // Get argument values of $vprocuser call
-    node      = args[VPNODENUM_ARG];
-    value     = args[VPINTERRUPT_ARG];
+    node                = args[VPNODENUM_ARG];
+    value               = args[VPINTERRUPT_ARG];
 
 #else
 # ifdef VPROC_VHDL_VHPI
-    int       node, value;;
+    int                 node, value;;
 
     getVhpiParams(cb, &args[1], VIRQ_NUM_ARGS);
 
     // Get argument values of VProcUser VHPI call
-    node      = args[VPNODENUM_ARG];
-    value     = args[VPINTERRUPT_ARG];
+    node                = args[VPNODENUM_ARG];
+    value               = args[VPINTERRUPT_ARG];
 # endif
 #endif
 
@@ -722,35 +689,34 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
     *VPDataOut                               = ((int *) ns[node]->send_buf.data_p)[idx];
     ((int *) ns[node]->send_buf.data_p)[idx] = VPDataIn;
 # else
-    int node, idx;
+    int                 node, idx;
 
     getVhpiParams(cb, &args[1], VACCESS_NUM_ARGS);
 
-    node      = args[VPNODENUM_ARG];
-    idx       = args[VPINDEX_ARG];
+    node                = args[VPNODENUM_ARG];
+    idx                 = args[VPINDEX_ARG];
 
-    args[VPDATAOUT_ARG] = ((int *) ns[node]->send_buf.data_p)[idx];
+    args[VPACCESSOUT_ARG] = ((int *) ns[node]->send_buf.data_p)[idx];
 
-    ((int *) ns[node]->send_buf.data_p)[idx] = args[VPDATAIN_ARG];
+    ((int *) ns[node]->send_buf.data_p)[idx] = args[VPACCESSIN_ARG];
 
-    setVhpiParams(cb, &args[1], VPDATAOUT_ARG-1, VACCESS_NUM_ARGS);
+    setVhpiParams(cb, &args[1], VPACCESSOUT_ARG-1, VACCESS_NUM_ARGS);
 # endif
 #else
-   int node, idx;
-
-    vpiHandle taskHdl;
+    int                 node, idx;
+    vpiHandle           taskHdl;
 
     // Obtain a handle to the argument list
-    taskHdl   = vpi_handle(vpiSysTfCall, NULL);
+    taskHdl             = vpi_handle(vpiSysTfCall, NULL);
 
     getArgs(taskHdl, &args[1]);
 
-    node      = args[VPNODENUM_ARG];
-    idx       = args[VPINDEX_ARG];
+    node                = args[VPNODENUM_ARG];
+    idx                 = args[VPINDEX_ARG];
 
-    args[VPDATAOUT_ARG] = ((int *) ns[node]->send_buf.data_p)[idx];
+    args[VPACCESSOUT_ARG] = ((int *) ns[node]->send_buf.data_p)[idx];
 
-    ((int *) ns[node]->send_buf.data_p)[idx] = args[VPDATAIN_ARG];
+    ((int *) ns[node]->send_buf.data_p)[idx] = args[VPACCESSIN_ARG];
 
     updateArgs(taskHdl, &args[1]);
 

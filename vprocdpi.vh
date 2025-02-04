@@ -28,19 +28,18 @@
 
 import "DPI-C" function void VInit     (input  int node);
 
-import "DPI-C" function void VSched    (input  int node, 
-                                        input  int Interrupt,
-                                        input  int VPDataIn, 
+import "DPI-C" function void VSched    (input  int node,
+                                        input  int VPDataIn,
                                         output int VPDataOut,
-                                        output int VPAddr, 
+                                        output int VPAddr,
                                         output int VPRw,
                                         output int VPTicks);
-                                        
+
 import "DPI-C" function void VAccess   (input  int node,
                                         input  int idx,
                                         input  int VPDataIn,
                                         output int VPDataOut);
-                                        
+
 import "DPI-C" function void VProcUser (input  int  node, input int value);
 
 import "DPI-C" function void VIrq      (input  int  node, input int irq);

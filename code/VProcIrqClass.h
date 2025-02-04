@@ -36,7 +36,7 @@ public:
     typedef void (*pIntFunc_t) (int);
 
     // Constructor
-    VProcIrqClass(const unsigned node = 0) :
+    VProcIrqClass(const uint32_t node = 0) :
         VProc{node},
         interrupt_enable(0),
         isr_enable(0),
@@ -73,13 +73,13 @@ public:
         return VProc::write(addr, data, delta);
     }
 
-    int writeByte (const uint32_t byteaddr, const uint32_t data, const int delta = 0)
+    int writeByte (const uint32_t byteaddr, const uint8_t data, const int delta = 0)
     {
         processIrq();
         return VProc::writeByte(byteaddr, data, delta);
     }
 
-    int writeHword (const uint32_t byteaddr, const uint32_t data, const int delta = 0)
+    int writeHword (const uint32_t byteaddr, const uint16_t data, const int delta = 0)
     {
         processIrq();
         return VProc::writeHword(byteaddr, data, delta);
@@ -91,25 +91,25 @@ public:
         return VProc::writeWord(byteaddr, data, delta);
     }
 
-    int burstWrite(const unsigned addr, void *data, const unsigned len)
+    int burstWrite(const uint32_t addr, void *data, const uint32_t len)
     {
         processIrq();
         return VProc::burstWrite(addr, data, len);
     }
     
-    int burstWriteBytes(const unsigned byteaddr, void *data, const unsigned bytelen)
+    int burstWriteBytes(const uint32_t byteaddr, void *data, const uint32_t bytelen)
     {
         processIrq();
         return VProc::burstWriteBytes(byteaddr, data, bytelen);
     }
 
-    int readByte (const uint32_t byteaddr, uint32_t *data, const int delta = 0)
+    int readByte (const uint32_t byteaddr, uint8_t *data, const int delta = 0)
     {
         processIrq();
         return VProc::readByte(byteaddr, data, delta);
     }
 
-    int readHword (const uint32_t byteaddr, uint32_t *data, const int delta = 0)
+    int readHword (const uint32_t byteaddr, uint16_t *data, const int delta = 0)
     {
         processIrq();
         return VProc::readHword(byteaddr, data, delta);
@@ -121,13 +121,13 @@ public:
         return VProc::readWord(byteaddr, data, delta);
     }
 
-    int burstRead(const unsigned addr, void *data, const unsigned len)
+    int burstRead(const uint32_t addr, void *data, const uint32_t len)
     {
         processIrq();
         return VProc::burstRead(addr, data, len);
     }
     
-    int burstReadBytes(const unsigned byteaddr, void *data, const unsigned bytelen)
+    int burstReadBytes(const uint32_t byteaddr, void *data, const uint32_t bytelen)
     {
         processIrq();
         return VProc::burstReadBytes(byteaddr, data, bytelen);
@@ -137,8 +137,8 @@ public:
 
     void enableInterrupts  (void)                   {interrupt_enable = true;}
     void disableInterrupts (void)                   {interrupt_enable = false;}
-    void enableIsr         (const unsigned int_num) {if (int_num < MAXINTERRUPTS && isr[int_num] != NULL) isr_enable |=  (1 << int_num);}
-    void disableIsr        (const unsigned int_num) {if (int_num < MAXINTERRUPTS && isr[int_num] != NULL) isr_enable &= ~(1 << int_num);}
+    void enableIsr         (const uint32_t int_num) {if (int_num < MAXINTERRUPTS && isr[int_num] != NULL) isr_enable |=  (1 << int_num);}
+    void disableIsr        (const uint32_t int_num) {if (int_num < MAXINTERRUPTS && isr[int_num] != NULL) isr_enable &= ~(1 << int_num);}
     void updateIrqState    (const uint32_t newirq)  {irq = newirq;}
     void registerIsr       (const pIntFunc_t isrFunc, const uint32_t level, const bool enable = false)
     {

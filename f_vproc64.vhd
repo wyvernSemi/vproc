@@ -28,18 +28,18 @@ use ieee.numeric_std.all;
 use work.vproc64_pkg.all;
 
 entity VProc64 is
-  generic (NODE            : integer := 0;
-           INT_WIDTH       : integer := 32;
-           BURST_ADDR_INCR : integer := 1;
-           DISABLE_DELTA   : integer := 0
+  generic (NODE            : integer                    := 0;
+           INT_WIDTH       : integer                    := 32;
+           BURST_ADDR_INCR : integer                    := 1;
+           DISABLE_DELTA   : integer                    := 0
   );
   port (
     Clk             : in  std_logic;
 
-    Addr            : out std_logic_vector(63 downto 0) := 64x"0";
-    BE              : out std_logic_vector( 7 downto 0) := 8x"FF";
-    WE              : out std_logic := '0';
-    RD              : out std_logic := '0';
+    Addr            : out std_logic_vector(63 downto 0)    := 64x"0";
+    BE              : out std_logic_vector( 7 downto 0)    := 8x"FF";
+    WE              : out std_logic                        := '0';
+    RD              : out std_logic                        := '0';
     DataOut         : out std_logic_vector(63 downto 0);
     DataIn          : in  std_logic_vector(63 downto 0);
     WRAck           : in  std_logic;
@@ -69,7 +69,7 @@ constant      BELASTHIBIT  : integer := 29;
 constant      DeltaCycle   : integer := -1;
 
 signal        Initialised  : integer := 0;
-signal        LBE          : std_logic_vector(7 downto 0) := 8x"FF";
+signal        LBE          : std_logic_vector(7 downto 0)  := 8x"FF";
 
 begin
   -- Initial
@@ -82,7 +82,6 @@ begin
 
       wait;
   end process;
-
 
   -- Update process
   pUPDATE : process
@@ -122,27 +121,6 @@ begin
 
       if Initialised = 1 then
 
-        if IntSamp > 0 then
-
-          -- If an interrupt active, call $vsched with interrupt value
-          VSched64(NODE,
-                   IntSamp,
-                   DataInSampLo,
-                   DataInSampHi,
-                   VPDataOutLo,
-                   VPDataOutHi,
-                   VPAddrLo,
-                   VPAddrHi,
-                   VPRW,
-                   VPTicks);
-
-          -- If interrupt routine returns non-zero tick, then override
-          -- current tick value. Otherwise, leave at present value.
-          if VPTicks > 0 then
-            TickVal             := VPTicks;
-          end if;
-        end if;
-
         -- Call $virq when interrupt value changes, passing in
         -- new value
         if IntSamp /= IntSampLast then
@@ -160,8 +138,6 @@ begin
 
           -- Loop accessing new commands until VPTicks is not a delta cycle update
           while VPTicks < 0 loop
-            -- Clear any interrupt (already dealt with)
-            IntSamp             := 0;
 
             -- Sample the data in port
             DataInSampLo        := to_integer(signed(DataIn(31 downto 0)));
@@ -180,13 +156,9 @@ begin
 
               -- Host process message scheduler called
               VSched64(NODE,
-                       IntSamp,
-                       DataInSampLo,
-                       DataInSampHi,
-                       VPDataOutLo,
-                       VPDataOutHi,
-                       VPAddrLo,
-                       VPAddrHi,
+                       DataInSampLo, DataInSampHi,
+                       VPDataOutLo,  VPDataOutHi,
+                       VPAddrLo,     VPAddrHi,
                        VPRW,
                        VPTicks);
 
