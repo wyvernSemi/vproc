@@ -147,26 +147,26 @@ $(VOBJDIR):
 	@mkdir $(VOBJDIR)
 
 $(VPROC_PLI): $(PYVRPOC_PLI) $(VLIB)
-	@$(C++) $(CPPSTD)                                      \
-           $(CFLAGS_SO)                                    \
-           -Wl,-whole-archive                              \
-           $(CFLAGS)                                       \
-           -lpthread                                       \
-           -L$(MODEL_TECH)                                 \
-           -lmtipli                                        \
-           -L$(TESTDIR) -lvproc -l:PyVProc.so              \
-           -Wl,-no-whole-archive                           \
-           -o $@
+	@$(C++) $(CPPSTD)                                  \
+	   $(CFLAGS_SO)                                    \
+	   -Wl,-whole-archive                              \
+	   $(CFLAGS)                                       \
+	   -lpthread                                       \
+	   -L$(MODEL_TECH)                                 \
+	   -lmtipli                                        \
+	   -L$(TESTDIR) -lvproc -l:PyVProc.so              \
+	   -Wl,-no-whole-archive                           \
+	   -o $@
 
 $(PYVRPOC_PLI): $(PYSRCDIR)/$(PYTHON_C)
-	@$(CC) -fPIC -shared -DNO_PLI_INCLUDE                  \
-           $^                                              \
-           -I../../code -L../../                           \
-           $(ARCHFLAG)                                     \
-           -I$(PYTHONHOME)/include/$(PYVER)                \
-           -L$(PYTHONHOME)/lib -l$(PYVER)                  \
-           -ldl                                            \
-           -o $@
+	@$(CC) -fPIC -shared -DNO_PLI_INCLUDE              \
+	   $^                                              \
+	   -I../../code -L../../                           \
+	   $(ARCHFLAG)                                     \
+	   -I$(PYTHONHOME)/include/$(PYVER)                \
+	   -L$(PYTHONHOME)/lib -l$(PYVER)                  \
+	   -ldl                                            \
+	   -o $@
 
 # Let simulator decide what's changed in the HDL
 .PHONY: hdl
