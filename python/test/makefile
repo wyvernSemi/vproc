@@ -90,9 +90,11 @@ PYVRPOC_PLI        = $(TESTDIR)/PyVProc.so
 ifeq ("$(HDL)", "VHDL")
   HDLLANGUAGE      = -DVPROC_VHDL
   HDLCMD           = vcom -quiet -2008 -work work -f files.tcl
+  VSIMFLAGS        = $(VPROC_TOP)
 else
   HDLLANGUAGE      =
   HDLCMD           = vlog $(VLOGFLAGS) -f test.vc
+  VSIMFLAGS        = -pli $(VPROC_PLI) $(VPROC_TOP)
 endif
 
 VPROC_TOP          = test
@@ -121,10 +123,6 @@ CFLAGS             = -fPIC                                 \
                      $(HDLLANGUAGE)                        \
                      -D_REENTRANT
 
-# Common flags for vsim
-VSIMFLAGS          = -pli $(VPROC_PLI) $(VPROC_TOP)
-VCFILE             = test.vc
-
 #------------------------------------------------------
 # BUILD RULES
 #------------------------------------------------------
@@ -148,28 +146,27 @@ $(VOBJS): | $(VOBJDIR)
 $(VOBJDIR):
 	@mkdir $(VOBJDIR)
 
-$(VPROC_PLI): $(PYVRPOC_PLI) $(VLIB) $(VOBJDIR)/veriuser.o
-	@$(C++) $(CPPSTD)                                      \
-           $(CFLAGS_SO)                                    \
-           -Wl,-whole-archive                              \
-           $(CFLAGS)                                       \
-           $(VOBJDIR)/veriuser.o                           \
-           -lpthread                                       \
-           -L$(MODEL_TECH)                                 \
-           -lmtipli                                        \
-           -L$(TESTDIR) -lvproc -l:PyVProc.so              \
-           -Wl,-no-whole-archive                           \
-           -o $@
+$(VPROC_PLI): $(PYVRPOC_PLI) $(VLIB)
+	@$(C++) $(CPPSTD)                                  \
+	   $(CFLAGS_SO)                                    \
+	   -Wl,-whole-archive                              \
+	   $(CFLAGS)                                       \
+	   -lpthread                                       \
+	   -L$(MODEL_TECH)                                 \
+	   -lmtipli                                        \
+	   -L$(TESTDIR) -lvproc -l:PyVProc.so              \
+	   -Wl,-no-whole-archive                           \
+	   -o $@
 
 $(PYVRPOC_PLI): $(PYSRCDIR)/$(PYTHON_C)
-	@$(CC) -fPIC -shared -DNO_PLI_INCLUDE                  \
-           $^                                              \
-           -I../../code -L../../                           \
-           $(ARCHFLAG)                                     \
-           -I$(PYTHONHOME)/include/$(PYVER)                \
-           -L$(PYTHONHOME)/lib -l$(PYVER)                  \
-           -ldl                                            \
-           -o $@
+	@$(CC) -fPIC -shared -DNO_PLI_INCLUDE              \
+	   $^                                              \
+	   -I../../code -L../../                           \
+	   $(ARCHFLAG)                                     \
+	   -I$(PYTHONHOME)/include/$(PYVER)                \
+	   -L$(PYTHONHOME)/lib -l$(PYVER)                  \
+	   -ldl                                            \
+	   -o $@
 
 # Let simulator decide what's changed in the HDL
 .PHONY: hdl
@@ -199,7 +196,6 @@ rungui: hdl
 
 gui: rungui
 
-.SILENT:
 help:
 	@$(info make help          Display this message)
 	@$(info make               Build C/C++ and HDL code without running simulation)

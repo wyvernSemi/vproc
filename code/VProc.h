@@ -2,7 +2,7 @@
 //
 // VProc.h                                            Date: 2004/12/13 
 //
-// Copyright (c) 2004-2024 Simon Southwell.
+// Copyright (c) 2004-2025 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -35,7 +35,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define VERSION_STRING         "VProc version 1.12.2. Copyright (c) 2004-2024 Simon Southwell."
+#define VERSION_STRING         "VProc version 1.12.3. Copyright (c) 2004-2025 Simon Southwell."
 
 #ifndef VP_MAX_NODES
 #define VP_MAX_NODES            64
