@@ -44,7 +44,7 @@ public:
     int  writeByte    (const uint64_t   byteaddr, const uint8_t     data, const int      delta=0)    {return VWriteBE64    (byteaddr & ~(0x7ULL), (uint64_t)data << (8*(byteaddr&0x7ULL)), 0x1 << (byteaddr&0x7ULL), delta, node);};
     int  writeHword   (const uint64_t   byteaddr, const uint16_t    data, const int      delta=0)    {return VWriteBE64    (byteaddr & ~(0x7ULL), (uint64_t)data << (8*(byteaddr&0x6ULL)), 0x3 << (byteaddr&0x6ULL), delta, node);};
     int  writeWord    (const uint64_t   byteaddr, const uint32_t    data, const int      delta=0)    {return VWriteBE64    (byteaddr & ~(0x7ULL), (uint64_t)data << (8*(byteaddr&0x4ULL)), 0xf << (byteaddr&0x4ULL), delta, node);};
-    int  writeDword   (const uint64_t   byteaddr, const uint64_t    data, const int      delta=0)    {return VWriteBE64    (byteaddr & ~(0x7ULL), (uint64_t)data,                       0xff,                  delta, node);};
+    int  writeDword   (const uint64_t   byteaddr, const uint64_t    data, const int      delta=0)    {return VWriteBE64    (byteaddr & ~(0x7ULL), (uint64_t)data,                          0xff,                     delta, node);};
 
     int  readByte     (const uint64_t   byteaddr,       uint8_t    *data, const int      delta=0)    { int status; uint64_t word;
                                                                                                        status = VRead64(byteaddr & ~(0x7ULL), &word, delta, node);
@@ -52,17 +52,17 @@ public:
                                                                                                        return status;};
 
     int  readHword    (const uint64_t   byteaddr,       uint16_t   *data, const int      delta=0)    { int status; uint64_t word;
-                                                                                                       status = VRead(byteaddr & ~(0x7ULL), &word, delta, node);
+                                                                                                       status = VRead64(byteaddr & ~(0x7ULL), &word, delta, node);
                                                                                                        *data  = (uint16_t)((word >> (8*(byteaddr&0x6ULL))) & 0xffffULL);
                                                                                                        return status;};
 
     int  readWord     (const uint64_t   byteaddr,       uint32_t   *data, const int      delta=0)    { int status; uint64_t word;
-                                                                                                       status = VRead(byteaddr & ~(0x7ULL), &word, delta, node);
+                                                                                                       status = VRead64(byteaddr & ~(0x7ULL), &word, delta, node);
                                                                                                        *data  = (uint32_t)((word >> (8*(byteaddr&0x4ULL))) & 0xffffffffULL);
                                                                                                        return status;};
 
-    int  readDword    (const uint64_t   byteaddr,       uint32_t   *data, const int      delta=0)    { int status; uint64_t word;
-                                                                                                       status = VRead(byteaddr & ~(0x7ULL), &word, delta, node);
+    int  readDword    (const uint64_t   byteaddr,       uint64_t   *data, const int      delta=0)    { int status; uint64_t word;
+                                                                                                       status = VRead64(byteaddr & ~(0x7ULL), &word, delta, node);
                                                                                                        *data  = word ;
                                                                                                        return status;};
 

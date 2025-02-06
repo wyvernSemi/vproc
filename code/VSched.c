@@ -493,7 +493,7 @@ VPROC_RTN_TYPE VSched64 (VSCHED64_PARAMS)
     // Get argument value of $vsched call
     node                = args[VPNODENUM_ARG];;
     VPDataInLo          = args[VPDATAINLO_ARG64];
-    VPDataInLo          = args[VPDATAINLO_ARG64];
+    VPDataInHi          = args[VPDATAINHI_ARG64];
 #endif
 
     // Sample inputs and update node state
