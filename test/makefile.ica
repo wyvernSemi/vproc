@@ -33,6 +33,7 @@
 #------------------------------------------------------
 # User overridable definitions
 
+VPROC              = VPROC
 MAX_NUM_VPROC      = 64
 USRFLAGS           =
 SRCDIR             = ../code
@@ -53,6 +54,10 @@ HDLLANGUAGE        =
 SIMULATOR          = -DICARUS
 SIMFLAGSSO         = -lvpi
 
+ifeq ("$(VPROC)", "VPROC64")
+  VPROCPARAM="-Ptest.USE_VPROC64=1"
+endif
+
 # Get OS type
 OSTYPE:=$(shell uname)
 
@@ -68,9 +73,9 @@ MEM_C              =
 MEMMODELDIR        = .
 
 # Common logic simulator flags
-VLOGFLAGS          = -DVPROC_BURST_IF -DVPROC_BYTE_ENABLE -I../ -Ptest.VCD_DUMP=1
+VLOGFLAGS          = -DVPROC_BURST_IF -DVPROC_BYTE_ENABLE -I../ $(VPROCPARAM) -Ptest.VCD_DUMP=1
 VLOGDEBUGFLAGS     = -Ptest.DEBUG_STOP=1
-VLOGFILES          = test.v ../f_VProc.v
+VLOGFILES          = test.v ../f_VProc.v ../f_VProc64.v
 
 #------------------------------------------------------
 # BUILD RULES

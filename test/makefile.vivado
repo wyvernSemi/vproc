@@ -23,6 +23,7 @@
 #------------------------------------------------------
 # User overridable definitions
 
+VPROC              = VPROC
 MAX_NUM_VPROC      = 64
 USRFLAGS           =
 SRCDIR             = ../code
@@ -55,9 +56,14 @@ OSTYPE:=$(shell uname)
 VPROC_TOP          = test
 
 # Flags for xsim
-ANALYSEFLAGS       = -i ../ --define VPROC_BURST_IF --define VPROC_BYTE_ENABLE --prj files.prj
-ELABFLAGS          = -sv_lib $(VPROC_PLI) --debug typical $(VPROC_TOP)
+ifeq ("$(VPROC)", "VPROC64")
+  VPROCDEF         = --define VPROC64_EN
+endif
+
+ANALYSEFLAGS       = -i ../ $(VPROCDEF) --define VPROC_BURST_IF --define VPROC_BYTE_ENABLE --prj files.prj
+ELABFLAGS          = $(VPROCPARAM) -sv_lib $(VPROC_PLI) --debug typical  $(VPROC_TOP)
 SIMFLAGS           = $(VPROC_TOP)
+
 
 #------------------------------------------------------
 # BUILD RULES
@@ -71,7 +77,7 @@ include makefile.common
 # Analyse HDL files
 .PHONY: sysverilog
 sysverilog: $(VPROC_PLI)
-	@xvlog $(ANALYSEFLAGS)
+	xvlog $(ANALYSEFLAGS)
 	@xelab $(ELABFLAGS)
 
 #------------------------------------------------------

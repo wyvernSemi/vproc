@@ -23,6 +23,9 @@
 #------------------------------------------------------
 # User overridable definitions
 
+# Type of VProc to use. VPROC | VPROC64
+VPROC              = VPROC
+
 # Target HDL language (VERILOG | VHDL)
 HDL                = VERILOG
 
@@ -60,14 +63,18 @@ VOBJDIR            = $(TESTDIR)/obj
 SIMULATOR          = -DMODELSIM
 SIMINCLUDEFLAG     = -I$(MODEL_TECH)/../include
 
+ifeq ("$(VPROC)", "VPROC64")
+  VPROCPARAM       = -GUSE_VPROC64=1
+endif
+
 ifeq ("$(HDL)", "VHDL")
   HDLLANGUAGE      = -DVPROC_VHDL
   HDLCMD           = vcom -quiet -2008 -work work -f files.tcl
-  VSIMFLAGS        = $(VPROC_TOP)
+  VSIMFLAGS        = $(VPROCPARAM) $(VPROC_TOP)
 else
   SIMFLAGSSO       = -L$(MODEL_TECH) -lmtipli
   HDLCMD           = vlog +define+VPROC_BURST_IF +define+VPROC_BYTE_INTERFACE +incdir+../ -f test.vc
-  VSIMFLAGS        = -pli $(VPROC_PLI) $(VPROC_TOP)
+  VSIMFLAGS        = -pli $(VPROC_PLI) $(VPROCPARAM) $(VPROC_TOP)
 endif
 
 # Common logic simulator flags
@@ -130,6 +137,9 @@ rungui: hdl
 	else                                                   \
 	    vsim -gui $(VSIMFLAGS);                            \
 	fi
+
+guinorun: hdl
+	vsim -gui -do wave.do $(VSIMFLAGS)
 
 gui: rungui
 

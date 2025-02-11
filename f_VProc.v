@@ -142,6 +142,9 @@ begin
     Update                              = 0;
     BlkCount                            = 0;
     IntSampLast                         = 0;
+    Burst                               = 0;
+    BurstFirst                          = 0;
+    BurstLast                           = 0;
 
     // Don't remove delay! Needed to allow Node to be assigned
     // before the call to VInit
@@ -198,9 +201,13 @@ begin
                     // the last data input sample.
                     if (BlkCount == 1)
                     begin
-                        AccIdx          = AccIdx + 1;
                         BlkCount        = 0;
-                        `VAccess(NodeI, AccIdx, DataInSamp, VPDataOut);
+                        
+                        if (RD)
+                        begin
+                            AccIdx          = AccIdx + 1;
+                            `VAccess(NodeI, AccIdx, DataInSamp, VPDataOut);
+                        end
                     end
 
                     // Get new access command

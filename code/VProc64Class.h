@@ -46,6 +46,8 @@ public:
     int  writeWord    (const uint64_t   byteaddr, const uint32_t    data, const int      delta=0)    {return VWriteBE64    (byteaddr & ~(0x7ULL), (uint64_t)data << (8*(byteaddr&0x4ULL)), 0xf << (byteaddr&0x4ULL), delta, node);};
     int  writeDword   (const uint64_t   byteaddr, const uint64_t    data, const int      delta=0)    {return VWriteBE64    (byteaddr & ~(0x7ULL), (uint64_t)data,                          0xff,                     delta, node);};
 
+    int  dummy        (uint64_t   data)    { return 0;};
+    
     int  readByte     (const uint64_t   byteaddr,       uint8_t    *data, const int      delta=0)    { int status; uint64_t word;
                                                                                                        status = VRead64(byteaddr & ~(0x7ULL), &word, delta, node);
                                                                                                        *data  = (uint8_t)((word >> (8*(byteaddr&0x7ULL))) & 0xffULL);

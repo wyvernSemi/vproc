@@ -88,6 +88,7 @@ reg                        Initialised;
 integer                    TickCount;
 integer                    BlkCount;
 integer                    AccIdx;
+integer                    AccIdx64;
 integer                    LBE;
 
 // ------------------------------------------------------------
@@ -103,6 +104,12 @@ begin
     Update                              = 0;
     BlkCount                            = 0;
     IntSampLast                         = 0;
+    Burst                               = 0;
+    BurstFirst                          = 0;
+    BurstLast                           = 0;
+    RdAckSamp                           = 0;
+    WRAckSamp                           = 0;
+    AccIdx                              = 0;
 
     `VInit(NODE);
     Initialised                         = 1;
@@ -156,10 +163,18 @@ begin
                     // the last data input sample.
                     if (BlkCount == 1)
                     begin
-                        AccIdx          = AccIdx + 1;
                         BlkCount        = 0;
-                        `VAccess(NODE, AccIdx*2,   DataInLoSamp, VPDataOutLo);
-                        `VAccess(NODE, AccIdx*2+1, DataInHiSamp, VPDataOutHi);
+
+                        if (RD)
+                        begin
+                            AccIdx      = AccIdx + 1;
+                            // Icarus Verilog does not like VPI call arguments with arithmetic,
+                            // so generate the index value for the two accesses for the 64-bit value.
+                            AccIdx64    = AccIdx * 2;
+                            `VAccess(NODE, AccIdx64, DataInLoSamp, VPDataOutLo);
+                            AccIdx64    = AccIdx64 + 1;
+                            `VAccess(NODE, AccIdx64, DataInHiSamp, VPDataOutHi);
+                        end
                     end
 
                     // Get new access command
@@ -197,8 +212,8 @@ begin
                         if (VPRW[`WEBIT])
                         begin
                             AccIdx      = 0;
-                            `VAccess(NODE, AccIdx*2,   `DONTCARE, VPDataOutLo);
-                            `VAccess(NODE, AccIdx*2+1, `DONTCARE, VPDataOutHi);
+                            `VAccess(NODE, 0, `DONTCARE, VPDataOutLo);
+                            `VAccess(NODE, 1, `DONTCARE, VPDataOutHi);
                         end
                         else
                         begin
@@ -215,8 +230,13 @@ begin
                 else
                 begin
                     AccIdx              = AccIdx + 1;
-                    `VAccess(NODE, AccIdx*2,   DataInLoSamp, VPDataOutLo);
-                    `VAccess(NODE, AccIdx*2+1, DataInHiSamp, VPDataOutHi);
+                    // Icarus Verilog does not like VPI call arguments with arithmetic,
+                    // so generate the index value for the two accesses for the 64-bit value.
+                    AccIdx64            = AccIdx * 2;
+                    `VAccess(NODE, AccIdx64, DataInLoSamp, VPDataOutLo);
+                    AccIdx64            = AccIdx64 + 1;;
+                    `VAccess(NODE, AccIdx64, DataInHiSamp, VPDataOutHi);
+
                     BlkCount            = BlkCount - 1;
 
                     if (BlkCount == 1)

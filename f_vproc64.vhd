@@ -148,10 +148,14 @@ begin
               -- If this is the last transfer in a burst, call $vaccess with
               -- the last data input sample.
               if BlkCount = 1 then
-                AccIdx          := AccIdx + 1;
-
-                VAccess(NODE, AccIdx*2,   DataInSampLo, VPDataOutLo);
-                VAccess(NODE, AccIdx*2+1, DataInSampHi, VPDataOutHi);
+              
+                BlkCount        := 0; 
+                
+                if RD = '1' then
+                    AccIdx          := AccIdx + 1;
+                    VAccess(NODE, AccIdx*2,   DataInSampLo, VPDataOutLo);
+                    VAccess(NODE, AccIdx*2+1, DataInSampHi, VPDataOutHi);
+                end if;
               end if;
 
               -- Host process message scheduler called

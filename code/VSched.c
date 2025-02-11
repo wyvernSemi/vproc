@@ -46,7 +46,7 @@
 // LOCAL DEFINITIONS
 // -------------------------------------------------------------------------
 
-#define ARGS_ARRAY_SIZE     20
+#define ARGS_ARRAY_SIZE     256
 
 // -------------------------------------------------------------------------
 // Node main state
@@ -719,7 +719,7 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
     ((int *) ns[node]->send_buf.data_p)[idx] = args[VPACCESSIN_ARG];
 
     updateArgs(taskHdl, &args[1]);
-
+    
     return 0;
 #endif
 }

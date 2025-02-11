@@ -23,6 +23,7 @@
 #------------------------------------------------------
 # User overridable definitions
 
+VPROC              = VPROC
 MAX_NUM_VPROC      = 64
 USRFLAGS           =
 SRCDIR             = ../code
@@ -43,6 +44,10 @@ HDLLANGUAGE        = -DVPROC_SV
 SIMULATOR          = -DVERILATOR
 SIMINCLUDEFLAG     =
 USRSIMFLAGS        =
+
+ifeq ("$(VPROC)", "VPROC64")
+  VPROCPARAM       = -GUSE_VPROC64=1
+endif
 
 # Get OS type
 OSTYPE             := $(shell uname)
@@ -88,7 +93,7 @@ CPPSTD             = -std=c++20
 SIMFLAGS           = --binary -sv --trace                   \
                      $(FINISHFLAG)                          \
                      $(TIMINGFLAG)                          \
-                     $(VCDFLAG) $(BURSTDEF)                 \
+                     $(VCDFLAG) $(BURSTDEF) $(VPROCPARAM)   \
                      $(USRSIMFLAGS)                         \
                      -Mdir work -I../ -Wno-WIDTH            \
                      --top $(VPROC_TOP)                     \

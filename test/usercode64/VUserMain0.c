@@ -67,7 +67,8 @@ static int VIrqCB (int irq)
 
 void VUserMain0()
 {
-    unsigned int num, data, addr;
+    unsigned num;
+    uint64_t data, addr;
 
     VPrint("VUserMain0(): node=%d\n", node);
 
@@ -87,18 +88,18 @@ void VUserMain0()
     while (1)
     {
         num  = rand() % 8;
-        addr = (rand() << 16) | rand();
+        addr = ((uint64_t)rand() << 32) |  (uint64_t)rand();
 
         if (num == 0)
         {
-            VRead(addr, &data, 0, node);
-            VPrint("Node %d: Read  %08x at %08x\n", node, data, addr);
+            VRead64(addr, &data, 0, node);
+            VPrint("Node %d: Read  %08llx at %08llx\n", node, data, addr);
         }
         else if (num == 1)
         {
-            data = (rand() << 16) | rand();
-            VWrite(addr, data, 0, node);
-            VPrint("Node %d: Wrote %08x at %08x\n", node, data, addr);
+            data = ((uint64_t)rand() << 32) | (uint64_t)rand();
+            VWrite64(addr, data, 0, node);
+            VPrint("Node %d: Wrote %08llx at %08llx\n", node, data, addr);
         }
         else
         {

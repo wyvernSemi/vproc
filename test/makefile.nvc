@@ -23,6 +23,7 @@
 #------------------------------------------------------
 # User overridable definitions
 
+VPROC              = VPROC
 MAX_NUM_VPROC      = 64
 USRFLAGS           =
 SRCDIR             = ../code
@@ -43,6 +44,10 @@ HDLLANGUAGE        = -DVPROC_VHDL
 SIMULATOR          = -DNVC
 SIMINCLUDEFLAG     = 
 SIMFLAGSSO         =
+
+ifeq ("$(VPROC)", "VPROC64")
+  VPROCPARAM       = -gUSE_VPROC64=1
+endif
 
 # Optional Memory model definitions
 MEM_C              =
@@ -75,14 +80,14 @@ include makefile.common
 # Analyse VHDL files
 .PHONY: vhdl
 vhdl: $(VPROC_PLI)
-	@nvc --std=08 -a -f files_nvc.tcl -e $(VPROC_TOP)
+	@nvc --std=08 -a -f files_nvc.tcl -e $(VPROCPARAM) $(VPROC_TOP)
 
 #------------------------------------------------------
 # EXECUTION RULES
 #------------------------------------------------------
 
 run: vhdl
-	@nvc -r $(SIMFLAGS)
+	nvc -r $(SIMFLAGS)
 
 rungui: vhdl
 	@nvc -r  $(SIMFLAGS)

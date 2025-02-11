@@ -23,6 +23,7 @@
 #------------------------------------------------------
 # User overridable definitions
 
+VPROC              = VPROC
 MAX_NUM_VPROC      = 64
 USRFLAGS           =
 SRCDIR             = ../code
@@ -57,6 +58,10 @@ WAVEFILE          = waves.ghw
 WAVESAVEFILE      = $(WAVEFILE:%.ghw=%.gtkw)
 WORKDIR           = work
 
+ifeq ("$(VPROC)", "VPROC64")
+  VPROCPARAM       = -gUSE_VPROC64=1
+endif
+
 # Runtime flags for GHDL
 SIMFLAGS          = --std=08 --workdir=$(WORKDIR)
 
@@ -88,10 +93,10 @@ vhdl: $(VPROC_PLI) $(WORKDIR)
 #------------------------------------------------------
 
 run: vhdl
-	@ghdl --elab-run $(SIMFLAGS) $(VPROC_TOP)
+	@ghdl --elab-run $(SIMFLAGS) $(VPROC_TOP) $(VPROCPARAM)
 
 rungui: vhdl
-	@ghdl --elab-run $(SIMFLAGS) $(VPROC_TOP) --wave=$(WAVEFILE)
+	@ghdl --elab-run $(SIMFLAGS) $(VPROC_TOP) $(VPROCPARAM) --wave=$(WAVEFILE)
 	@if [ -e $(WAVESAVEFILE) ]; then                       \
 	    gtkwave -A $(WAVEFILE);                            \
 	else                                                   \
