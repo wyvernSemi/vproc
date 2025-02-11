@@ -212,9 +212,13 @@ begin
                     // the last data input sample.
                     if (BlkCount == 1)
                     begin
-                        AccIdx          = AccIdx + 1;
                         BlkCount        = 0;
-                        `vaccess(NodeI, AccIdx, DataInSamp, VPDataOut);
+                        
+                        if (RD)
+                        begin
+                            AccIdx          = AccIdx + 1;
+                            `vaccess(NodeI, AccIdx, DataInSamp, VPDataOut);
+                        end
                     end
 
                     // Get new access command

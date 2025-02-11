@@ -196,7 +196,7 @@ extern "C" void VUserMain1()
     // -------------------------------------------
     // Write burst data to memory
 
-    uint32_t wbuf[8], rbuf[8];
+    uint32_t wbuf[32], rbuf[32];
 
     addr = 0xa1000020;
 
