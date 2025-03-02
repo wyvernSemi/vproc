@@ -1,3 +1,2 @@
-sv      work ../f_vproc.sv
-sv      work ../f_vproc64.sv
+sv      work ../vproc2.sv
 verilog work ./test.v

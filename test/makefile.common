@@ -69,7 +69,7 @@ VOBJS               = $(addprefix $(VOBJDIR)/,            \
 
 # Set OS specific variables between Linux and Windows (MinGW)
 ifeq ($(OSTYPE), Linux)
-  FLAGSOS           = -shared -lpthread -lrt -rdynamic
+  FLAGSOS           = -shared -lpthread
 else
   FLAGSOS           = -shared -Wl,-export-all-symbols
 endif
@@ -87,7 +87,7 @@ CFLAGS              = $(OPTFLAG) $(ARCHFLAG)              \
 
 # Flags for compiling/linking shared object
 CFLAGS_SO           = $(ARCHFLAG)                         \
-                      $(FLAGSOS) -lpthread                \
+                      $(FLAGSOS)                          \
                       -Wl,-whole-archive                  \
                       $(SIMFLAGSSO)                       \
                       -L$(TESTDIR) -lvproc                \

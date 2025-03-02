@@ -24,6 +24,13 @@
 
 `include "vprocdefs.vh"
 
+`ifdef VPROC_SV
+`ifndef VPROCDPI_INCLUDED
+`include "vprocdpi.vh"
+`endif
+`include "vprocdpi64.vh"
+`endif
+
 // ============================================================
 // VProc64 module
 // ============================================================
@@ -234,7 +241,7 @@ begin
                     // so generate the index value for the two accesses for the 64-bit value.
                     AccIdx64            = AccIdx * 2;
                     `VAccess(NODE, AccIdx64, DataInLoSamp, VPDataOutLo);
-                    AccIdx64            = AccIdx64 + 1;;
+                    AccIdx64            = AccIdx64 + 1;
                     `VAccess(NODE, AccIdx64, DataInHiSamp, VPDataOutHi);
 
                     BlkCount            = BlkCount - 1;

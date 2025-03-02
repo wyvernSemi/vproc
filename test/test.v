@@ -27,7 +27,7 @@
 // ---------------------------------------------------------
 
 `define       CLKPERIOD          (2 * `NSEC)
-`define       TIMEOUTCOUNT       10000
+`define       TIMEOUTCOUNT       1000
 
 `define       INTWIDTH           3
 `define       NODEWIDTH          32
@@ -40,7 +40,7 @@
 `ifdef VPROC64_EN
 `define       VPROC64_DEFAULT    1
 `else
-`define       VPROC64_DEFAULT    0  
+`define       VPROC64_DEFAULT    0
 `endif
 
 // =========================================================
@@ -83,11 +83,11 @@ wire [ARCHSIZE-1:0]   VPDataOut1;
 wire [ARCHSIZE-1:0]   VPDataIn1;
 
 
-wire                 VPWE0;
-wire                 VPWE1;
-wire                 VPRD0;
-wire                 VPRD1;
-wire  [1:0]          Update;
+wire                  VPWE0;
+wire                  VPWE1;
+wire                  VPRD0;
+wire                  VPRD1;
+wire  [1:0]           Update;
 
 // ---------------------------------------------------------
 // Combinatorial logic
@@ -101,63 +101,67 @@ wire          reset_irq = nreset & ~nreset_h;
 wire CS1 = (VPAddr1[ARCHSIZE-1:ARCHSIZE-4] == 4'ha) ? 1'b1 : 1'b0;
 wire CS2 = (VPAddr1[ARCHSIZE-1:ARCHSIZE-4] == 4'hb) ? 1'b1 : 1'b0;
 
-generate
-
-if (USE_VPROC64)
-begin
-
  // ---------------------------------------------------------
  // Virtual Processor 0
  // ---------------------------------------------------------
 
- VProc64  #(.INT_WIDTH          (`INTWIDTH),
+ vproc2  #(
             .NODE               (0),
+            .ARCH_WIDTH         (ARCHSIZE),
+            .INT_WIDTH          (`INTWIDTH),
             .DISABLE_DELTA      (DISABLE_DELTA)
-           ) vp0
-           (.Clk                (clk),
-            .Addr               (VPAddr0),
-            .WE                 (VPWE0),
-            .RD                 (VPRD0),
-            .BE                 (VPBE0),
+          ) vp0
+          (
+            .clk                (clk),
 
-            .Burst              (),
-            .BurstFirst         (),
-            .BurstLast          (),
-            .DataOut            (VPDataOut0),
-            .DataIn             (VPDataIn0),
-            .WRAck              (VPWE0),
-            .RDAck              (VPRD0),
-            .Interrupt          ({{(`INTWIDTH-3){1'b0}}, reset_irq, Interrupt0[1:0]}),
-            .Update             (Update[0]),
-            .UpdateResponse     (Update[0])
+            .addr               (VPAddr0),
+            .wr                 (VPWE0),
+            .rd                 (VPRD0),
+            .be                 (VPBE0),
+            .data_out           (VPDataOut0),
+            .data_in             (VPDataIn0),
+            .wrack              (VPWE0),
+            .rdack              (VPRD0),
+
+            .burst              (),
+            .burst_first        (),
+            .burst_last         (),
+
+            .irq                ({{(`INTWIDTH-3){1'b0}}, reset_irq, Interrupt0[1:0]}),
+            .update             (Update[0]),
+            .update_response    (Update[0])
            );
 
  // ---------------------------------------------------------
  // Virtual Processor 1
  // ---------------------------------------------------------
 
- VProc64  #(.INT_WIDTH          (`INTWIDTH),
+ vproc2  #(
             .NODE               (1),
+            .ARCH_WIDTH         (ARCHSIZE),
+            .INT_WIDTH          (`INTWIDTH),
             .BURST_ADDR_INCR    (8),
             .DISABLE_DELTA      (DISABLE_DELTA)
-           ) vp1
-           (.Clk                (clk),
-            .Addr               (VPAddr1),
-            .WE                 (VPWE1),
-            .RD                 (VPRD1),
-            .BE                 (VPBE1),
+          ) vp1
+          (
+            .clk                (clk),
 
-            .Burst              (),
-            .BurstFirst         (),
-            .BurstLast          (),
+            .addr               (VPAddr1),
+            .wr                 (VPWE1),
+            .rd                 (VPRD1),
+            .be                 (VPBE1),
+            .data_out           (VPDataOut1),
+            .data_in            (VPDataIn1),
+            .wrack              (VPWE1),
+            .rdack              (VPRD1),
+            .irq                (Interrupt1[`INTWIDTH-1:0]),
 
-            .DataOut            (VPDataOut1),
-            .DataIn             (VPDataIn1),
-            .WRAck              (VPWE1),
-            .RDAck              (VPRD1),
-            .Interrupt          (Interrupt1[`INTWIDTH-1:0]),
-            .Update             (Update[1]),
-            .UpdateResponse     (Update[1])
+            .burst              (),
+            .burst_first        (),
+            .burst_last         (),
+
+            .update             (Update[1]),
+            .update_response    (Update[1])
            );
 
    // ---------------------------------------------------------
@@ -173,97 +177,6 @@ begin
               .A                  (VPAddr1[12:3]),
               .CS                 (CS1)
              );
-
-end
-else
-begin
-
-`ifndef VPROC_BYTE_ENABLE
-assign VPBE0 = {ARCHSIZE/8{1'b1}};
-assign VPBE1 = {ARCHSIZE/8{1'b1}};
-`endif
-
-   // ---------------------------------------------------------
-   // Virtual Processor 0
-   // ---------------------------------------------------------
-
-   VProc    #(.INT_WIDTH          (`INTWIDTH),
-              .NODE_WIDTH         (`NODEWIDTH),
-              .DISABLE_DELTA      (DISABLE_DELTA)
-             ) vp0
-             (.Clk                (clk),
-              .Addr               (VPAddr0),
-              .WE                 (VPWE0),
-              .RD                 (VPRD0),
-
-`ifdef VPROC_BYTE_ENABLE
-              .BE                 (VPBE0),
-`endif
-
-`ifdef VPROC_BURST_IF
-              .Burst              (),
-              .BurstFirst         (),
-              .BurstLast          (),
-`endif
-              .DataOut            (VPDataOut0),
-              .DataIn             (VPDataIn0),
-              .WRAck              (VPWE0),
-              .RDAck              (VPRD0),
-              .Interrupt          ({{(`INTWIDTH-3){1'b0}}, reset_irq, Interrupt0[1:0]}),
-              .Update             (Update[0]),
-              .UpdateResponse     (Update[0]),
-              .Node               (0)
-             );
-
-   // ---------------------------------------------------------
-   // Virtual Processor 1
-   // ---------------------------------------------------------
-
-   VProc    #(.INT_WIDTH          (`INTWIDTH),
-              .NODE_WIDTH         (`NODEWIDTH),
-              .BURST_ADDR_INCR    (4),
-              .DISABLE_DELTA      (DISABLE_DELTA)
-             ) vp1
-             (.Clk                (clk),
-              .Addr               (VPAddr1),
-              .WE                 (VPWE1),
-              .RD                 (VPRD1),
-
-`ifdef VPROC_BYTE_ENABLE
-              .BE                 (VPBE1),
-`endif
-
-`ifdef VPROC_BURST_IF
-              .Burst              (),
-              .BurstFirst         (),
-              .BurstLast          (),
-`endif
-              .DataOut            (VPDataOut1),
-              .DataIn             (VPDataIn1),
-              .WRAck              (VPWE1),
-              .RDAck              (VPRD1),
-              .Interrupt          (Interrupt1[`INTWIDTH-1:0]),
-              .Update             (Update[1]),
-              .UpdateResponse     (Update[1]),
-              .Node               (1)
-             );
-
-   // ---------------------------------------------------------
-   // Memory
-   // ---------------------------------------------------------
-
-   Mem #(.ARCHSIZE(ARCHSIZE)) m
-             (.clk                (clk),
-              .DI                 (VPDataOut1),
-              .DO                 (VPDataIn1),
-              .WE                 (VPWE1),
-              .BE                 (VPBE1),
-              .A                  (VPAddr1[11:2]),
-              .CS                 (CS1)
-             );
-
-end
-endgenerate
 
 
 // ---------------------------------------------------------

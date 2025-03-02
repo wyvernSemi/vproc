@@ -75,7 +75,7 @@ MEMMODELDIR        = .
 # Common logic simulator flags
 VLOGFLAGS          = -DVPROC_BURST_IF -DVPROC_BYTE_ENABLE -I../ $(VPROCPARAM) -Ptest.VCD_DUMP=1
 VLOGDEBUGFLAGS     = -Ptest.DEBUG_STOP=1
-VLOGFILES          = test.v ../f_VProc.v ../f_VProc64.v
+VLOGFILES          = test.v ../vproc2.v
 
 #------------------------------------------------------
 # BUILD RULES
@@ -87,10 +87,10 @@ all: verilog
 include makefile.common
 
 verilog: $(VPROC_PLI) $(VLOGFILES)
-	@iverilog $(VLOGFLAGS) $(PLIFLAG) -o sim $(VLOGFILES)
+	@iverilog $(VLOGFLAGS) -o sim $(VLOGFILES)
 
 verilog_debug: $(VPROC_PLI) $(VLOGFILES)
-	@iverilog $(VLOGDEBUGFLAGS) $(VLOGFLAGS) $(PLIFLAG) -o sim $(VLOGFILES)
+	@iverilog $(VLOGDEBUGFLAGS) $(VLOGFLAGS) -o sim $(VLOGFILES)
 
 #------------------------------------------------------
 # EXECUTION RULES

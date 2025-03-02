@@ -1,3 +1,2 @@
-../f_VProc.sv
-../f_VProc64.sv
+../vproc2.sv
 test.v

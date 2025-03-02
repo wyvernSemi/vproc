@@ -100,7 +100,7 @@ SIMFLAGS           = --binary -sv --trace                   \
                      -MAKEFLAGS "--quiet"                   \
                      -CFLAGS "$(CPPSTD) -Wno-attributes"    \
                      -LDFLAGS "$(SIMFLAGSSO)                \
-                     -Wl,-whole-archive -L../ -lvproc -Wl,-no-whole-archive -ldl"
+                     -Wl,-whole-archive -L../ -lvproc -Wl,-no-whole-archive"
 
 SIMEXE             = work/V$(VPROC_TOP)
 FILELIST           = files.verilator

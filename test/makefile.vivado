@@ -77,7 +77,7 @@ include makefile.common
 # Analyse HDL files
 .PHONY: sysverilog
 sysverilog: $(VPROC_PLI)
-	xvlog $(ANALYSEFLAGS)
+	@xvlog $(ANALYSEFLAGS)
 	@xelab $(ELABFLAGS)
 
 #------------------------------------------------------

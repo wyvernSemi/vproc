@@ -1,9 +1,9 @@
 // ====================================================================
 //
-// Verilog side Virtual Processor 64-bit, for running host
+// SystemVerilog side Virtual Processor, for running host
 // programs as control in simulation.
 //
-// Copyright (c) 2025 Simon Southwell.
+// Copyright (c) 2024 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -22,13 +22,9 @@
 //
 // ====================================================================
 
-// Import DPI-C fuctions
-import "DPI-C" function void VSched64  (input  int node,
-                                        input  int VPDataInLo,
-                                        input  int VPDataInHi,
-                                        output int VPDataOutLo,
-                                        output int VPDataOutHi,
-                                        output int VPAddrLo,
-                                        output int VPAddrHi,
-                                        output int VPRw,
-                                        output int VPTicks);
+// The SystemVerilog VProc HDL is the same as the Verilog, 
+// with DPI definitions inluded here
+
+`define VPROC_SV
+
+`include "vproc2.v"

@@ -28,10 +28,11 @@ use ieee.numeric_std.all;
 use work.vproc64_pkg.all;
 
 entity VProc64 is
-  generic (NODE            : integer                    := 0;
-           INT_WIDTH       : integer                    := 32;
-           BURST_ADDR_INCR : integer                    := 1;
-           DISABLE_DELTA   : integer                    := 0
+  generic (
+    NODE            : integer                              := 0;
+    INT_WIDTH       : integer range 1 to 32                := 32;
+    BURST_ADDR_INCR : integer range 1 to 8                 := 1;
+    DISABLE_DELTA   : integer range 0 to 1                 := 0
   );
   port (
     Clk             : in  std_logic;
@@ -42,17 +43,17 @@ entity VProc64 is
     RD              : out std_logic                        := '0';
     DataOut         : out std_logic_vector(63 downto 0);
     DataIn          : in  std_logic_vector(63 downto 0);
-    WRAck           : in  std_logic;
-    RDAck           : in  std_logic;
+    WRAck           : in  std_logic                        := '0';
+    RDAck           : in  std_logic                        := '0';
 
-    Interrupt       : in  std_logic_vector(INT_WIDTH-1 downto 0);
+    Interrupt       : in  std_logic_vector(INT_WIDTH-1 downto 0) := (others => '0');
 
-    Update          : out std_logic := '0';
-    UpdateResponse  : in  std_logic;
+    Update          : out std_logic                        := '0';
+    UpdateResponse  : in  std_logic                        := '0';
 
-    Burst           : out std_logic_vector(11 downto 0);
-    BurstFirst      : out std_logic;
-    BurstLast       : out std_logic
+    Burst           : out std_logic_vector(11 downto 0)    := 12x"000";
+    BurstFirst      : out std_logic                        := '0';
+    BurstLast       : out std_logic                        := '0'
   );
 end;
 

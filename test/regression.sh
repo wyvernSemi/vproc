@@ -45,9 +45,9 @@ date | tee -a $LOGFILE
 echo "" | tee -a $LOGFILE
 
 #
-# Main C/C+ regression tests
+# Main C/C+ VProc (32-bit) regression tests
 #
-echo "============ C/C++ regression tests ============" $'\n' | tee -a $LOGFILE
+echo "======== C/C++ 32-bit regression tests =========" $'\n' | tee -a $LOGFILE
 for usrcode in usercode usercodeIrq
 do
   for mkfile in $MKFILEBASE "makefile HDL=VHDL" makefile.verilator
@@ -55,6 +55,22 @@ do
    echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
    make -f $mkfile clean
    make -f $mkfile USRCDIR=$usrcode run 2>&1 | egrep -i "error|fatal"  | egrep -v "$FILTERSTR" | tee -a $LOGFILE
+   make -f $mkfile clean
+   echo "" | tee -a $LOGFILE
+  done
+done
+
+#
+# Main C/C+ VProc64 regression tests
+#
+echo "======== C/C++ 64-bit regression tests =========" $'\n' | tee -a $LOGFILE
+for usrcode in usercode64
+do
+  for mkfile in $MKFILEBASE "makefile HDL=VHDL" makefile.verilator
+  do
+   echo "Running $mkfile VPROC=VPROC64 with $usrcode/ ..." | tee -a $LOGFILE
+   make -f $mkfile clean
+   make -f $mkfile USRCDIR=$usrcode VPROC=VPROC64 run 2>&1 | egrep -i "error|fatal"  | egrep -v "$FILTERSTR" | tee -a $LOGFILE
    make -f $mkfile clean
    echo "" | tee -a $LOGFILE
   done
@@ -218,6 +234,34 @@ then
   done
 else
   echo  "====== Skipping tcpIpPg regression tests ======" $'\n' | tee -a $LOGFILE
+fi
+
+#
+# udpIpPg regression tests (if repository checked out)
+#
+
+cd $REGRESSDIR
+TESTDIR=../../udpIpPg/test
+
+if [ -d $TESTDIR ]
+then
+
+  cd $TESTDIR
+
+  echo "========== udpIpPg regression tests ============" $'\n' | tee -a $LOGFILE
+  for usrcode in src
+  do
+    for mkfile in $MKFILEBASE "makefile HDL=VHDL" makefile.verilator
+    do
+     echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
+     make -f $mkfile clean 2>&1 > /dev/null
+     make -f $mkfile USRCDIR=$usrcode run 2>&1 | egrep -i "error|fatal" | egrep -v "$FILTERSTR" | tee -a $LOGFILE
+     make -f $mkfile clean 2>&1 > /dev/null
+     echo "" | tee -a $LOGFILE
+    done
+  done
+else
+  echo  "====== Skipping udpIpPg regression tests ======" $'\n' | tee -a $LOGFILE
 fi
 
 cd $REGRESSDIR

@@ -80,101 +80,53 @@ begin
   CS1                                  <= '1' when VPAddr1(ARCHSIZE-1 downto ARCHSIZE-4) = 4x"a" else '0';
   CS2                                  <= '1' when VPAddr1(ARCHSIZE-1 downto ARCHSIZE-4) = 4x"b" else '0';
 
-g_VPROC : if USE_VPROC64 /= 0 generate
 
-  vp0 : entity work.VProc64
+  vp0 : entity work.vproc2
   generic map (
+    ARCH_WIDTH                         => ARCHSIZE,
     NODE                               => 0,
     INT_WIDTH                          => 3
   )
   port map (
-    Clk                                => Clk,
-    Addr                               => VPAddr0,
-    BE                                 => VPBE0,
-    WE                                 => VPWE0,
-    RD                                 => VPRD0,
-    DataOut                            => VPDataOut0,
-    DataIn                             => VPDataIn0,
-    WRAck                              => VPWE0,
-    RDAck                              => VPRD0,
-    Interrupt                          => ResetInt & Interrupt0(1 downto 0),
-    Update                             => Update(0),
-    UpdateResponse                     => UpdateResponse(0)
+    clk                                => Clk,
+    addr                               => VPAddr0,
+    be                                 => VPBE0,
+    wr                                 => VPWE0,
+    rd                                 => VPRD0,
+    data_out                           => VPDataOut0,
+    data_in                            => VPDataIn0,
+    wrack                              => VPWE0,
+    rdack                              => VPRD0,
+    irq                                => ResetInt & Interrupt0(1 downto 0),
+    update                             => Update(0),
+    update_response                    => UpdateResponse(0)
   );
 
   ---------------------------------------------
   -- VProc 1
   ---------------------------------------------
 
-  vp1 : entity work.VProc64
+  vp1 : entity work.vproc2
   generic map (
+    ARCH_WIDTH                         => ARCHSIZE,
     BURST_ADDR_INCR                    => 8,
     NODE                               => 1,
     INT_WIDTH                          => 3
   )
   port map (
-    Clk                                => Clk,
-    Addr                               => VPAddr1,
-    BE                                 => VPBE1,
-    WE                                 => VPWE1,
-    RD                                 => VPRD1,
-    DataOut                            => VPDataOut1,
-    DataIn                             => VPDataIn1,
-    WRAck                              => VPWE1,
-    RDAck                              => VPRD1,
-    Interrupt                          => Interrupt1,
-    Update                             => Update(1),
-    UpdateResponse                     => UpdateResponse(1)
+    clk                                => Clk,
+    addr                               => VPAddr1,
+    be                                 => VPBE1,
+    wr                                 => VPWE1,
+    rd                                 => VPRD1,
+    data_out                           => VPDataOut1,
+    data_in                            => VPDataIn1,
+    wrack                              => VPWE1,
+    rdack                              => VPRD1,
+    irq                                => Interrupt1,
+    update                             => Update(1),
+    update_response                    => UpdateResponse(1)
   );
-
-else generate
-
-  ---------------------------------------------
-  -- VProc 0
-  ---------------------------------------------
-
-  vp0 : entity work.VProc
-  port map (
-    Clk                                => Clk,
-    Addr                               => VPAddr0,
-    BE                                 => VPBE0,
-    WE                                 => VPWE0,
-    RD                                 => VPRD0,
-    DataOut                            => VPDataOut0,
-    DataIn                             => VPDataIn0,
-    WRAck                              => VPWE0,
-    RDAck                              => VPRD0,
-    Interrupt                          => ResetInt & Interrupt0(1 downto 0),
-    Update                             => Update(0),
-    UpdateResponse                     => UpdateResponse(0),
-    Node                               => 4x"0"
-  );
-
-  ---------------------------------------------
-  -- VProc 1
-  ---------------------------------------------
-
-  vp1 : entity work.VProc
-  generic map (
-    BURST_ADDR_INCR                    => 4
-  )
-  port map (
-    Clk                                => Clk,
-    Addr                               => VPAddr1,
-    BE                                 => VPBE1,
-    WE                                 => VPWE1,
-    RD                                 => VPRD1,
-    DataOut                            => VPDataOut1,
-    DataIn                             => VPDataIn1,
-    WRAck                              => VPWE1,
-    RDAck                              => VPRD1,
-    Interrupt                          => Interrupt1,
-    Update                             => Update(1),
-    UpdateResponse                     => UpdateResponse(1),
-    Node                               => 4x"1"
-  );
-
-end generate;
 
   ---------------------------------------------
   -- Response processes

@@ -27,9 +27,4 @@
 
 `define VPROC_SV
 
-`ifndef VPROCDPI_INCLUDED
-`include "vprocdpi.vh"
-`endif
-`include "vprocdpi64.vh"
-
 `include "f_VProc64.v"

@@ -73,7 +73,7 @@ ifeq ("$(HDL)", "VHDL")
   VSIMFLAGS        = $(VPROCPARAM) $(VPROC_TOP)
 else
   SIMFLAGSSO       = -L$(MODEL_TECH) -lmtipli
-  HDLCMD           = vlog +define+VPROC_BURST_IF +define+VPROC_BYTE_INTERFACE +incdir+../ -f test.vc
+  HDLCMD           = vlog +define+VPROC_BURST_IF +define+VPROC_BYTE_ENABLE +incdir+../ -f test.vc
   VSIMFLAGS        = -pli $(VPROC_PLI) $(VPROCPARAM) $(VPROC_TOP)
 endif
 
