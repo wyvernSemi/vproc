@@ -36,6 +36,9 @@ FILTERSTR="EIO|, Warnings:|Note|Finished with no"
 if [ "$OSTYPE" != "Linux" ]
 then
   MAKEFILEXSIM=makefile.vivado
+  MAKEFILEVER=
+else
+  MAKEFILEVER=makefile.verilator
 fi
 
 MKFILEBASE="$MKFILEBASE $MAKEFILEXSIM"
@@ -154,7 +157,7 @@ then
   echo "======= usbModel Verilog regression tests =======" $'\n' | tee -a $LOGFILE
   for usrcode in usercode
   do
-    for mkfile in makefile makefile.ica makefile.verilator $MAKEFILEXSIM
+    for mkfile in makefile makefile.ica $MAKEFILEVER $MAKEFILEXSIM
     do
      echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
      make -f $mkfile clean
@@ -193,7 +196,7 @@ else
 fi
 
 #
-# tcpIp regression tests (if repository checked out)
+# tcpIpPg regression tests (if repository checked out)
 #
 
 cd $REGRESSDIR
@@ -218,6 +221,34 @@ then
   done
 else
   echo  "====== Skipping tcpIpPg regression tests ======" $'\n' | tee -a $LOGFILE
+fi
+
+#
+# udpIpPg regression tests (if repository checked out)
+#
+
+cd $REGRESSDIR
+TESTDIR=../../udpIpPg/test
+
+if [ -d $TESTDIR ]
+then
+
+  cd $TESTDIR
+
+  echo "========== udpIpPg regression tests ============" $'\n' | tee -a $LOGFILE
+  for usrcode in src
+  do
+    for mkfile in $MKFILEBASE "makefile HDL=VHDL" makefile.verilator
+    do
+     echo "Running $mkfile with $usrcode/ ..." | tee -a $LOGFILE
+     make -f $mkfile clean 2>&1 > /dev/null
+     make -f $mkfile USRCDIR=$usrcode run 2>&1 | egrep -i "error|fatal" | egrep -v "$FILTERSTR" | tee -a $LOGFILE
+     make -f $mkfile clean 2>&1 > /dev/null
+     echo "" | tee -a $LOGFILE
+    done
+  done
+else
+  echo  "====== Skipping udpIpPg regression tests ======" $'\n' | tee -a $LOGFILE
 fi
 
 cd $REGRESSDIR

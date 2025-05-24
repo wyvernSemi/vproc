@@ -4,7 +4,7 @@
 >EXPERIMENTAL
 
 The Verilator simulor control module is a _VProc_ wrapper that allows control of the running simulation on the console command line from where
-the test bench with the module instnatiated is run. It consists of a SystemVerilog module defined in `verilator/verilator_sim_ctrl.sv` with a 
+the test bench with the module instantiated is run. It consists of a SystemVerilog module defined in `verilator/verilator_sim_ctrl.sv` with a 
 single clock input (`clk`) and a clock count output (`clk_count`) for use by the test bench if desired. The only other inputs to the module are
 from its parameters:
 
