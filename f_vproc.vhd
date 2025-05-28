@@ -1,6 +1,6 @@
 -- =============================================================
 --
---  Copyright (c) 2021-2023 Simon Southwell. All rights reserved.
+--  Copyright (c) 2021-2025 Simon Southwell. All rights reserved.
 --
 --  Date: 4th May 2021
 --
@@ -123,25 +123,7 @@ begin
 
       if Initialised = 1 then
 
-        if IntSamp > 0 then
-
-          -- If an interrupt active, call $vsched with interrupt value
-          VSched(to_integer(unsigned(Node)),
-                 IntSamp,
-                 DataInSamp,
-                 VPDataOut,
-                 VPAddr,
-                 VPRW,
-                 VPTicks);
-
-          -- If interrupt routine returns non-zero tick, then override
-          -- current tick value. Otherwise, leave at present value.
-          if VPTicks > 0 then
-            TickVal             := VPTicks;
-          end if;
-        end if;
-
-        -- Call $virq when interrupt value changes, passing in
+        -- Call VIrq when interrupt value changes, passing in
         -- new value
         if IntSamp /= IntSampLast then
           VIrq(to_integer(unsigned(Node)), IntSamp);
@@ -166,14 +148,14 @@ begin
 
             if BlkCount <= 1 then
 
-              -- If this is the last transfer in a burst, call $vaccess with
+              -- If this is the last transfer in a burst, call VAccess with
               -- the last data input sample.
               if BlkCount = 1 then
                 BlkCount        := 0;
-                
+
                 if RD = '1' then
                     AccIdx          := AccIdx + 1;
-                    
+
                     VAccess(to_integer(unsigned(Node)),
                             AccIdx,
                             DataInSamp,
@@ -183,7 +165,6 @@ begin
 
               -- Host process message scheduler called
               VSched(to_integer(unsigned(Node)),
-                     IntSamp,
                      DataInSamp,
                      VPDataOut,
                      VPAddr,
@@ -202,13 +183,13 @@ begin
               -- If new BlkCount is non-zero, setup burst transfer
               if BlkCount /= 0 then
                 BurstFirst      <= '1';
-              
+
                 -- If a single word transfer, set the last flag
                 if BlkCount = 1 then
                   BurstLast      <= '1';
                 end if;
 
-                -- On writes, override VPDataOut to get from burst access task $VAccess at index 0
+                -- On writes, override VPDataOut to get from burst access task VAccess at index 0
                 if to_unsigned(VPRW, 32)(WEbit)  = '1' then
                   AccIdx        := 0;
 

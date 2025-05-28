@@ -1,7 +1,7 @@
 /**************************************************************/
 /* VUserMain.c                               Date: 2004/12/13 */
 /*                                                            */
-/* Copyright (c) 2004-2024 Simon Southwell.                   */
+/* Copyright (c) 2004-2025 Simon Southwell.                   */
 /* All rights reserved.                                       */
 /*                                                            */
 /**************************************************************/
@@ -18,7 +18,7 @@ static int node = 0;
 static int Reset = 0;
 
 // ------------------------------------------------------------
-// Interrupt callback function for level 1
+// ISR  function for level 1
 // ------------------------------------------------------------
 
 static int VInterrupt_1(void)
@@ -28,7 +28,7 @@ static int VInterrupt_1(void)
 }
 
 // ------------------------------------------------------------
-// Interrupt callback function for level 4
+// ISR function for level 4
 // ------------------------------------------------------------
 
 static int VInterrupt_4(void)
@@ -36,6 +36,23 @@ static int VInterrupt_4(void)
     VPrint("Node %d: VInterrupt_4()\n", node);
     Reset = 1;
     return 1;
+}
+
+// ------------------------------------------------------------
+// Interrrupt callback function
+// ------------------------------------------------------------
+
+static int VInterrupt (int level)
+{
+    switch(level)
+    {
+        case 1: VInterrupt_1(); break;
+        case 4: VInterrupt_4(); break;
+        case 0: break;
+        default:
+          VPrint("***ERROR: VInterrupt(): unrecognised interrupt vector (0x%08x)\n", level);
+          break;
+    }
 }
 
 // ------------------------------------------------------------
@@ -51,9 +68,8 @@ void VUserMain0()
 
     VPrint("VUserMain0(): node=%d\n", node);
 
-    // Register functions as interrupt levels 1 and 4 routines
-    VRegInterrupt(1, VInterrupt_1, node);
-    VRegInterrupt(4, VInterrupt_4, node);
+    // Register function for interrupt 
+    VRegIrq(VInterrupt, node);
 
     do
     {

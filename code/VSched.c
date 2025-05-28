@@ -2,7 +2,7 @@
 //
 // VSched.c                                           Date: 2004/12/13
 //
-// Copyright (c) 2004-2024 Simon Southwell.
+// Copyright (c) 2004-2025 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -89,7 +89,7 @@ VPROC_RTN_TYPE (*vhpi_startup_routines[])() = {
 // Get the parameter values of a foreign procedure using VHPI methods
 // -------------------------------------------------------------------------
 
-static void getVhpiParams(const struct vhpiCbDataS* cb, int args[], int args_size)
+static void getVhpiParams(const struct vhpiCbDataS* cb, int args[], const int args_size)
 {
     int         idx      = 0;
     vhpiValueT  value;
@@ -115,7 +115,7 @@ static void getVhpiParams(const struct vhpiCbDataS* cb, int args[], int args_siz
 // Set the parameters values of a foreign procedure using VHPI methods
 // -------------------------------------------------------------------------
 
-static void setVhpiParams(const struct vhpiCbDataS* cb, int args[], int start_of_outputs, int args_size)
+static void setVhpiParams(const struct vhpiCbDataS* cb, const int args[], const int start_of_outputs, const int args_size)
 {
     int         idx      = 0;
     vhpiValueT  value;
@@ -191,7 +191,7 @@ void (*vlog_startup_routines[])() =
 // Get task arguments using VPI calls
 // -------------------------------------------------------------------------
 
-int getArgs (vpiHandle taskHdl, int value[])
+int getArgs (const vpiHandle taskHdl, int value[])
 {
   int                  idx = 0;
   struct t_vpi_value   argval;
@@ -218,7 +218,7 @@ int getArgs (vpiHandle taskHdl, int value[])
 // Update task arguments using VPI calls
 // -------------------------------------------------------------------------
 
-int updateArgs (vpiHandle taskHdl, int value[])
+int updateArgs (const vpiHandle taskHdl, const int value[])
 {
   int                 idx = 0;
   struct t_vpi_value  argval;
@@ -347,7 +347,7 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 
 #if !defined(VPROC_VHDL) && !defined(VPROC_SV)
     int node;
-    int Interrupt, VPDataIn;
+    int VPDataIn;
 
     vpiHandle    taskHdl;
 
@@ -358,7 +358,7 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 #else
 # ifdef VPROC_VHDL_VHPI
     int node;
-    int Interrupt, VPDataIn;
+    int VPDataIn;
 
     getVhpiParams(cb, &args[1], VSCHED_NUM_ARGS);
 # endif
@@ -370,33 +370,11 @@ VPROC_RTN_TYPE VSched (VSCHED_PARAMS)
 
     // Get argument value of $vsched call
     node         = args[VPNODENUM_ARG];
-    Interrupt    = args[VPINTERRUPT_ARG];
     VPDataIn     = args[VPDATAIN_ARG];
 #endif
 
     // Sample inputs and update node state
     ns[node]->rcv_buf.data_in   = VPDataIn;
-    ns[node]->rcv_buf.interrupt = Interrupt;
-
-    //----------------------------------------------
-    // Discard any level interrupt when vectored
-    // IRQ enabled
-    //----------------------------------------------
-
-    // If call to VSched is for interrupt and vector IRQ enabled (with C or Python callback registered)
-    // don't process here with the level interrupt code and just return.
-    if (Interrupt && (ns[node]->VUserIrqCB != NULL || ns[node]->PyIrqCB != NULL))
-    {
-#if !defined(VPROC_VHDL) && !defined(VPROC_SV)
-        return 0;
-#else
-# ifndef VPROC_VHDL_VHPI
-        // Since not processing make a delta cycle on return
-        *VPTicks   = DELTA_CYCLE;
-# endif
-        return;
-#endif
-    }
 
     //----------------------------------------------
     // Send inputs to user thread
@@ -486,7 +464,7 @@ VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 
     // Get argument values of $vprocuser call
     node      = args[VPNODENUM_ARG];
-    value     = args[VPINTERRUPT_ARG];
+    value     = args[VPVALUE_ARG];
 
 #else
 # ifdef VPROC_VHDL_VHPI
@@ -496,7 +474,7 @@ VPROC_RTN_TYPE VProcUser(VPROCUSER_PARAMS)
 
     // Get argument values of VProcUser VHPI call
     node      = args[VPNODENUM_ARG];
-    value     = args[VPINTERRUPT_ARG];
+    value     = args[VPVALUE_ARG];
 
 # endif
 #endif
@@ -588,14 +566,14 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
     node      = args[VPNODENUM_ARG];
     idx       = args[VPINDEX_ARG];
 
-    args[VPDATAOUT_ARG] = ((int *) ns[node]->send_buf.data_p)[idx];
+    args[VACCESSOUT_ARG] = ((int *) ns[node]->send_buf.data_p)[idx];
 
-    ((int *) ns[node]->send_buf.data_p)[idx] = args[VPDATAIN_ARG];
+    ((int *) ns[node]->send_buf.data_p)[idx] = args[VPACCESSIN_ARG];
 
-    setVhpiParams(cb, &args[1], VPDATAOUT_ARG-1, VACCESS_NUM_ARGS);
+    setVhpiParams(cb, &args[1], VACCESSOUT_ARG-1, VACCESS_NUM_ARGS);
 # endif
 #else
-   int node, idx;
+    int node, idx;
 
     vpiHandle taskHdl;
 
@@ -607,9 +585,9 @@ VPROC_RTN_TYPE VAccess(VACCESS_PARAMS)
     node      = args[VPNODENUM_ARG];
     idx       = args[VPINDEX_ARG];
 
-    args[VPDATAOUT_ARG] = ((int *) ns[node]->send_buf.data_p)[idx];
+    args[VACCESSOUT_ARG] = ((int *) ns[node]->send_buf.data_p)[idx];
 
-    ((int *) ns[node]->send_buf.data_p)[idx] = args[VPDATAIN_ARG];
+    ((int *) ns[node]->send_buf.data_p)[idx] = args[VPACCESSIN_ARG];
 
     updateArgs(taskHdl, &args[1]);
 

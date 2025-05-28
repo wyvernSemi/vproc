@@ -2,7 +2,7 @@
 //
 // VUser.c                                            Date: 2004/12/13
 //
-// Copyright (c) 2004-2024 Simon Southwell.
+// Copyright (c) 2004-2025 Simon Southwell.
 //
 // This file is part of VProc.
 //
@@ -51,12 +51,6 @@ int VUser (const unsigned node)
     int       idx, jdx;
 
     debug_io_printf("VUser(): node %d\n", node);
-
-    // Level interrupt callback table initialisation
-    for (jdx = 0; jdx < 8; jdx++)
-    {
-        ns[node]->VInt_table[jdx] = NULL;
-    }
 
     // Callback intialisation
     ns[node]->VUserIrqCB = NULL;
@@ -138,7 +132,7 @@ static void VUserInit (const unsigned node)
 // the original IO message reply is waited for again.
 // -------------------------------------------------------------------------
 
-static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
+static void VExch (const psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
 {
     int status;
     // Send message to simulator
@@ -152,47 +146,11 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
         exit(1);
     }
 
-    do
-    {
-        // Wait for response message from simulator
-        debug_io_printf("VExch(): waiting for rcv[%d] semaphore\n", node);
-        sem_wait(&(ns[node]->rcv));
+    // Wait for response message from simulator
+    debug_io_printf("VExch(): waiting for rcv[%d] semaphore\n", node);
+    sem_wait(&(ns[node]->rcv));
 
-        *prbuf = ns[node]->rcv_buf;
-
-        // Check if this is an interrupt
-        if (prbuf->interrupt > 0)
-        {
-            debug_io_printf("VExch(): node %d processing interrupt (%d)\n", node, prbuf->interrupt);
-
-            if (prbuf->interrupt > MAX_INTERRUPT_LEVEL)
-            {
-                VPrint("***Error: invalid interrupt level %d (VExch)\n", prbuf->interrupt);
-                exit(1);
-            }
-
-            if (ns[node]->VInt_table[prbuf->interrupt] != NULL)
-            {
-                // Call user registered interrupt function
-                psbuf->ticks       = (*(ns[node]->VInt_table[prbuf->interrupt]))();
-                ns[node]->send_buf = *psbuf;
-
-                debug_io_printf("VExch(): interrupt send_buf[node].ticks = %d\n", ns[node]->send_buf.ticks);
-            }
-
-            // Send new message to simulation
-            debug_io_printf("VExch(): setting snd[%d] semaphore (interrupt)\n", node);
-
-            if ((status = sem_post(&(ns[node]->snd))) == -1)
-            {
-                VPrint("***Error: bad sem_post status (%d) on node %d (VExch)\n", status, node);
-                exit(1);
-            }
-        }
-    // If the response was an interrupt, go back and wait for IO message response.
-    // (This could be in the same cycle as the interrupt)
-    }
-    while (prbuf->interrupt > 0);
+    *prbuf = ns[node]->rcv_buf;
 
     debug_io_printf("VExch(): returning to user code from node %d\n", node);
 
@@ -203,7 +161,7 @@ static void VExch (psend_buf_t psbuf, prcv_buf_t prbuf, const unsigned node)
 // =========================================================================
 
 // -------------------------------------------------------------------------
-// VWrite
+// VWrite()
 //
 // Invokes a write message exchange
 // -------------------------------------------------------------------------
@@ -214,7 +172,7 @@ int VWrite (const unsigned addr, const unsigned data, const int delta, const uns
 }
 
 // -------------------------------------------------------------------------
-// VWriteBE
+// VWriteBE()
 //
 // Invokes a write message exchange with byte enables
 // -------------------------------------------------------------------------
@@ -371,26 +329,6 @@ int VTick (const unsigned ticks, const unsigned node)
 }
 
 // -------------------------------------------------------------------------
-// VRegInterrupt()
-//
-// Registers a user function as an level interrupt callback. Deprecated in
-// favour f vectored interrupts. Kept for backwards compatibility.
-// -------------------------------------------------------------------------
-
-void VRegInterrupt (const int level, const pVUserInt_t func, const unsigned node)
-{
-    debug_io_printf("VRegInterrupt(): at node %d, registering interrupt level %d\n", node, level);
-
-    if (level < MIN_INTERRUPT_LEVEL || level >= MAX_INTERRUPT_LEVEL)
-    {
-        VPrint("***Error: attempt to register an out of range interrupt level (VRegInterrupt)\n");
-        exit(1);
-    }
-
-    ns[node]->VInt_table[level] = func;
-}
-
-// -------------------------------------------------------------------------
 // VRegIrq()
 //
 // Registers a user function as a vector IRQ callback
@@ -424,7 +362,7 @@ void VRegIrqPy (const pPyIrqCB_t func, const unsigned node)
 
 void VRegUser (const pVUserCB_t func, const unsigned node)
 {
-    debug_io_printf("VRegFinish(): at node %d, registering finish callback function\n", node);
+    debug_io_printf("VRegUser(): at node %d, registering user callback function\n", node);
 
     ns[node]->VUserCB = func;
 }

@@ -1,7 +1,7 @@
 /*
  * Top level demonstration test environment for VProc
  *
- * Copyright (c) 2004-2024 Simon Southwell.
+ * Copyright (c) 2004-2025 Simon Southwell.
  *
  * This file is part of VProc.
  *
@@ -56,7 +56,6 @@ integer       Interrupt0;
 integer       Interrupt1;
 reg [31:0]    VPDataIn0;
 reg           nreset_h;
-integer       restart;
 
 // ---------------------------------------------------------
 // Signals
