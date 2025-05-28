@@ -2,7 +2,7 @@
 ###################################################################
 # Regression test script for the VProc virtual processor
 #
-# Copyright (c) 2024 Simon Southwell.
+# Copyright (c) 2024-2025 Simon Southwell.
 #
 # This file is part of VProc.
 #
