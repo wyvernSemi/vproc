@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 ###################################################################
-# Regression test script for the VProc virtual processor
+# Regression test shell script for the VProc virtual processor
 #
 # Copyright (c) 2024-2025 Simon Southwell.
 #
