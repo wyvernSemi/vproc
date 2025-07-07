@@ -120,7 +120,7 @@ static void VUserInit (const unsigned node)
     // Call user program
     debug_io_printf("VUserInit(): calling VUserMain%d\n", node);
 
-    VUserMain_func();
+    VUserMain_func(node);
 }
 
 // -------------------------------------------------------------------------

@@ -91,6 +91,6 @@ extern int  VUser         (const unsigned   node);
 #endif
 
 // Pointer to VUserMain function type definition
-typedef void (*pVUserMain_t)(void);
+typedef void (*pVUserMain_t)(int node);
 
 #endif
