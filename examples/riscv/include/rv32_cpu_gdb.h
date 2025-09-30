@@ -52,7 +52,7 @@
 // -------------------------------------------------------------------------
 
 // Map the socket type for windows  
-#include <Winsock2.h>
+
 typedef SOCKET rv32gdb_skt_t;
     
 #else
