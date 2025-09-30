@@ -43,6 +43,7 @@ static uint32_t  irq                  = 0;
 
 static const int strbufsize = 256;
 static char      argstr[strbufsize];
+static char      execstr[strbufsize];
 static rv32*     pCpu;
 
 static double    tv_diff_usec;
@@ -248,7 +249,8 @@ int parseArgs(int argcIn, char** argvIn, rv32i_cfg_s &cfg, const int node)
         switch (c)
         {
         case 't':
-            cfg.exec_fname = optarg;
+            strncpy(execstr, optarg, strbufsize);
+            cfg.exec_fname = execstr;
             cfg.user_fname = true;
             break;
         case 'n':
@@ -362,11 +364,12 @@ uint32_t iss_int_callback(const rv32i_time_t time, rv32i_time_t *wakeup_time)
 extern "C" void VUserMain0()
 {
     rv32i_cfg_s   cfg;
+    int           error = 0;
 
     VPrint("\n*****************************\n");
     VPrint(  "*   Wyvern Semiconductors   *\n");
     VPrint(  "*  rv32_cpu ISS (on VProc)  *\n");
-    VPrint(  "*     Copyright (c) 2024    *\n");
+    VPrint(  "*     Copyright (c) 2025    *\n");
     VPrint(  "*****************************\n\n");
 
     VTick(20, node);
@@ -427,8 +430,11 @@ extern "C" void VUserMain0()
         else
         {
             // Load an executable
-            if (!pCpu->read_elf(cfg.exec_fname))
+            error = pCpu->read_elf(cfg.exec_fname);
+
+            if (!error)
             {
+                
                 pre_run_setup();
 
                 // Run processor
@@ -453,6 +459,10 @@ extern "C" void VUserMain0()
                         VPrint("PASS: exit code = 0x%08x running %s\n", pCpu->regi_val(10), cfg.exec_fname);
                     }
                 }
+            }
+            else
+            {
+                fprintf(stderr, "***ERROR: failed to load %s\n", cfg.exec_fname);
             }
         }
 

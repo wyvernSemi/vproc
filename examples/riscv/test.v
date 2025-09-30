@@ -79,7 +79,7 @@ reg            readdatavalid;
 reg            swirq;
 
 wire           timirq;
-wire  [2:0]   irq = {swirq, timirq, 1'b0};
+wire  [2:0]    irq = {1'b0, timirq, swirq};
 
 // -----------------------------------------------
 // Initialisation, clock and reset
