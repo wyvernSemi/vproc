@@ -78,10 +78,10 @@ extern void VRegIrqPy     (const pPyIrqCB_t    func,  const unsigned  node);
 // VUser function prototype for VInit in VSched.c
 extern int  VUser         (const unsigned   node);
 
-#if defined(VPROC_VHDL) || defined (ICARUS) || defined (VPROC_SV)
-# define VPrint(...) printf (__VA_ARGS__)
-#else
+#if defined(VPROC_USE_VPI_VPRINT)
 # define VPrint(...) vpi_printf (__VA_ARGS__)
+#else
+# define VPrint(...) printf (__VA_ARGS__)
 #endif
 
 #ifdef DEBUG
